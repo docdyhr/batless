@@ -131,8 +131,12 @@ pub fn process_file(
 
     // Extract tokens if requested
     let tokens = if config.include_tokens {
-        let content = if config.summary_mode && summary_lines.is_some() {
-            summary_lines.as_ref().unwrap().join("\n")
+        let content = if config.summary_mode {
+            if let Some(ref summary) = summary_lines {
+                summary.join("\n")
+            } else {
+                lines.join("\n")
+            }
         } else {
             lines.join("\n")
         };
@@ -350,8 +354,9 @@ mod tests {
     use tempfile::NamedTempFile;
 
     fn create_test_file(content: &str) -> NamedTempFile {
-        let mut file = NamedTempFile::new().unwrap();
-        file.write_all(content.as_bytes()).unwrap();
+        let mut file = NamedTempFile::new().expect("Failed to create temporary file");
+        file.write_all(content.as_bytes())
+            .expect("Failed to write to temporary file");
         file
     }
 
@@ -361,7 +366,11 @@ mod tests {
         let file = create_test_file(content);
         let config = BatlessConfig::default();
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert_eq!(result.lines.len(), 3);
         assert_eq!(result.lines[0], "line 1");
@@ -377,10 +386,16 @@ mod tests {
     fn test_process_file_max_lines() {
         let content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
         let file = create_test_file(content);
-        let mut config = BatlessConfig::default();
-        config.max_lines = 3;
+        let config = BatlessConfig {
+            max_lines: 3,
+            ..Default::default()
+        };
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert_eq!(result.lines.len(), 3);
         assert_eq!(result.total_lines, 3);
@@ -393,10 +408,16 @@ mod tests {
     fn test_process_file_max_bytes() {
         let content = "short\nlonger line\neven longer line\n";
         let file = create_test_file(content);
-        let mut config = BatlessConfig::default();
-        config.max_bytes = Some(15); // Should stop after first two lines
+        let config = BatlessConfig {
+            max_bytes: Some(15), // Should stop after first two lines
+            ..Default::default()
+        };
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert!(result.truncated);
         assert!(result.truncated_by_bytes);
@@ -425,8 +446,10 @@ mod tests {
     #[test]
     fn test_highlight_content_plain() {
         let content = "fn main() {\n    println!(\"Hello\");\n}\n";
-        let mut config = BatlessConfig::default();
-        config.use_color = false;
+        let config = BatlessConfig {
+            use_color: false,
+            ..Default::default()
+        };
 
         let result = highlight_content(content, "test.rs", &config).unwrap();
         assert_eq!(result, content);
@@ -463,10 +486,16 @@ mod tests {
         let content =
             "import os\n\ndef main():\n    print('hello')\n    x = 1\n\nclass Test:\n    pass\n";
         let file = create_test_file(content);
-        let mut config = BatlessConfig::default();
-        config.summary_mode = true;
+        let config = BatlessConfig {
+            summary_mode: true,
+            ..Default::default()
+        };
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert!(result.summary_lines.is_some());
         let summary = result.summary_lines.unwrap();
@@ -479,10 +508,16 @@ mod tests {
     fn test_include_tokens() {
         let content = "fn main() {\n    let x = 42;\n}\n";
         let file = create_test_file(content);
-        let mut config = BatlessConfig::default();
-        config.include_tokens = true;
+        let config = BatlessConfig {
+            include_tokens: true,
+            ..Default::default()
+        };
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert!(result.tokens.is_some());
         let tokens = result.tokens.unwrap();
@@ -497,7 +532,11 @@ mod tests {
         let file = create_test_file(content);
         let config = BatlessConfig::default();
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
         assert_eq!(result.encoding, "UTF-8");
     }
 
@@ -520,7 +559,11 @@ mod tests {
         let file = create_test_file(content);
         let config = BatlessConfig::default();
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert_eq!(result.lines.len(), 0);
         assert_eq!(result.total_lines, 0);
@@ -536,7 +579,11 @@ mod tests {
         let file = create_test_file(content);
         let config = BatlessConfig::default();
 
-        let result = process_file(file.path().to_str().unwrap(), &config).unwrap();
+        let file_path = file
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let result = process_file(file_path, &config).expect("Failed to process file");
 
         assert_eq!(result.lines.len(), 1);
         assert_eq!(result.lines[0], "single line without newline");

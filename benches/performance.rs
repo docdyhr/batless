@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput, BenchmarkId};
-use batless::{process_file, highlight_content, BatlessConfig};
+use batless::{highlight_content, process_file, BatlessConfig};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::io::Write;
 use tempfile::NamedTempFile;
 
@@ -11,49 +11,55 @@ fn create_test_file(content: &str) -> NamedTempFile {
 
 fn benchmark_process_file(c: &mut Criterion) {
     let mut group = c.benchmark_group("process_file");
-    
+
     // Test with different file sizes
     let sizes = vec![1000, 10000, 100000];
-    
+
     for size in sizes {
         let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n".repeat(size / 50);
         let file = create_test_file(&content);
         let config = BatlessConfig::default();
-        
+
         group.throughput(Throughput::Bytes(content.len() as u64));
         group.bench_with_input(
             BenchmarkId::new("file_size", size),
             &(file.path().to_str().unwrap(), &config),
-            |b, (path, config)| {
-                b.iter(|| {
-                    black_box(process_file(path, config).unwrap())
-                })
-            }
+            |b, (path, config)| b.iter(|| black_box(process_file(path, config).unwrap())),
         );
     }
-    
+
     group.finish();
 }
 
 fn benchmark_highlight_content(c: &mut Criterion) {
     let mut group = c.benchmark_group("highlight_content");
-    
+
     let test_cases = vec![
-        ("rust", "fn main() {\n    println!(\"Hello, world!\");\n}", "test.rs"),
-        ("python", "def main():\n    print('Hello, world!')\n", "test.py"),
+        (
+            "rust",
+            "fn main() {\n    println!(\"Hello, world!\");\n}",
+            "test.rs",
+        ),
+        (
+            "python",
+            "def main():\n    print('Hello, world!')\n",
+            "test.py",
+        ),
         ("json", r#"{"hello": "world", "number": 42}"#, "test.json"),
-        ("plain", "This is plain text\nwith multiple lines\n", "test.txt"),
+        (
+            "plain",
+            "This is plain text\nwith multiple lines\n",
+            "test.txt",
+        ),
     ];
-    
+
     for (lang, content, filename) in test_cases {
         let config = BatlessConfig::default();
         group.bench_function(lang, |b| {
-            b.iter(|| {
-                black_box(highlight_content(content, filename, &config).unwrap())
-            })
+            b.iter(|| black_box(highlight_content(content, filename, &config).unwrap()))
         });
     }
-    
+
     group.finish();
 }
 
@@ -84,50 +90,49 @@ fn main() {
         Err(e) => eprintln!("Error: {}", e),
     }
 }
-"#.repeat(10); // Repeat to make it larger
-    
+"#
+    .repeat(10); // Repeat to make it larger
+
     let file = create_test_file(&rust_code);
-    
-    let mut summary_config = BatlessConfig::default();
-    summary_config.summary_mode = true;
-    
-    let mut regular_config = BatlessConfig::default();
-    regular_config.summary_mode = false;
-    
+
+    let summary_config = BatlessConfig {
+        summary_mode: true,
+        ..Default::default()
+    };
+
+    let regular_config = BatlessConfig {
+        summary_mode: false,
+        ..Default::default()
+    };
+
     c.bench_function("summary_mode_enabled", |b| {
-        b.iter(|| {
-            black_box(process_file(file.path().to_str().unwrap(), &summary_config).unwrap())
-        })
+        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &summary_config).unwrap()))
     });
-    
+
     c.bench_function("summary_mode_disabled", |b| {
-        b.iter(|| {
-            black_box(process_file(file.path().to_str().unwrap(), &regular_config).unwrap())
-        })
+        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &regular_config).unwrap()))
     });
 }
 
 fn benchmark_max_lines_limits(c: &mut Criterion) {
     let large_content = "Line of text\n".repeat(10000);
     let file = create_test_file(&large_content);
-    
+
     let mut group = c.benchmark_group("max_lines");
-    
+
     for max_lines in [100, 1000, 5000, 10000].iter() {
-        let mut config = BatlessConfig::default();
-        config.max_lines = *max_lines;
-        
+        let config = BatlessConfig {
+            max_lines: *max_lines,
+            ..Default::default()
+        };
+
         group.bench_with_input(
             BenchmarkId::new("limit", max_lines),
             &(file.path().to_str().unwrap(), &config),
-            |b, (path, config)| {
-                b.iter(|| {
-                    black_box(process_file(path, config).unwrap())
-                })
-            }
+            |b, (path, config)| b.iter(|| black_box(process_file(path, config).unwrap())),
         );
     }
-    
+
     group.finish();
 }
 

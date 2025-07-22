@@ -74,14 +74,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Handle list commands first
     if args.list_languages {
         for language in batless::list_languages() {
-            println!("{}", language);
+            println!("{language}");
         }
         return Ok(());
     }
 
     if args.list_themes {
         for theme in batless::list_themes() {
-            println!("{}", theme);
+            println!("{theme}");
         }
         return Ok(());
     }
