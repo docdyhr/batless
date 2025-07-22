@@ -1,0 +1,120 @@
+name: Feature Request
+description: Suggest an idea or enhancement for batless
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! We appreciate your input in making batless better.
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature description
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: I would like batless to support...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem or use case
+      description: What problem does this feature solve? What's your use case?
+      placeholder: This feature would help with...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: How would you like this feature to work?
+      placeholder: The feature could work by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you considered any alternative solutions or workarounds?
+      placeholder: I've also considered...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Feature category
+      description: Which area does this feature relate to?
+      options:
+        - Syntax highlighting
+        - Output formats
+        - Performance
+        - CLI interface
+        - AI/automation features
+        - Language support
+        - Themes and colors
+        - File processing
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would be helpful
+        - High - Important for my workflow
+        - Critical - Blocking my use case
+    validations:
+      required: true
+
+  - type: textarea
+    id: example-usage
+    attributes:
+      label: Example usage
+      description: Show how this feature would be used (CLI commands, code examples, etc.)
+      render: shell
+      placeholder: |
+        batless file.py --new-feature-flag
+        # Expected output: ...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      options:
+        - label: This feature should maintain backward compatibility
+        - label: This feature is for AI assistants/automation
+        - label: This feature is for interactive use
+        - label: This feature requires breaking changes
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Any other information that might be helpful
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission checklist
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have clearly described the problem and proposed solution
+          required: true
+        - label: I understand this is a feature request, not a bug report
+          required: true

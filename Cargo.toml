@@ -1,0 +1,42 @@
+[package]
+name = "batless"
+version = "0.1.0"
+edition = "2021"
+authors = ["Thomas <you@example.com>"]
+description = "A non-blocking, LLM-friendly code viewer inspired by bat"
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/your-username/batless"
+repository = "https://github.com/your-username/batless"
+documentation = "https://docs.rs/batless"
+keywords = ["cli", "syntax-highlighting", "code-viewer", "ai", "automation"]
+categories = ["command-line-utilities", "development-tools", "text-processing"]
+exclude = [
+    "target/",
+    "*.tmp",
+    "test_file*.txt",
+    "demo_output.txt",
+    ".github/",
+    "demo.sh",
+]
+
+[lib]
+name = "batless"
+path = "src/lib.rs"
+
+[[bin]]
+name = "batless"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+syntect = "5"
+atty = "0.2"
+termcolor = "1.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+strip-ansi-escapes = "0.2"
+
+[dev-dependencies]
+tempfile = "3.8"
+serde_json = "1.0"

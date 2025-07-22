@@ -1,0 +1,252 @@
+use std::io::Write;
+use std::process::Command;
+use tempfile::NamedTempFile;
+
+fn create_test_file(content: &str, extension: &str) -> NamedTempFile {
+    let mut file = tempfile::Builder::new()
+        .suffix(extension)
+        .tempfile()
+        .unwrap();
+    file.write_all(content.as_bytes()).unwrap();
+    file
+}
+
+fn run_batless(args: &[&str]) -> std::process::Output {
+    Command::new("cargo")
+        .arg("run")
+        .arg("--")
+        .args(args)
+        .output()
+        .expect("Failed to execute batless")
+}
+
+#[test]
+fn test_help_command() {
+    let output = run_batless(&["--help"]);
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("A non-blocking, LLM-friendly code viewer"));
+    assert!(stdout.contains("--mode <MODE>"));
+    assert!(stdout.contains("--max-lines"));
+}
+
+#[test]
+fn test_version_command() {
+    let output = run_batless(&["--version"]);
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("batless"));
+}
+
+#[test]
+fn test_plain_mode() {
+    let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=plain"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("fn main()"));
+    assert!(stdout.contains("println!"));
+}
+
+#[test]
+fn test_highlight_mode() {
+    let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=highlight",
+        "--color=always",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Should contain the content, might have ANSI codes but that's ok
+    assert!(stdout.contains("main"));
+    assert!(stdout.contains("println"));
+}
+
+#[test]
+fn test_json_mode() {
+    let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=json"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    // Parse as JSON to verify structure
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["mode"], "json");
+    assert_eq!(json["language"], "Rust");
+    assert!(json["lines"].is_array());
+    assert!(json["total_lines"].is_number());
+    assert!(json["total_bytes"].is_number());
+}
+
+#[test]
+fn test_max_lines_limit() {
+    let content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
+    let file = create_test_file(content, ".txt");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=plain",
+        "--max-lines=3",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let lines: Vec<&str> = stdout.trim().split('\n').collect();
+
+    // Should have 3 content lines + 1 truncation message
+    assert_eq!(lines.len(), 4);
+    assert!(lines[3].contains("Output truncated after 3 lines"));
+}
+
+#[test]
+fn test_max_bytes_limit() {
+    let content = "Short line 1\nShort line 2\nShort line 3\nShort line 4\n";
+    let file = create_test_file(content, ".txt");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=plain",
+        "--max-bytes=25",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Should be truncated since the content is longer than 25 bytes
+    assert!(stdout.contains("Output truncated after") && stdout.contains("bytes"));
+}
+
+#[test]
+fn test_language_detection() {
+    let python_content = "def hello():\n    print('Hello, world!')\n";
+    let file = create_test_file(python_content, ".py");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=json"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["language"], "Python");
+}
+
+#[test]
+fn test_explicit_language() {
+    let content = "function hello() {\n    console.log('Hello');\n}\n";
+    let file = create_test_file(content, ".unknown");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--language=javascript",
+        "--mode=json",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["language"], "javascript");
+}
+
+#[test]
+fn test_color_never() {
+    let content = "fn main() {\n    println!(\"Hello\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=highlight",
+        "--color=never",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // With color=never, should not contain ANSI escape sequences
+    assert!(!stdout.contains("\x1b["));
+}
+
+#[test]
+fn test_strip_ansi() {
+    let content = "fn main() {\n    println!(\"Hello\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=plain",
+        "--strip-ansi",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("fn main()"));
+}
+
+#[test]
+fn test_custom_theme() {
+    let content = "fn main() {\n    println!(\"Hello\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=highlight",
+        "--theme=InspiredGitHub",
+        "--color=always",
+    ]);
+
+    assert!(output.status.success());
+    // Should not crash with custom theme
+}
+
+#[test]
+fn test_empty_file() {
+    let file = create_test_file("", ".txt");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=json"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["total_lines"], 0);
+    assert_eq!(json["total_bytes"], 0);
+    assert_eq!(json["truncated"], false);
+}
+
+#[test]
+fn test_nonexistent_file() {
+    let output = run_batless(&["/nonexistent/file.txt", "--mode=plain"]);
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(stderr.contains("No such file") || stderr.contains("not found"));
+}
+
+#[test]
+fn test_multiple_options_combined() {
+    let content = "def func1():\n    pass\n\ndef func2():\n    pass\n\ndef func3():\n    pass\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=json",
+        "--max-lines=2",
+        "--language=python",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+
+    assert_eq!(json["language"], "python");
+    assert_eq!(json["total_lines"], 2);
+    assert_eq!(json["truncated"], true);
+    assert_eq!(json["lines"].as_array().unwrap().len(), 2);
+}
