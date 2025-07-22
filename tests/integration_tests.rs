@@ -250,3 +250,138 @@ fn test_multiple_options_combined() {
     assert_eq!(json["truncated"], true);
     assert_eq!(json["lines"].as_array().unwrap().len(), 2);
 }
+
+#[test]
+fn test_list_languages() {
+    let output = run_batless(&["--list-languages"]);
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("Rust"));
+    assert!(stdout.contains("Python"));
+    assert!(stdout.contains("JavaScript"));
+}
+
+#[test]
+fn test_list_themes() {
+    let output = run_batless(&["--list-themes"]);
+    assert!(output.status.success());
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("base16-ocean.dark"));
+    assert!(stdout.contains("InspiredGitHub"));
+}
+
+#[test]
+fn test_summary_mode() {
+    let content = "import os\nimport sys\n\ndef main():\n    print('hello')\n    x = 1\n    y = 2\n\nclass Test:\n    def method(self):\n        pass\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=summary"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("import os"));
+    assert!(stdout.contains("def main():"));
+    assert!(stdout.contains("class Test:"));
+    assert!(!stdout.contains("x = 1")); // Should not include non-summary lines
+}
+
+#[test]
+fn test_summary_flag() {
+    let content = "fn main() {\n    println!(\"hello\");\n    let x = 1;\n}\n\nstruct Test {\n    name: String,\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--summary", "--mode=plain"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("fn main()"));
+    assert!(stdout.contains("struct Test"));
+    assert!(!stdout.contains("let x = 1")); // Should not include non-summary lines
+}
+
+#[test]
+fn test_include_tokens() {
+    let content = "fn main() {\n    println!(\"Hello\");\n}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=json",
+        "--include-tokens",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+
+    assert!(json["tokens"].is_array());
+    let tokens = json["tokens"].as_array().unwrap();
+    assert!(!tokens.is_empty());
+}
+
+#[test]
+fn test_enhanced_json_output() {
+    let content = "def hello():\n    print('world')\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=json",
+        "--include-tokens",
+        "--summary",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+
+    // Check new fields
+    assert!(json["encoding"].is_string());
+    assert!(json["syntax_errors"].is_array());
+    assert!(json["truncated_by_lines"].is_boolean());
+    assert!(json["truncated_by_bytes"].is_boolean());
+    assert!(json["tokens"].is_array());
+    assert!(json["summary_lines"].is_array());
+}
+
+#[test]
+fn test_summary_with_no_important_lines() {
+    let content = "// Just comments\n// Nothing important\n// More comments\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=summary"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("No summary-worthy code structures found"));
+}
+
+#[test]
+fn test_file_required_error() {
+    let output = run_batless(&["--mode=json"]);
+    assert!(!output.status.success());
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(stderr.contains("File path required"));
+}
+
+#[test]
+fn test_summary_mode_different_languages() {
+    // Test JavaScript
+    let js_content = "import React from 'react';\n\nfunction Component() {\n    console.log('test');\n    return <div>Hello</div>;\n}\n\nexport default Component;\n";
+    let js_file = create_test_file(js_content, ".js");
+
+    let output = run_batless(&[
+        js_file.path().to_str().unwrap(),
+        "--mode=summary",
+        "--language=javascript",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("import React"));
+    assert!(stdout.contains("function Component"));
+    assert!(stdout.contains("export default"));
+}
