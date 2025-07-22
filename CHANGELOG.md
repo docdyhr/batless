@@ -1,12 +1,47 @@
-# Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2024-12-28
+# Changelog
 
+## [0.1.0] - 2025-01-23
+
+### Added
+- 🎯 **Core batless functionality** - non-blocking code viewer for AI and automation
+- 🎨 **Syntax highlighting** for 100+ programming languages via syntect
+- 📊 **Multiple output modes**: plain, highlight, JSON, and summary
+- 🤖 **AI-optimized features**:
+  - Summary mode extracts functions, classes, imports
+  - Token extraction for LLM context processing  
+  - JSON output with metadata and structure
+- ⚡ **Performance features**:
+  - Smart file limiting by lines and bytes
+  - Memory-efficient streaming architecture
+  - Cached syntax definitions for fast startup
+- 🔒 **Enterprise-grade security**:
+  - Comprehensive test coverage with property-based testing
+  - Daily vulnerability scanning and dependency auditing
+  - Supply chain security with SBOM generation
+  - Memory safety validation and fuzz testing
+- 📦 **Professional distribution**:
+  - Cross-platform binaries (Linux, macOS, Windows)
+  - Homebrew tap integration
+  - Docker containerization
+  - GitHub Actions CI/CD pipeline
+
+### Changed
+- Established security-first development practices
+- Implemented comprehensive testing infrastructure
+- Added strategic roadmap and development planning
+
+### Fixed
+- Resolved all clippy warnings and security audit issues  
+- Proper error handling throughout codebase
+- Memory safety improvements in all critical paths
+
+## [0.1.0] - 2024-12-28
 ### Added
 - Initial release of batless - a minimal, AI-friendly code viewer
 - Core syntax highlighting using syntect with 100+ language support
