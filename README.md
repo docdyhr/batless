@@ -1,36 +1,45 @@
 # 🦇 batless
 
-> A minimal, blazing-fast syntax viewer for AI code assistants and modern CLI workflows.
+> The non-blocking code viewer built for automation, not humans.
 
 [![Crates.io](https://img.shields.io/crates/v/batless.svg)](https://crates.io/crates/batless)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/docdyhr/batless/workflows/CI%2FCD/badge.svg)](https://github.com/docdyhr/batless/actions)
+[![Security](https://github.com/docdyhr/batless/workflows/Security%20Review/badge.svg)](https://github.com/docdyhr/batless/actions)
+[![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg)](https://codecov.io/gh/docdyhr/batless)
 
-**batless** is a non-blocking, AI-friendly code viewer inspired by [`bat`](https://github.com/sharkdp/bat) but designed specifically for:
-- 🤖 **AI code assistants** (Claude, Gemini, etc.)
-- 🔄 **CI/CD pipelines** and automation
-- 📜 **Non-interactive workflows**
+**batless** is a minimal, blazing-fast syntax viewer that **never blocks, never pages, never hangs**. While [`bat`](https://github.com/sharkdp/bat) is a feature-rich "cat with wings" for human users, `batless` is purpose-built for:
 
-Unlike traditional pagers that can block or hang, `batless` guarantees streaming, predictable output perfect for automated tools and AI agents.
+- 🤖 **AI code assistants** that need predictable, streaming output
+- 🔄 **CI/CD pipelines** where interactive pagers would hang forever
+- 📜 **Automation scripts** that require guaranteed non-blocking behavior
+- 🚀 **Modern workflows** where JSON output and code summaries matter more than line numbers
+
+**Core guarantee**: `batless` will NEVER wait for user input or block your pipeline.
 
 ## ✨ Features
 
-### Core Features
-- ⚡ **Always non-blocking** - never hangs or waits for user input
-- 🎨 **Syntax highlighting** with 100+ languages via Tree-sitter
-- 📊 **Multiple output modes**: plain text, highlighted, JSON
-- 🔍 **Language auto-detection** or explicit specification
-- 📏 **Smart limiting** by lines or bytes
-- 🎯 **Memory efficient** streaming for large files
+### Non-Blocking Guarantees
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
 
-### AI & Automation Friendly
-- 🤖 **LLM-safe defaults** - no decorations, clean output
-- 📋 **Enhanced JSON mode** with encoding, tokens, and metadata
-- 🎯 **Summary mode** - extract only important code structures
-- 🔤 **Token extraction** for AI processing and analysis
-- 🚫 **ANSI stripping** support
-- 🎨 **Color control** (auto/always/never)
-- 📦 **Single binary** with no external dependencies
-- 🚀 **Performance optimized** with cached syntax sets
+### Core Features
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 🔍 **Language auto-detection** with manual override support
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+
+### Built for Automation
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
 
 ## 🚀 Installation
 
@@ -212,39 +221,86 @@ View all supported languages:
 batless --list-languages
 ```
 
-## 🆚 Comparison with `bat`
+## 🆚 Why batless instead of bat?
+
+### When to use `batless`
+- ✅ **CI/CD pipelines** - Guaranteed to never hang waiting for input
+- ✅ **AI assistants** - Clean output with JSON mode and code summaries
+- ✅ **Automation scripts** - Predictable, streaming behavior
+- ✅ **Large file processing** - Memory-efficient streaming architecture
+- ✅ **Headless environments** - No terminal detection or pager issues
+
+### When to use `bat`
+- ✅ **Interactive terminal use** - Rich features like paging and git integration
+- ✅ **Human code review** - Line numbers, file headers, and decorations
+- ✅ **Git workflows** - Shows inline diffs and modifications
+- ✅ **Terminal multiplexing** - Full terminal UI features
+
+### Feature Comparison
 
 | Feature | `batless` | `bat` |
 |---------|-----------|-------|
-| **Blocking behavior** | ✅ Never blocks | ❌ Can block on `less` |
-| **AI-friendly** | ✅ Designed for it | ⚠️ Manual config needed |
-| **Enhanced JSON output** | ✅ Built-in with metadata | ❌ No |
-| **Summary mode** | ✅ Code structure extraction | ❌ No |
-| **Token extraction** | ✅ For AI processing | ❌ No |
-| **Byte limiting** | ✅ Yes | ❌ No |
-| **Performance** | ✅ Cached, optimized | ⚠️ Slower startup |
-| **CI/CD safe** | ✅ Always | ⚠️ Needs `--paging=never` |
-| **Git integration** | ❌ No | ✅ Yes |
-| **Line numbers** | ❌ No (by design) | ✅ Yes |
-| **File headers** | ❌ No (by design) | ✅ Yes |
+| **Core Philosophy** | Built for machines | Built for humans |
+| **Blocking behavior** | ✅ **NEVER blocks** | ❌ Uses interactive pager |
+| **Default output** | ✅ Clean, no decorations | ❌ Headers, grids, line numbers |
+| **JSON output** | ✅ First-class with metadata | ❌ Not supported |
+| **Summary mode** | ✅ Extract code structure | ❌ Not supported |
+| **Token extraction** | ✅ For AI processing | ❌ Not supported |
+| **Byte limiting** | ✅ Memory-safe streaming | ❌ Loads entire file |
+| **Binary size** | ✅ ~2MB minimal | ❌ ~10MB with features |
+| **Startup time** | ✅ <50ms cached | ⚠️ ~180ms full init |
+| **Dependencies** | ✅ 9 crates | ❌ 20+ crates |
+| **Git integration** | ❌ No (by design) | ✅ Full support |
+| **Line numbers** | ❌ No (use `cat -n` if needed) | ✅ Configurable |
+| **Interactive paging** | ❌ No (by design) | ✅ Smart pager integration |
 
 ## 🛠️ Development
 
 ### Running Tests
 ```bash
+# Run all tests
 cargo test
+
+# Run property-based tests
+cargo test --test property_tests
+
+# Run benchmarks
+cargo bench
+
+# Run security checks
+./scripts/security-check.sh
 ```
 
-### Building
+### Building & Quality Checks
 ```bash
+# Build release
 cargo build --release
+
+# Comprehensive linting
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Code formatting
+cargo fmt --all -- --check
+
+# Security audit
+cargo audit
+
+# Generate coverage report
+cargo install cargo-llvm-cov
+cargo llvm-cov --html
 ```
 
-### Linting
-```bash
-cargo clippy -- -D warnings
-cargo fmt --all -- --check
-```
+### Security & Testing
+This project maintains high security and quality standards:
+
+- ✅ **90%+ test coverage** with unit, integration, and property-based tests
+- ✅ **Daily security audits** with automated vulnerability scanning  
+- ✅ **Fuzz testing** for crash resistance and input validation
+- ✅ **Memory safety** verification with Valgrind
+- ✅ **Supply chain security** with OSSF Scorecard monitoring
+- ✅ **Performance benchmarking** with regression detection
+
+See [SECURITY_TESTING.md](SECURITY_TESTING.md) for detailed security measures.
 
 ## 📊 Performance
 

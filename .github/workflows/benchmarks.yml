@@ -1,0 +1,397 @@
+name: Performance Benchmarks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run benchmarks weekly to track performance over time
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-benchmark-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Add benchmark dependencies
+        run: |
+          # Add criterion to Cargo.toml for benchmarking
+          cat >> Cargo.toml << 'EOF'
+          
+          [[bench]]
+          name = "performance"
+          harness = false
+          
+          [dev-dependencies.criterion]
+          version = "0.5"
+          features = ["html_reports"]
+          EOF
+
+      - name: Create benchmark suite
+        run: |
+          mkdir -p benches
+          cat > benches/performance.rs << 'EOF'
+          use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput, BenchmarkId};
+          use batless::{process_file, highlight_content, BatlessConfig};
+          use std::io::Write;
+          use tempfile::NamedTempFile;
+
+          fn create_test_file(content: &str) -> NamedTempFile {
+              let mut file = NamedTempFile::new().unwrap();
+              file.write_all(content.as_bytes()).unwrap();
+              file
+          }
+
+          fn benchmark_process_file(c: &mut Criterion) {
+              let mut group = c.benchmark_group("process_file");
+              
+              // Test with different file sizes
+              let sizes = vec![1000, 10000, 100000];
+              
+              for size in sizes {
+                  let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n".repeat(size / 50);
+                  let file = create_test_file(&content);
+                  let config = BatlessConfig::default();
+                  
+                  group.throughput(Throughput::Bytes(content.len() as u64));
+                  group.bench_with_input(
+                      BenchmarkId::new("file_size", size),
+                      &(file.path().to_str().unwrap(), &config),
+                      |b, (path, config)| {
+                          b.iter(|| {
+                              black_box(process_file(path, config).unwrap())
+                          })
+                      }
+                  );
+              }
+              
+              group.finish();
+          }
+
+          fn benchmark_highlight_content(c: &mut Criterion) {
+              let mut group = c.benchmark_group("highlight_content");
+              
+              let test_cases = vec![
+                  ("rust", "fn main() {\n    println!(\"Hello, world!\");\n}", "test.rs"),
+                  ("python", "def main():\n    print('Hello, world!')\n", "test.py"),
+                  ("json", r#"{"hello": "world", "number": 42}"#, "test.json"),
+                  ("plain", "This is plain text\nwith multiple lines\n", "test.txt"),
+              ];
+              
+              for (lang, content, filename) in test_cases {
+                  let config = BatlessConfig::default();
+                  group.bench_function(lang, |b| {
+                      b.iter(|| {
+                          black_box(highlight_content(content, filename, &config).unwrap())
+                      })
+                  });
+              }
+              
+              group.finish();
+          }
+
+          fn benchmark_summary_mode(c: &mut Criterion) {
+              let rust_code = r#"
+          use std::io;
+          
+          pub struct Config {
+              pub debug: bool,
+              pub timeout: u64,
+          }
+          
+          impl Config {
+              pub fn new() -> Self {
+                  Self { debug: false, timeout: 30 }
+              }
+          }
+          
+          pub fn process_data(data: &str) -> Result<String, io::Error> {
+              // Process the data
+              Ok(data.to_uppercase())
+          }
+          
+          fn main() {
+              let config = Config::new();
+              match process_data("hello") {
+                  Ok(result) => println!("{}", result),
+                  Err(e) => eprintln!("Error: {}", e),
+              }
+          }
+          "#.repeat(10); // Repeat to make it larger
+              
+              let file = create_test_file(&rust_code);
+              
+              let mut summary_config = BatlessConfig::default();
+              summary_config.summary_mode = true;
+              
+              let mut regular_config = BatlessConfig::default();
+              regular_config.summary_mode = false;
+              
+              c.bench_function("summary_mode_enabled", |b| {
+                  b.iter(|| {
+                      black_box(process_file(file.path().to_str().unwrap(), &summary_config).unwrap())
+                  })
+              });
+              
+              c.bench_function("summary_mode_disabled", |b| {
+                  b.iter(|| {
+                      black_box(process_file(file.path().to_str().unwrap(), &regular_config).unwrap())
+                  })
+              });
+          }
+
+          fn benchmark_max_lines_limits(c: &mut Criterion) {
+              let large_content = "Line of text\n".repeat(10000);
+              let file = create_test_file(&large_content);
+              
+              let mut group = c.benchmark_group("max_lines");
+              
+              for max_lines in [100, 1000, 5000, 10000].iter() {
+                  let mut config = BatlessConfig::default();
+                  config.max_lines = *max_lines;
+                  
+                  group.bench_with_input(
+                      BenchmarkId::new("limit", max_lines),
+                      &(file.path().to_str().unwrap(), &config),
+                      |b, (path, config)| {
+                          b.iter(|| {
+                              black_box(process_file(path, config).unwrap())
+                          })
+                      }
+                  );
+              }
+              
+              group.finish();
+          }
+
+          criterion_group!(
+              benches,
+              benchmark_process_file,
+              benchmark_highlight_content,
+              benchmark_summary_mode,
+              benchmark_max_lines_limits
+          );
+          criterion_main!(benches);
+          EOF
+
+      - name: Run benchmarks
+        run: cargo bench
+
+      - name: Install hyperfine for CLI benchmarking
+        run: |
+          wget https://github.com/sharkdp/hyperfine/releases/latest/download/hyperfine_1.18.0_amd64.deb
+          sudo dpkg -i hyperfine_1.18.0_amd64.deb
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Create comparison test files
+        run: |
+          mkdir -p benchmark_files
+          
+          # Small Rust file (1KB)
+          cat > benchmark_files/small.rs << 'EOF'
+          fn main() {
+              println!("Hello, world!");
+          }
+          EOF
+          
+          # Medium Rust file (10KB)
+          cat > benchmark_files/medium.rs << 'EOF'
+          use std::collections::HashMap;
+          use std::io::{self, Read};
+          
+          struct DataProcessor {
+              cache: HashMap<String, String>,
+              config: ProcessorConfig,
+          }
+          
+          struct ProcessorConfig {
+              max_entries: usize,
+              timeout_ms: u64,
+          }
+          
+          impl DataProcessor {
+              fn new() -> Self {
+                  Self {
+                      cache: HashMap::new(),
+                      config: ProcessorConfig {
+                          max_entries: 1000,
+                          timeout_ms: 5000,
+                      },
+                  }
+              }
+              
+              fn process(&mut self, input: &str) -> Result<String, io::Error> {
+                  if let Some(cached) = self.cache.get(input) {
+                      return Ok(cached.clone());
+                  }
+                  
+                  let result = input.to_uppercase();
+                  self.cache.insert(input.to_string(), result.clone());
+                  Ok(result)
+              }
+          }
+          
+          fn main() -> Result<(), Box<dyn std::error::Error>> {
+              let mut processor = DataProcessor::new();
+              let mut input = String::new();
+              io::stdin().read_to_string(&mut input)?;
+              
+              match processor.process(&input) {
+                  Ok(result) => println!("{}", result),
+                  Err(e) => eprintln!("Error: {}", e),
+              }
+              
+              Ok(())
+          }
+          EOF
+          
+          # Large file (100KB) - repeat medium content
+          for i in {1..10}; do
+              cat benchmark_files/medium.rs >> benchmark_files/large.rs
+          done
+
+      - name: Benchmark CLI performance
+        run: |
+          echo "# CLI Performance Benchmarks" > benchmark-results.md
+          echo "" >> benchmark-results.md
+          
+          # Compare different modes
+          echo "## Mode Comparison (medium.rs)" >> benchmark-results.md
+          hyperfine --export-markdown mode-comparison.md \
+            './target/release/batless benchmark_files/medium.rs --mode=plain' \
+            './target/release/batless benchmark_files/medium.rs --mode=highlight' \
+            './target/release/batless benchmark_files/medium.rs --mode=json' \
+            './target/release/batless benchmark_files/medium.rs --mode=summary'
+          cat mode-comparison.md >> benchmark-results.md
+          echo "" >> benchmark-results.md
+          
+          # Compare file sizes
+          echo "## File Size Impact (highlight mode)" >> benchmark-results.md
+          hyperfine --export-markdown size-comparison.md \
+            './target/release/batless benchmark_files/small.rs' \
+            './target/release/batless benchmark_files/medium.rs' \
+            './target/release/batless benchmark_files/large.rs --max-lines=1000'
+          cat size-comparison.md >> benchmark-results.md
+          echo "" >> benchmark-results.md
+          
+          # Compare with bat (if available)
+          if command -v bat &> /dev/null; then
+            echo "## Comparison with bat" >> benchmark-results.md
+            hyperfine --export-markdown bat-comparison.md \
+              './target/release/batless benchmark_files/medium.rs --mode=plain' \
+              'bat --paging=never --decorations=never benchmark_files/medium.rs'
+            cat bat-comparison.md >> benchmark-results.md
+          fi
+
+      - name: Check for performance regressions
+        if: github.event_name == 'pull_request'
+        run: |
+          # Simple regression check - ensure basic operations complete under thresholds
+          timeout 5 ./target/release/batless benchmark_files/large.rs --max-lines=100 || {
+            echo "❌ Performance regression: Large file processing took too long"
+            exit 1
+          }
+          
+          timeout 1 ./target/release/batless benchmark_files/medium.rs || {
+            echo "❌ Performance regression: Medium file processing took too long" 
+            exit 1
+          }
+          
+          echo "✅ No significant performance regressions detected"
+
+      - name: Archive benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            target/criterion/
+            benchmark-results.md
+            
+      - name: Comment PR with performance results
+        if: github.event_name == 'pull_request' && hashFiles('benchmark-results.md') != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('benchmark-results.md')) {
+              const results = fs.readFileSync('benchmark-results.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '## 📊 Performance Benchmark Results\n\n' + results
+              });
+            }
+
+  memory-profiling:
+    name: Memory Profiling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+
+      - name: Build with debug info
+        run: cargo build --release
+
+      - name: Create large test file
+        run: |
+          # Create a 1MB test file
+          dd if=/dev/zero bs=1024 count=1024 | tr '\0' 'A' > large_test.txt
+
+      - name: Memory usage analysis
+        run: |
+          echo "# Memory Usage Analysis" > memory-report.md
+          echo "" >> memory-report.md
+          
+          # Test memory usage with different file sizes
+          for size in 1KB 10KB 100KB 1MB; do
+            case $size in
+              1KB) head -c 1024 large_test.txt > test_$size.txt ;;
+              10KB) head -c 10240 large_test.txt > test_$size.txt ;;
+              100KB) head -c 102400 large_test.txt > test_$size.txt ;;
+              1MB) cp large_test.txt test_$size.txt ;;
+            esac
+            
+            echo "## Memory usage for $size file:" >> memory-report.md
+            timeout 60 valgrind --tool=massif --massif-out-file=massif.out.$size \
+              ./target/release/batless test_$size.txt --max-lines=1000 2>&1 | \
+              grep -E "(ERROR SUMMARY|definitely lost|indirectly lost)" >> memory-report.md || true
+            echo "" >> memory-report.md
+          done
+
+      - name: Upload memory analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: memory-analysis
+          path: |
+            memory-report.md
+            massif.out.*

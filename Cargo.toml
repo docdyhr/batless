@@ -6,8 +6,8 @@ authors = ["Thomas <you@example.com>"]
 description = "A non-blocking, LLM-friendly code viewer inspired by bat"
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/your-username/batless"
-repository = "https://github.com/your-username/batless"
+homepage = "https://github.com/docdyhr/batless"
+repository = "https://github.com/docdyhr/batless"
 documentation = "https://docs.rs/batless"
 keywords = ["cli", "syntax-highlighting", "code-viewer", "ai", "automation"]
 categories = ["command-line-utilities", "development-tools", "text-processing"]
@@ -42,3 +42,11 @@ encoding_rs = "0.8"
 [dev-dependencies]
 tempfile = "3.8"
 serde_json = "1.0"
+
+# Enhanced testing dependencies
+proptest = { version = "1.4", default-features = false, features = ["std"] }
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "performance"
+harness = false

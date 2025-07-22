@@ -1,0 +1,81 @@
+name: Test Formula
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Test weekly to catch upstream changes
+    - cron: '0 12 * * 1'
+
+jobs:
+  test-formula:
+    strategy:
+      matrix:
+        os: [macos-12, macos-13]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Cache Homebrew downloads
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/api
+          key: ${{ runner.os }}-homebrew-${{ hashFiles('Formula/*.rb') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-
+
+      - name: Checkout tap
+        uses: actions/checkout@v4
+
+      - name: Test formula syntax
+        run: |
+          brew audit --strict --formula Formula/batless.rb
+
+      - name: Install formula
+        run: |
+          brew install --build-from-source Formula/batless.rb
+
+      - name: Test installation
+        run: |
+          # Test that batless is installed and working
+          batless --version
+          batless --help
+          
+          # Test basic functionality
+          echo 'fn main() { println!("test"); }' > test.rs
+          batless test.rs
+          batless --mode=json test.rs
+          batless --mode=summary test.rs
+          rm test.rs
+
+      - name: Test uninstall
+        run: |
+          brew uninstall batless
+
+  test-tap-installation:
+    runs-on: macos-latest
+    steps:
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Test tap installation
+        run: |
+          # Test installing from tap (simulates user experience)
+          brew tap docdyhr/batless https://github.com/docdyhr/homebrew-batless.git
+          brew install batless --build-from-source
+          
+          # Test functionality
+          batless --version
+          echo 'println!("Hello, world!");' > test.rs
+          batless test.rs
+          
+          # Cleanup
+          brew uninstall batless
+          brew untap docdyhr/batless

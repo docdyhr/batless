@@ -1,0 +1,346 @@
+name: Code Quality & Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov
+
+      - name: Generate coverage report
+        run: |
+          cargo llvm-cov clean --workspace
+          cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+          cargo llvm-cov --all-features --workspace --html --output-dir coverage-html
+          cargo llvm-cov report --all-features --workspace
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          fail_ci_if_error: true
+          flags: unittests
+          name: batless-coverage
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Generate coverage summary
+        run: |
+          # Extract coverage percentage
+          COVERAGE=$(cargo llvm-cov report --all-features --workspace | grep -oP 'TOTAL.*?(\d+\.\d+)%' | grep -oP '\d+\.\d+')
+          echo "COVERAGE_PERCENT=$COVERAGE" >> $GITHUB_ENV
+          
+          # Generate summary
+          echo "# Coverage Report" > coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "**Overall Coverage: ${COVERAGE}%**" >> coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "## Detailed Report" >> coverage-summary.md
+          echo '```' >> coverage-summary.md
+          cargo llvm-cov report --all-features --workspace >> coverage-summary.md
+          echo '```' >> coverage-summary.md
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            lcov.info
+            coverage-html/
+            coverage-summary.md
+
+      - name: Coverage quality gate
+        run: |
+          if (( $(echo "$COVERAGE_PERCENT < 80" | bc -l) )); then
+            echo "❌ Coverage is below 80% (current: $COVERAGE_PERCENT%)"
+            exit 1
+          else
+            echo "✅ Coverage meets threshold (current: $COVERAGE_PERCENT%)"
+          fi
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('coverage-summary.md')) {
+              const coverage = fs.readFileSync('coverage-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: coverage
+              });
+            }
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-quality-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install quality tools
+        run: |
+          cargo install cargo-machete cargo-unused-features
+          # For dead code detection
+          rustup toolchain install nightly
+          rustup +nightly component add rust-src
+
+      - name: Check code formatting
+        run: |
+          cargo fmt --all -- --check --verbose
+          echo "✅ Code formatting is correct"
+
+      - name: Run Clippy with strict linting
+        run: |
+          cargo clippy --all-targets --all-features -- \
+            -D warnings \
+            -D clippy::all \
+            -D clippy::pedantic \
+            -D clippy::nursery \
+            -A clippy::missing_docs_in_private_items \
+            -A clippy::module_name_repetitions \
+            -A clippy::missing_errors_doc
+
+      - name: Check for unused dependencies
+        run: |
+          cargo machete
+          echo "✅ No unused dependencies found"
+
+      - name: Check for unused features
+        run: |
+          cargo unused-features analyze
+          echo "✅ Feature analysis completed"
+
+      - name: Dead code detection
+        run: |
+          # Use nightly for dead code detection
+          cargo +nightly build --all-features
+          RUSTFLAGS="-D dead_code" cargo +nightly check --all-features
+          echo "✅ No dead code detected"
+
+      - name: Documentation check
+        run: |
+          cargo doc --all-features --no-deps --document-private-items
+          echo "✅ Documentation builds successfully"
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true | wc -l)
+          echo "Found $TODO_COUNT TODO/FIXME comments"
+          
+          if [ $TODO_COUNT -gt 10 ]; then
+            echo "❌ Too many TODO/FIXME comments ($TODO_COUNT > 10)"
+            grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true
+            exit 1
+          else
+            echo "✅ Acceptable number of TODO/FIXME comments"
+          fi
+
+  documentation-quality:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install documentation tools
+        run: |
+          cargo install cargo-rdme
+
+      - name: Check README sync with lib.rs
+        run: |
+          cargo rdme --check
+          echo "✅ README is in sync with documentation"
+
+      - name: Build documentation with warnings as errors
+        run: |
+          RUSTDOCFLAGS="-D warnings" cargo doc --all-features --no-deps --document-private-items
+
+      - name: Check for missing documentation
+        run: |
+          # Check that public items have documentation
+          RUSTFLAGS="-D missing_docs" cargo check --all-features
+          echo "✅ All public items are documented"
+
+      - name: Documentation coverage
+        run: |
+          # Generate documentation coverage report
+          rustup toolchain install nightly
+          cargo +nightly doc --all-features --no-deps -Zunstable-options -Zrustdoc-map
+          
+          # Check documentation completeness
+          DOC_COVERAGE=$(cargo +nightly rustdoc --all-features -- --show-coverage 2>&1 | \
+            grep -oP '\d+\.\d+(?=% \(\d+/\d+ documented\))' | tail -1 || echo "0")
+          
+          echo "Documentation coverage: $DOC_COVERAGE%"
+          
+          if (( $(echo "$DOC_COVERAGE < 90" | bc -l) )); then
+            echo "❌ Documentation coverage below 90% (current: $DOC_COVERAGE%)"
+            exit 1
+          else
+            echo "✅ Documentation coverage meets threshold"
+          fi
+
+  complexity-analysis:
+    name: Code Complexity Analysis  
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install tokei for SLOC analysis
+        run: |
+          cargo install tokei
+
+      - name: Lines of code analysis
+        run: |
+          echo "# Code Complexity Analysis" > complexity-report.md
+          echo "" >> complexity-report.md
+          
+          echo "## Lines of Code" >> complexity-report.md
+          echo '```' >> complexity-report.md
+          tokei >> complexity-report.md
+          echo '```' >> complexity-report.md
+          echo "" >> complexity-report.md
+          
+          # Get total lines of Rust code
+          RUST_LINES=$(tokei --output json | jq -r '.Rust.code // 0')
+          echo "Total Rust SLOC: $RUST_LINES" >> complexity-report.md
+          
+          # Check if codebase is getting too large
+          if [ $RUST_LINES -gt 10000 ]; then
+            echo "⚠️ Codebase is getting large ($RUST_LINES SLOC)" >> complexity-report.md
+          else
+            echo "✅ Codebase size is manageable ($RUST_LINES SLOC)" >> complexity-report.md
+          fi
+
+      - name: Function complexity check
+        run: |
+          # Check for overly complex functions (simple heuristic)
+          echo "" >> complexity-report.md
+          echo "## Function Complexity Warnings" >> complexity-report.md
+          
+          COMPLEX_FUNCTIONS=$(grep -n "fn " src/**/*.rs | while read line; do
+            file=$(echo $line | cut -d: -f1)
+            line_num=$(echo $line | cut -d: -f2)
+            
+            # Count lines in function (simple heuristic)
+            func_lines=$(sed -n "${line_num},/^}/p" "$file" | wc -l)
+            if [ $func_lines -gt 50 ]; then
+              echo "$file:$line_num - Function has $func_lines lines"
+            fi
+          done)
+          
+          if [ -n "$COMPLEX_FUNCTIONS" ]; then
+            echo "⚠️ Functions with >50 lines:" >> complexity-report.md
+            echo '```' >> complexity-report.md
+            echo "$COMPLEX_FUNCTIONS" >> complexity-report.md
+            echo '```' >> complexity-report.md
+          else
+            echo "✅ No overly complex functions detected" >> complexity-report.md
+          fi
+
+      - name: Upload complexity report
+        uses: actions/upload-artifact@v4
+        with:
+          name: complexity-analysis
+          path: complexity-report.md
+
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    needs: [code-coverage, code-quality, documentation-quality, complexity-analysis]
+    if: always()
+    steps:
+      - name: Quality gate summary
+        run: |
+          echo "# Quality Gate Results" > quality-summary.md
+          echo "" >> quality-summary.md
+          echo "- Code Coverage: ${{ needs.code-coverage.result }}" >> quality-summary.md
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> quality-summary.md  
+          echo "- Documentation: ${{ needs.documentation-quality.result }}" >> quality-summary.md
+          echo "- Complexity Analysis: ${{ needs.complexity-analysis.result }}" >> quality-summary.md
+          echo "" >> quality-summary.md
+          
+          # Determine overall status
+          if [[ "${{ needs.code-coverage.result }}" == "success" && \
+                "${{ needs.code-quality.result }}" == "success" && \
+                "${{ needs.documentation-quality.result }}" == "success" ]]; then
+            echo "🎉 All quality gates passed!" >> quality-summary.md
+            echo "QUALITY_STATUS=success" >> $GITHUB_ENV
+          else
+            echo "❌ Some quality gates failed" >> quality-summary.md  
+            echo "QUALITY_STATUS=failure" >> $GITHUB_ENV
+          fi
+
+      - name: Fail if quality gates don't pass
+        if: env.QUALITY_STATUS == 'failure'
+        run: |
+          echo "Quality gates failed. Please fix the issues before merging."
+          exit 1
+
+      - name: Comment PR with quality summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('quality-summary.md')) {
+              const summary = fs.readFileSync('quality-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '## 🔍 Code Quality Report\n\n' + summary
+              });
+            }
