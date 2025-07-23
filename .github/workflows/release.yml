@@ -37,23 +37,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux targets
+          # Primary targets (most common platforms)
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-20.04
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-20.04
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-20.04
-          
-          # macOS targets  
           - target: x86_64-apple-darwin
             os: macos-12
-          - target: aarch64-apple-darwin
-            os: macos-12
-            
-          # Windows targets
           - target: x86_64-pc-windows-msvc
             os: windows-2022
+          
+          # Additional targets (if primary builds succeed)
+          - target: aarch64-apple-darwin
+            os: macos-12
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-20.04
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -66,18 +62,10 @@ jobs:
       
       # Linux cross-compilation setup
       - name: Install cross-compilation tools (Linux)
-        if: contains(matrix.target, 'linux') && !contains(matrix.target, 'x86_64-unknown-linux-gnu')
+        if: matrix.target == 'x86_64-unknown-linux-musl'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-multilib
-          
-          if [[ "${{ matrix.target }}" == *"musl"* ]]; then
-            sudo apt-get install -y musl-tools
-          fi
-          
-          if [[ "${{ matrix.target }}" == "aarch64"* ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu
-          fi
+          sudo apt-get install -y musl-tools
 
       - name: Build release binary
         run: |
