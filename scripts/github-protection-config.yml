@@ -1,0 +1,29 @@
+# GitHub CLI Branch Protection Configuration
+# Use with: gh api repos/docdyhr/batless/branches/main/protection --method PUT --input github-protection-config.yml
+
+required_status_checks:
+  strict: true
+  contexts:
+    - "Test (ubuntu-latest, stable)"
+    - "Test (windows-latest, stable)"
+    - "Test (macos-latest, stable)"
+    - "Security Audit"
+    - "Code Coverage"
+
+enforce_admins: true
+
+required_pull_request_reviews:
+  required_approving_review_count: 1
+  dismiss_stale_reviews: true
+  require_code_owner_reviews: false
+  require_last_push_approval: false
+
+restrictions: null
+
+required_linear_history: false
+allow_force_pushes: false
+allow_deletions: false
+block_creations: false
+required_conversation_resolution: true
+lock_branch: false
+allow_fork_syncing: true
