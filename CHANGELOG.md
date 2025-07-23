@@ -1,4 +1,3 @@
-
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -6,8 +5,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Changelog
 
-## [Unreleased]
 
+
+## [0.1.1] - 2025-07-23
+
+### Added
+- Comprehensive release infrastructure with GitHub Actions
+- Cross-platform binary builds (Linux, macOS, Windows) 
+- Automated Homebrew tap updates
+- Enhanced CI/CD pipeline for releases
+
+### Changed
+- Replaced unmaintained `atty` dependency with `is-terminal` for better security
+- Simplified release workflow for faster build times
+- Improved release automation scripts
+
+### Fixed
+- Security vulnerability in dependency chain
+- Release workflow compatibility issues
+
+### Infrastructure
+- Set up automated crates.io publishing
+- Added cross-platform binary distribution
+- Enhanced security scanning and dependency management
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [Unreleased]
 ### Security
 - Replaced unmaintained `atty` dependency with `is-terminal` to fix RUSTSEC-2024-0375 and RUSTSEC-2021-0145
 - Updated author information in Cargo.toml
@@ -20,8 +48,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved security vulnerabilities in dependencies
 - Updated author email from placeholder to actual email
 
-## [0.1.0] - 2025-01-23
 
+
+## [0.1.1] - 2025-07-23
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 70cc589 chore: remove backup file
+- bcab2e1 fix: replace unmaintained atty with is-terminal for security
+- 1baba90 Simplify release workflow for faster builds
+- 0cd0ea2 Fix release workflow - remove cargo-dist dependency
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.0] - 2025-01-23
 ### Added
 - 🎯 **Core batless functionality** - non-blocking code viewer for AI and automation
 - 🎨 **Syntax highlighting** for 100+ programming languages via syntect
@@ -55,8 +102,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Proper error handling throughout codebase
 - Memory safety improvements in all critical paths
 
-## [0.1.0] - 2024-12-28
+
+
+## [0.1.1] - 2025-07-23
+
 ### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 70cc589 chore: remove backup file
+- bcab2e1 fix: replace unmaintained atty with is-terminal for security
+- 1baba90 Simplify release workflow for faster builds
+- 0cd0ea2 Fix release workflow - remove cargo-dist dependency
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.0] - 2024-12-28
 - Initial release of batless - a minimal, AI-friendly code viewer
 - Core syntax highlighting using syntect with 100+ language support
 - Multiple output modes:
