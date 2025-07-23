@@ -1,5 +1,6 @@
 use batless::{detect_language, highlight_content, process_file, BatlessConfig};
 use clap::{Parser, ValueEnum};
+use is_terminal::IsTerminal;
 use serde_json::json;
 
 #[derive(Parser)]
@@ -96,7 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let use_color = match args.color {
         ColorMode::Always => true,
         ColorMode::Never => false,
-        ColorMode::Auto => atty::is(atty::Stream::Stdout),
+        ColorMode::Auto => std::io::stdout().is_terminal(),
     };
 
     // Create configuration

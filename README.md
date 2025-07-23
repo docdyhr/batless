@@ -43,6 +43,27 @@
 
 ## 🚀 Installation
 
+### GitHub Releases (Recommended)
+Download pre-compiled binaries for your platform:
+
+```bash
+# macOS/Linux - download and extract latest release
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.0-x86_64-apple-darwin.tar.gz | tar xz
+
+# Or use wget
+wget https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.0-x86_64-unknown-linux-gnu.tar.gz
+```
+
+Available builds:
+- **Linux**: `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-gnu`
+- **macOS**: `x86_64-apple-darwin` (Intel), `aarch64-apple-darwin` (Apple Silicon)  
+- **Windows**: `x86_64-pc-windows-msvc`
+
+### Homebrew (macOS)
+```bash
+brew install docdyhr/batless/batless
+```
+
 ### From Crates.io
 ```bash
 cargo install batless
@@ -50,7 +71,7 @@ cargo install batless
 
 ### From Source
 ```bash
-git clone https://github.com/your-username/batless.git
+git clone https://github.com/docdyhr/batless.git
 cd batless
 cargo build --release
 ```
