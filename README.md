@@ -48,10 +48,10 @@ Download pre-compiled binaries for your platform:
 
 ```bash
 # macOS/Linux - download and extract latest release
-curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.0-x86_64-apple-darwin.tar.gz | tar xz
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.1-x86_64-apple-darwin.tar.gz | tar xz
 
 # Or use wget
-wget https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.0-x86_64-unknown-linux-gnu.tar.gz
+wget https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.1-x86_64-unknown-linux-gnu.tar.gz
 ```
 
 Available builds:

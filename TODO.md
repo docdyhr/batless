@@ -3,15 +3,15 @@
 > Prioritized implementation tasks for batless development
 
 **Last Updated**: January 2025  
-**Current Version**: v0.1.0  
+**Current Version**: v0.1.1  
 **Next Target**: v0.1.5 (Quick Wins & Polish)
 
 ---
 
 ## 🚨 **URGENT - Release Readiness** 
 
-### P0 - Critical for v0.1.0 Release
-- [ ] **Create first release** using `./scripts/release.sh 0.1.0`
+### P0 - Critical for v0.1.1 Release (COMPLETED)
+- [x] **Create first release** using `./scripts/release.sh 0.1.1`
 - [ ] **Test Homebrew installation** workflow end-to-end
 - [ ] **Verify all CI/CD pipelines** pass on release
 - [ ] **Update version references** in documentation
@@ -76,7 +76,7 @@
 - [ ] **Improve large file handling** - streaming optimizations
 - [ ] **Memory usage optimization** - reduce peak memory for summary mode
 - [ ] **Startup time improvements** - lazy loading of non-essential components
-- [ ] **Benchmark against v0.1.0** - ensure 10-15% improvement
+- [ ] **Benchmark against v0.1.1** - ensure 10-15% improvement
 
 ### P3 - Developer Experience
 
@@ -365,7 +365,7 @@
 
 | Phase | Duration | Key Deliverables |
 |-------|----------|------------------|
-| **v0.1.0** | Immediate | First stable release, basic functionality |
+| **v0.1.1** | Completed | First stable release, basic functionality |
 | **v0.1.5** | 4-6 weeks | Shell completions, AI presets, config files |
 | **v0.2.0** | 8-10 weeks | Smart summaries, token counting, enhanced JSON |
 | **v0.3.0** | 10-12 weeks | Plugin system, community plugins, extensibility |
