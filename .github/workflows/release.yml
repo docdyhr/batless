@@ -17,37 +17,22 @@ permissions:
   packages: write
 
 jobs:
-  # Plan the release and generate matrix
-  plan:
+  # Build and test
+  test:
     runs-on: ubuntu-latest
-    outputs:
-      has-releases: ${{ steps.plan.outputs.has-releases }}
-      releases: ${{ steps.plan.outputs.releases }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Install cargo-dist
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-dist
-      - id: plan
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run tests
         run: |
-          cargo dist plan --tag="${{ github.event.inputs.tag || github.ref_name }}" --output-format=json > plan-dist-manifest.json
-          echo "has-releases=$(jq -r .has_releases plan-dist-manifest.json)" >> $GITHUB_OUTPUT
-          echo "releases<<EOF" >> $GITHUB_OUTPUT
-          jq -c ".releases[]" plan-dist-manifest.json >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-      - name: "Upload dist-manifest.json"
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-manifest
-          path: plan-dist-manifest.json
+          cargo test --all-features
+          cargo clippy -- -D warnings
+          cargo fmt --all -- --check
 
-  # Build and upload binaries
-  upload-local-artifacts:
-    needs: plan
-    if: ${{ needs.plan.outputs.has-releases == 'true' }}
+  # Build cross-platform binaries
+  build:
+    needs: test
     strategy:
       fail-fast: false
       matrix:
@@ -55,46 +40,29 @@ jobs:
           # Linux targets
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-20.04
-            install-dist: true
           - target: x86_64-unknown-linux-musl
             os: ubuntu-20.04
-            install-dist: true
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-20.04
-            install-dist: true
           
           # macOS targets  
           - target: x86_64-apple-darwin
             os: macos-12
-            install-dist: true
           - target: aarch64-apple-darwin
             os: macos-12
-            install-dist: true
             
           # Windows targets
           - target: x86_64-pc-windows-msvc
             os: windows-2022
-            install-dist: true
 
     runs-on: ${{ matrix.os }}
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      BUILD_MANIFEST_NAME: target-${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      
-      - name: Install cargo-dist
-        if: ${{ matrix.install-dist }}
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-dist
       
       # Linux cross-compilation setup
       - name: Install cross-compilation tools (Linux)
@@ -111,101 +79,53 @@ jobs:
             sudo apt-get install -y gcc-aarch64-linux-gnu
           fi
 
-      - name: Build artifacts
+      - name: Build release binary
         run: |
-          # Get the dist manifest
-          cargo dist build --target=${{ matrix.target }} --output-format=json > dist-manifest.json
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.BUILD_MANIFEST_NAME }}
-          path: |
-            dist-manifest.json
-            target/distrib/**/*
-
-  # Generate additional packages (deb, rpm, msi)
-  generate-packages:
-    needs: [plan, upload-local-artifacts]
-    if: ${{ needs.plan.outputs.has-releases == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm alien nsis
-          cargo install cargo-deb cargo-generate-rpm
+          cargo build --release --target=${{ matrix.target }}
           
-      - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: target-*linux*
-          merge-multiple: true
-          path: artifacts/
-      
-      - name: Generate Debian packages
+      - name: Create release archive
+        shell: bash
         run: |
-          # Generate .deb packages for each Linux target
-          for target in x86_64-unknown-linux-gnu x86_64-unknown-linux-musl aarch64-unknown-linux-gnu; do
-            if [ -f "artifacts/target/distrib/$target/batless" ]; then
-              cargo deb --target $target --no-build
-            fi
-          done
-      
-      - name: Generate RPM packages  
-        run: |
-          # Generate .rpm packages
-          for target in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu; do
-            if [ -f "artifacts/target/distrib/$target/batless" ]; then
-              cargo generate-rpm --target $target
-            fi
-          done
-      
-      - name: Upload packages
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+          
+          if [[ "${{ matrix.os }}" == "windows-"* ]]; then
+            ARCHIVE="batless-${VERSION}-${{ matrix.target }}.zip"
+            cp target/${{ matrix.target }}/release/batless.exe batless.exe
+            7z a "$ARCHIVE" batless.exe README.md LICENSE CHANGELOG.md
+          else
+            ARCHIVE="batless-${VERSION}-${{ matrix.target }}.tar.gz"
+            cp target/${{ matrix.target }}/release/batless batless
+            tar czf "$ARCHIVE" batless README.md LICENSE CHANGELOG.md
+          fi
+          
+          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: packages
-          path: |
-            target/debian/*.deb
-            target/generate-rpm/*.rpm
+          name: batless-${{ matrix.target }}
+          path: ${{ env.ARCHIVE }}
 
   # Create GitHub release
-  announce:
-    needs: [plan, upload-local-artifacts, generate-packages]
-    if: ${{ needs.plan.outputs.has-releases == 'true' }}
+  release:
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
           
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: target-*
-          merge-multiple: true
           path: artifacts/
-          
-      - name: Download packages
-        uses: actions/download-artifact@v4
-        with:
-          name: packages
-          path: packages/
 
-      - name: Install cargo-dist
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-dist
-          
       # Publish to crates.io
       - name: Publish to crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
           cargo publish --dry-run
-          cargo publish
+          # cargo publish  # Uncomment when ready for actual publishing
 
       # Create GitHub release
       - name: Create GitHub Release
@@ -213,8 +133,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
-          
-          # Extract version from tag (remove 'v' prefix)
           VERSION="${TAG#v}"
           
           # Generate release notes from CHANGELOG.md
@@ -223,6 +141,12 @@ jobs:
             sed -n "/^## \[${VERSION}\]/,/^## \[/{/^## \[${VERSION}\]/p; /^## \[/!p; /^## \[${VERSION}\]/!{/^## \[/q}}" CHANGELOG.md > release_notes.md
           else
             echo "Release ${VERSION}" > release_notes.md
+            echo "" >> release_notes.md
+            echo "## Features" >> release_notes.md
+            echo "- Non-blocking code viewer for AI and automation" >> release_notes.md
+            echo "- Syntax highlighting for 100+ programming languages" >> release_notes.md
+            echo "- Multiple output modes: plain, highlight, JSON, summary" >> release_notes.md
+            echo "- Cross-platform binaries for Linux, macOS, and Windows" >> release_notes.md
           fi
           
           # Create release
@@ -231,24 +155,22 @@ jobs:
             --notes-file release_notes.md \
             --draft=false \
             --prerelease=false \
-            artifacts/target/distrib/*/* \
-            packages/*.deb \
-            packages/*.rpm
+            artifacts/*/*.tar.gz \
+            artifacts/*/*.zip
             
       # Generate and upload checksums
       - name: Generate checksums
         run: |
-          cd artifacts/target/distrib/
-          find . -type f -name "*" -exec sha256sum {} \; > ../../../SHA256SUMS
-          cd ../../..
+          cd artifacts/
+          find . -name "*.tar.gz" -o -name "*.zip" | xargs sha256sum > ../SHA256SUMS
+          cd ..
           
           # Upload checksums to release
           gh release upload "${{ github.event.inputs.tag || github.ref_name }}" SHA256SUMS
 
   # Update Homebrew formula in tap repository
   update-homebrew:
-    needs: [announce]
-    if: ${{ needs.plan.outputs.has-releases == 'true' }}
+    needs: [release]
     runs-on: ubuntu-latest
     steps:
       - name: Update Homebrew tap
@@ -316,81 +238,13 @@ jobs:
           end
           EOF
           
-          # Create commit and PR
+          # Create commit and push directly to main (simplified for now)
           git add Formula/batless.rb
           
-          if git diff --cached --quiet; then
-            echo "No changes to formula"
+          if ! git diff --cached --quiet; then
+            git commit -m "Update batless to ${VERSION}"
+            git push origin main
+            echo "Updated Homebrew formula to ${VERSION}"
           else
-            git commit -m "Update batless to ${VERSION}
-            
-          - Update version to ${VERSION}
-          - Update SHA256 checksum
-          - Automated update from release workflow"
-            
-            # Create a new branch for the PR
-            BRANCH="update-batless-${VERSION}"
-            git checkout -b "$BRANCH"
-            git push origin "$BRANCH"
-            
-            # Create PR using GitHub CLI
-            gh pr create \
-              --title "Update batless to ${VERSION}" \
-              --body "Automated update of batless formula to version ${VERSION}.
-              
-            This PR was automatically created by the release workflow.
-            
-            Changes:
-            - Update version to ${VERSION}
-            - Update SHA256 checksum to ${SHA256}
-            - Update download URL
-            
-            The formula has been tested in the main repository's CI pipeline." \
-              --head "$BRANCH" \
-              --base main \
-              --repo docdyhr/homebrew-batless
-            
-            echo "Created PR for Homebrew formula update"
+            echo "No changes to formula"
           fi
-
-  # Build and push Docker images
-  docker:
-    needs: [announce]
-    if: ${{ needs.plan.outputs.has-releases == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract version
-        id: version
-        run: |
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
-          VERSION="${TAG#v}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-      
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/docdyhr/batless:latest
-            ghcr.io/docdyhr/batless:${{ steps.version.outputs.version }}
-          labels: |
-            org.opencontainers.image.title=batless
-            org.opencontainers.image.description=Non-blocking code viewer for AI and automation
-            org.opencontainers.image.version=${{ steps.version.outputs.version }}
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
