@@ -23,26 +23,24 @@
 
 ```bash
 # Install required tools
-cargo install cargo-dist cargo-release cargo-audit
-cargo install cargo-deb cargo-generate-rpm  # Linux packages
+cargo install cargo-release cargo-audit
 
 # Verify tools
-cargo dist --version
 cargo release --version
 ```
 
 ### One-Time Setup
 
 ```bash
-# 1. Initialize cargo-dist
-cargo dist init
+# 1. Setup release automation
+# This project uses GitHub Actions for releases, no additional setup needed
 
 # 2. Configure release automation
 cargo dist generate-ci
 
 # 3. Commit configuration
 git add .
-git commit -m "Configure release automation with cargo-dist"
+git commit -m "Configure release automation"
 ```
 
 ---
@@ -316,7 +314,7 @@ cargo release patch --execute  # Immediate patch
 ## 📚 References & Tools
 
 ### Core Tools
-- 📦 [cargo-dist](https://github.com/axodotdev/cargo-dist) - Cross-platform distribution
+- 🚀 GitHub Actions - Cross-platform distribution and releases
 - 🚀 [cargo-release](https://github.com/crate-ci/cargo-release) - Release automation
 - 🔍 [cargo-audit](https://github.com/RustSec/rustsec/tree/main/cargo-audit) - Security auditing
 
