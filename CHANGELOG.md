@@ -7,17 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-07-25
+
+### Added
+- Manual workflow dispatch system for granular CI/CD control
+- Repository health check automation with issue creation
+- Comprehensive performance benchmarking with regression detection
+- Enhanced dependency management with grouped Dependabot updates
+
+### Changed
+- Optimized CI/CD workflows with consolidated caching strategy
+- Enhanced error handling with graceful failures and proper timeouts
+- Updated security tools with locked dependencies and latest versions
+- Improved release process with retry logic and better artifact management
+
+### Fixed
+- Replaced deprecated `actions/upload-release-asset@v1` with modern alternatives
+- Fixed caching inefficiencies with restore keys and matrix strategy support
+- Enhanced workflow stability with better external dependency handling
+
 ### Security
+- Updated OSSF Scorecard to latest version with proper token handling
+- Enhanced security audit workflows with better reporting
 - Replaced unmaintained `atty` dependency with `is-terminal` to fix RUSTSEC-2024-0375 and RUSTSEC-2021-0145
 - Updated author information in Cargo.toml
 
-### Added
+### Performance
+- Implemented comprehensive benchmarking suite with criterion
+- Added performance regression detection in CI/CD
 - Performance baseline documentation in `docs/PERFORMANCE_BASELINE.md`
-- Established benchmark metrics for tracking performance regressions
-
-### Fixed
-- Resolved security vulnerabilities in dependencies
-- Updated author email from placeholder to actual email
 
 ## [0.1.1] - 2025-07-23
 
