@@ -9,9 +9,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 5
     reviewers:
-      - "your-username"
+      - "docdyhr"
     assignees:
-      - "your-username"
+      - "docdyhr"
     commit-message:
       prefix: "deps"
       prefix-development: "deps-dev"
@@ -62,9 +62,9 @@ updates:
       time: "09:00"
     open-pull-requests-limit: 3
     reviewers:
-      - "your-username"
+      - "docdyhr"
     assignees:
-      - "your-username"
+      - "docdyhr"
     commit-message:
       prefix: "ci"
       include: "scope"

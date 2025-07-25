@@ -25,6 +25,19 @@ cargo fmt                           # Format code
 cargo audit                         # Security vulnerability audit
 ```
 
+### CI/CD Workflows
+```bash
+# Manual workflow triggers available:
+gh workflow run workflow-dispatch.yml -f workflow_type=full-test-suite
+gh workflow run workflow-dispatch.yml -f workflow_type=security-audit
+gh workflow run workflow-dispatch.yml -f workflow_type=performance-benchmark
+gh workflow run workflow-dispatch.yml -f workflow_type=quality-check
+gh workflow run workflow-dispatch.yml -f workflow_type=quick-validation
+
+# Release process:
+gh workflow run manual-release.yml -f version=0.1.2 -f create_tag=true -f dry_run=false
+```
+
 ### Running the Tool
 ```bash
 cargo run -- file.rs                # Run in debug mode

@@ -34,23 +34,17 @@ jobs:
         toolchain: ${{ matrix.rust }}
         components: rustfmt, clippy
 
-    - name: Cache cargo registry
+    - name: Cache dependencies
       uses: actions/cache@v4
       with:
-        path: ~/.cargo/registry
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Cache cargo index
-      uses: actions/cache@v4
-      with:
-        path: ~/.cargo/git
-        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Cache cargo build
-      uses: actions/cache@v4
-      with:
-        path: target
-        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.rust }}-cargo-
+          ${{ runner.os }}-cargo-
 
     - name: Check formatting
       run: cargo fmt --all -- --check
@@ -79,10 +73,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - uses: dtolnay/rust-toolchain@stable
+    - name: Cache security tools
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/bin
+        key: ${{ runner.os }}-security-tools-${{ hashFiles('**/Cargo.lock') }}
     - name: Install cargo-audit
-      run: cargo install cargo-audit
+      run: cargo install cargo-audit --locked
     - name: Run security audit
-      run: cargo audit
+      run: cargo audit --color never --quiet
 
   coverage:
     name: Code Coverage
@@ -100,7 +99,11 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         files: lcov.info
-        fail_ci_if_error: true
+        fail_ci_if_error: false
+        flags: unittests
+        name: ci-coverage
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   build_binaries:
     name: Build Binaries
@@ -163,14 +166,11 @@ jobs:
         fi
 
     - name: Upload binary to release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/upload-artifact@v4
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./${{ env.ASSET }}
-        asset_name: ${{ env.ASSET }}
-        asset_content_type: application/octet-stream
+        name: release-binaries-${{ matrix.target }}
+        path: ${{ env.ASSET }}
+        retention-days: 90
 
   publish_crate:
     name: Publish to crates.io

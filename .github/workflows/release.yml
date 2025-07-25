@@ -183,10 +183,14 @@ jobs:
             cp "$file" release/
           done
 
-          # Create combined checksum file
+          # Create combined checksum file with verification
           cd release
-          cat *.sha256 > SHA256SUMS
-          rm *.sha256
+          if ls *.sha256 1> /dev/null 2>&1; then
+            cat *.sha256 > SHA256SUMS
+            rm *.sha256
+          else
+            echo "Warning: No individual checksum files found"
+          fi
 
           ls -la
 
@@ -227,7 +231,18 @@ jobs:
         run: |
           if [ -n "$CARGO_REGISTRY_TOKEN" ]; then
             echo "Publishing to crates.io..."
-            cargo publish --allow-dirty || echo "::warning::Failed to publish to crates.io - check if version already exists"
+            # Dry run first to catch issues
+            cargo publish --dry-run --allow-dirty
+            # Actual publish with retry logic
+            for i in {1..3}; do
+              if cargo publish --allow-dirty; then
+                echo "Successfully published to crates.io"
+                break
+              else
+                echo "Attempt $i failed, retrying in 30 seconds..."
+                sleep 30
+              fi
+            done
           else
             echo "::warning::CARGO_REGISTRY_TOKEN not set, skipping crates.io publication"
           fi
@@ -259,9 +274,23 @@ jobs:
 
           echo "Updating Homebrew tap for ${VERSION}..."
 
-          # Download the source tarball to calculate SHA256
-          curl -L "https://github.com/docdyhr/batless/archive/refs/tags/${TAG}.tar.gz" -o "batless-${VERSION}.tar.gz"
-          SHA256=$(sha256sum "batless-${VERSION}.tar.gz" | cut -d' ' -f1)
+          # Download the source tarball to calculate SHA256 with retry
+          for i in {1..3}; do
+            if curl -L --fail "https://github.com/docdyhr/batless/archive/refs/tags/${TAG}.tar.gz" -o "batless-${VERSION}.tar.gz"; then
+              break
+            else
+              echo "Download attempt $i failed, retrying..."
+              sleep 10
+            fi
+          done
+          
+          # Verify download and calculate SHA256
+          if [ -f "batless-${VERSION}.tar.gz" ]; then
+            SHA256=$(sha256sum "batless-${VERSION}.tar.gz" | cut -d' ' -f1)
+          else
+            echo "::error::Failed to download source tarball"
+            exit 1
+          fi
 
           echo "Calculated SHA256: $SHA256"
 

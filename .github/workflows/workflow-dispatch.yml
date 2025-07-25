@@ -1,0 +1,112 @@
+name: Manual Workflow Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      workflow_type:
+        description: 'Type of workflow to run'
+        required: true
+        type: choice
+        options:
+          - 'full-test-suite'
+          - 'security-audit'
+          - 'performance-benchmark'
+          - 'quality-check'
+          - 'quick-validation'
+      skip_tests:
+        description: 'Skip time-consuming tests'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  checks: write
+  security-events: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_tests: ${{ steps.decision.outputs.run_tests }}
+      should_run_security: ${{ steps.decision.outputs.run_security }}
+      should_run_benchmarks: ${{ steps.decision.outputs.run_benchmarks }}
+      should_run_quality: ${{ steps.decision.outputs.run_quality }}
+    steps:
+      - name: Make workflow decisions
+        id: decision
+        run: |
+          case "${{ github.event.inputs.workflow_type }}" in
+            "full-test-suite")
+              echo "run_tests=true" >> $GITHUB_OUTPUT
+              echo "run_security=true" >> $GITHUB_OUTPUT
+              echo "run_benchmarks=true" >> $GITHUB_OUTPUT
+              echo "run_quality=true" >> $GITHUB_OUTPUT
+              ;;
+            "security-audit")
+              echo "run_tests=false" >> $GITHUB_OUTPUT
+              echo "run_security=true" >> $GITHUB_OUTPUT
+              echo "run_benchmarks=false" >> $GITHUB_OUTPUT
+              echo "run_quality=false" >> $GITHUB_OUTPUT
+              ;;
+            "performance-benchmark")
+              echo "run_tests=false" >> $GITHUB_OUTPUT
+              echo "run_security=false" >> $GITHUB_OUTPUT
+              echo "run_benchmarks=true" >> $GITHUB_OUTPUT
+              echo "run_quality=false" >> $GITHUB_OUTPUT
+              ;;
+            "quality-check")
+              echo "run_tests=false" >> $GITHUB_OUTPUT
+              echo "run_security=false" >> $GITHUB_OUTPUT
+              echo "run_benchmarks=false" >> $GITHUB_OUTPUT
+              echo "run_quality=true" >> $GITHUB_OUTPUT
+              ;;
+            "quick-validation")
+              echo "run_tests=true" >> $GITHUB_OUTPUT
+              echo "run_security=false" >> $GITHUB_OUTPUT
+              echo "run_benchmarks=false" >> $GITHUB_OUTPUT
+              echo "run_quality=false" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+  call-tests:
+    if: needs.dispatch.outputs.should_run_tests == 'true'
+    needs: dispatch
+    uses: ./.github/workflows/testing.yml
+    secrets: inherit
+
+  call-security:
+    if: needs.dispatch.outputs.should_run_security == 'true'
+    needs: dispatch
+    uses: ./.github/workflows/security.yml
+    secrets: inherit
+
+  call-benchmarks:
+    if: needs.dispatch.outputs.should_run_benchmarks == 'true'
+    needs: dispatch
+    uses: ./.github/workflows/benchmarks.yml
+    secrets: inherit
+
+  call-quality:  
+    if: needs.dispatch.outputs.should_run_quality == 'true'
+    needs: dispatch
+    uses: ./.github/workflows/quality.yml
+    secrets: inherit
+
+  summary:
+    runs-on: ubuntu-latest
+    needs: [dispatch, call-tests, call-security, call-benchmarks, call-quality]
+    if: always()
+    steps:
+      - name: Workflow summary
+        run: |
+          echo "# Manual Workflow Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow Type:** ${{ github.event.inputs.workflow_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Skip Tests:** ${{ github.event.inputs.skip_tests }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests: ${{ needs.call-tests.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Security: ${{ needs.call-security.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Benchmarks: ${{ needs.call-benchmarks.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Quality: ${{ needs.call-quality.result || 'skipped' }}" >> $GITHUB_STEP_SUMMARY

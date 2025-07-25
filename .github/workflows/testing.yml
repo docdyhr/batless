@@ -204,10 +204,15 @@ jobs:
 
       - name: Run fuzz tests (short duration for CI)
         run: |
-          timeout 300 cargo fuzz run process_file -- -max_total_time=300 || true
+          # Run with timeout and better error handling
+          if timeout 300 cargo fuzz run process_file -- -max_total_time=300 -verbosity=0; then
+            echo "✅ Fuzz testing completed successfully"
+          else
+            echo "⚠️ Fuzz testing timed out or encountered issues"
+          fi
           
           # Check if any crashes were found
-          if [ -d "fuzz/artifacts/process_file" ] && [ "$(ls -A fuzz/artifacts/process_file)" ]; then
+          if [ -d "fuzz/artifacts/process_file" ] && [ "$(ls -A fuzz/artifacts/process_file 2>/dev/null)" ]; then
             echo "❌ Fuzz testing found crashes!"
             ls -la fuzz/artifacts/process_file/
             exit 1
