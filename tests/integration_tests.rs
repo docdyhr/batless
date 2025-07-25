@@ -226,7 +226,13 @@ fn test_nonexistent_file() {
 
     assert!(!output.status.success());
     let stderr = String::from_utf8(output.stderr).unwrap();
-    assert!(stderr.contains("No such file") || stderr.contains("not found"));
+    // Windows may have different error messages
+    assert!(
+        stderr.contains("No such file")
+            || stderr.contains("not found")
+            || stderr.contains("cannot find")
+            || stderr.contains("system cannot find")
+    );
 }
 
 #[test]

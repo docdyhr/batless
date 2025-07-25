@@ -350,6 +350,43 @@ Contributions are welcome! Please:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+### Branch Protection & Contributing
+
+This repository uses branch protection rules to ensure code quality and security:
+
+- **Pull requests required** - No direct commits to `main`
+- **CI/CD checks required** - All tests must pass
+- **GPG signed commits recommended** - For authenticity verification
+
+#### Quick Setup
+```bash
+# Setup branch protection (one-time)
+gh auth login
+./scripts/setup-branch-protection-gh.sh
+
+# Verify configuration
+./scripts/verify-protection-gh.sh
+```
+
+#### Development Workflow
+```bash
+# 1. Create feature branch
+git checkout -b feature/my-feature
+
+# 2. Make changes and commit
+git add .
+git commit -m "feat: description"
+
+# 3. Push and create PR
+git push origin feature/my-feature
+gh pr create --title "feat: description"
+
+# 4. Wait for CI, then merge
+gh pr merge --squash
+```
+
+See [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md) for detailed guidance.
+
 ### Development Setup
 ```bash
 git clone https://github.com/your-username/batless.git
