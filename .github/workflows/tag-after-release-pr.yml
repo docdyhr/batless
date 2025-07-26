@@ -1,0 +1,66 @@
+name: Tag After Release PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'release')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Extract version from PR
+        id: extract
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          # Extract version from PR title (format: "Release X.Y.Z")
+          VERSION=$(echo "$PR_TITLE" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract version from PR title: $PR_TITLE"
+            exit 1
+          fi
+          
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Verify version in Cargo.toml
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          if ! grep -q "^version = \"${VERSION}\"" Cargo.toml; then
+            echo "::error::Version mismatch! Expected ${VERSION} in Cargo.toml"
+            exit 1
+          fi
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.extract.outputs.tag }}"
+          VERSION="${{ steps.extract.outputs.version }}"
+          
+          git config user.name "Release Bot"
+          git config user.email "release-bot@github.com"
+          
+          # Create annotated tag
+          git tag -a "${TAG}" -m "Release ${VERSION}" -m "Released via PR #${{ github.event.pull_request.number }}"
+          
+          # Push tag
+          git push origin "${TAG}"
+          
+          echo "## 🏷️ Tag Created Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** ${TAG}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release workflow should now be triggered automatically by the new tag." >> $GITHUB_STEP_SUMMARY
