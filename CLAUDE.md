@@ -80,6 +80,13 @@ When modifying the codebase:
 3. Add unit tests for new library functions in `src/lib.rs`
 4. Ensure all tests pass on CI before considering changes complete
 
+## Development Workflow
+
+### Feature Development
+- Use feature branches for changes
+- Implement new features with comprehensive test coverage
+- Ensure clean, modular code following Rust best practices
+
 ## Common Tasks
 
 ### Adding a New Output Mode
@@ -93,3 +100,4 @@ When modifying the codebase:
 2. Run `cargo update` to update lock file
 3. Run `cargo test` to ensure compatibility
 4. Run `cargo audit` to check for vulnerabilities
+```
