@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2025-07-26
+
+### Added
+- PR-based release workflow that respects branch protection rules
+- Comprehensive development guide with release process documentation
+- Benchmark files and performance test results
+
+### Changed
+- Updated release process to use PRs instead of direct main branch pushes
+- Enhanced CLAUDE.md with development workflow guidelines
+- Improved CI/CD automation with branch protection compliance
+
+### Fixed
+- Release workflow failures due to branch protection rules
+- Cargo.lock tracking for binary crate reproducible builds
+- Missing GH_TOKEN in GitHub Actions workflows
+
 ## [0.1.3] - 2025-07-25
 
 ### Added
