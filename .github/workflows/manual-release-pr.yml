@@ -145,6 +145,8 @@ jobs:
 
       - name: Create Pull Request
         if: github.event.inputs.dry_run == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.prepare.outputs.version }}"
           TAG="${{ steps.prepare.outputs.tag }}"
