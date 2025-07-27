@@ -98,11 +98,10 @@ impl LanguageDetector {
         if languages.iter().any(|l| l.eq_ignore_ascii_case(language)) {
             Ok(())
         } else {
-            Err(BatlessError::LanguageDetectionError(format!(
-                "Language '{}' not found. Available languages: {}",
-                language,
-                languages.join(", ")
-            )))
+            Err(BatlessError::language_not_found_with_suggestions(
+                language.to_string(),
+                &languages,
+            ))
         }
     }
 
@@ -157,7 +156,11 @@ impl ThemeManager {
         if THEME_SET.themes.contains_key(theme_name) {
             Ok(())
         } else {
-            Err(BatlessError::ThemeNotFound(theme_name.to_string()))
+            let available_themes = Self::list_themes();
+            Err(BatlessError::theme_not_found_with_suggestions(
+                theme_name.to_string(),
+                &available_themes,
+            ))
         }
     }
 

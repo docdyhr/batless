@@ -1,0 +1,52 @@
+#compdef batless
+
+autoload -U is-at-least
+
+_batless() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" : \
+'--language=[Language for syntax highlighting (auto-detect if not specified)]:LANGUAGE:_default' \
+'--max-lines=[Limit lines shown]:MAX_LINES:_default' \
+'--max-bytes=[Limit bytes shown]:MAX_BYTES:_default' \
+'--mode=[Output mode]:MODE:(plain highlight json summary)' \
+'--color=[Color output control]:COLOR:(auto always never)' \
+'--theme=[Theme for syntax highlighting]:THEME:_default' \
+'--generate-completions=[Generate shell completions for the specified shell]:GENERATE_COMPLETIONS:(bash zsh fish power-shell)' \
+'--profile=[Use predefined AI tool profile (overrides other settings)]:PROFILE:((claude\:"Optimized for Claude'\''s context window (4K lines, summary mode)"
+copilot\:"Focused on code suggestions for GitHub Copilot (2K lines, tokens included)"
+chatgpt\:"OpenAI ChatGPT optimizations (3K lines, JSON output)"
+assistant\:"General AI assistant profile (5K lines, balanced output)"))' \
+'--strip-ansi[Strip ANSI escape codes from output]' \
+'--list-languages[List all supported languages]' \
+'--list-themes[List all available themes]' \
+'--include-tokens[Include tokens in JSON output (AI-friendly)]' \
+'--summary[Summary mode\: show only important code structures]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
+'-V[Print version]' \
+'--version[Print version]' \
+'::file -- File to view:_default' \
+&& ret=0
+}
+
+(( $+functions[_batless_commands] )) ||
+_batless_commands() {
+    local commands; commands=()
+    _describe -t commands 'batless commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_batless" ]; then
+    _batless "$@"
+else
+    compdef _batless batless
+fi

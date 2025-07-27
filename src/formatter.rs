@@ -199,14 +199,16 @@ impl OutputFormatter {
     /// Get a human-readable error type name
     fn error_type_name(error: &BatlessError) -> &'static str {
         match error {
-            BatlessError::FileNotFound(_) => "file_not_found",
+            BatlessError::FileNotFound { .. } => "file_not_found",
             BatlessError::FileReadError { .. } => "file_read_error",
+            BatlessError::PermissionDenied { .. } => "permission_denied",
             BatlessError::HighlightError(_) => "highlight_error",
-            BatlessError::ThemeNotFound(_) => "theme_not_found",
+            BatlessError::ThemeNotFound { .. } => "theme_not_found",
+            BatlessError::LanguageNotFound { .. } => "language_not_found",
             BatlessError::LanguageDetectionError(_) => "language_detection_error",
             BatlessError::EncodingError { .. } => "encoding_error",
             BatlessError::ProcessingError(_) => "processing_error",
-            BatlessError::ConfigurationError(_) => "configuration_error",
+            BatlessError::ConfigurationError { .. } => "configuration_error",
             BatlessError::JsonSerializationError(_) => "json_serialization_error",
             BatlessError::OutputError(_) => "output_error",
             BatlessError::IoError(_) => "io_error",
@@ -434,7 +436,10 @@ mod tests {
 
     #[test]
     fn test_format_error() {
-        let error = BatlessError::FileNotFound("test.txt".to_string());
+        let error = BatlessError::FileNotFound {
+            path: "test.txt".to_string(),
+            suggestions: vec![],
+        };
 
         let json_result = OutputFormatter::format_error(&error, "test.txt", OutputMode::Json);
         assert!(json_result.contains("\"error\": true"));
@@ -495,7 +500,10 @@ mod tests {
             ("test.rs".to_string(), Ok(file_info)),
             (
                 "error.txt".to_string(),
-                Err(BatlessError::FileNotFound("error.txt".to_string())),
+                Err(BatlessError::FileNotFound {
+                    path: "error.txt".to_string(),
+                    suggestions: vec![],
+                }),
             ),
         ];
 
@@ -520,11 +528,17 @@ mod tests {
     #[test]
     fn test_error_type_names() {
         assert_eq!(
-            OutputFormatter::error_type_name(&BatlessError::FileNotFound("test".to_string())),
+            OutputFormatter::error_type_name(&BatlessError::FileNotFound {
+                path: "test".to_string(),
+                suggestions: vec![],
+            }),
             "file_not_found"
         );
         assert_eq!(
-            OutputFormatter::error_type_name(&BatlessError::ThemeNotFound("test".to_string())),
+            OutputFormatter::error_type_name(&BatlessError::ThemeNotFound {
+                theme: "test".to_string(),
+                suggestions: vec![],
+            }),
             "theme_not_found"
         );
     }

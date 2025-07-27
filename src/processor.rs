@@ -25,7 +25,9 @@ impl FileProcessor {
 
         // Check if file exists
         if !Path::new(file_path).exists() {
-            return Err(BatlessError::FileNotFound(file_path.to_string()));
+            return Err(BatlessError::file_not_found_with_suggestions(
+                file_path.to_string(),
+            ));
         }
 
         // Detect encoding and prepare file reading
@@ -187,7 +189,9 @@ impl FileProcessor {
         let path = Path::new(file_path);
 
         if !path.exists() {
-            return Err(BatlessError::FileNotFound(file_path.to_string()));
+            return Err(BatlessError::file_not_found_with_suggestions(
+                file_path.to_string(),
+            ));
         }
 
         if !path.is_file() {
@@ -315,7 +319,10 @@ mod tests {
         let result = FileProcessor::process_file("nonexistent.txt", &config);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), BatlessError::FileNotFound(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            BatlessError::FileNotFound { .. }
+        ));
     }
 
     #[test]

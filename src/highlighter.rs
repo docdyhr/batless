@@ -60,8 +60,12 @@ impl SyntaxHighlighter {
         // Validate theme exists
         ThemeManager::validate_theme(theme_name)?;
 
-        ThemeManager::get_theme(theme_name)
-            .ok_or_else(|| BatlessError::ThemeNotFound(theme_name.to_string()))
+        ThemeManager::get_theme(theme_name).ok_or_else(|| {
+            BatlessError::theme_not_found_with_suggestions(
+                theme_name.to_string(),
+                &ThemeManager::list_themes(),
+            )
+        })
     }
 
     /// Get syntax reference from file path and optional language override
@@ -80,9 +84,10 @@ impl SyntaxHighlighter {
                 .find_syntax_by_name(lang)
                 .or_else(|| syntax_set.find_syntax_by_extension(lang))
                 .ok_or_else(|| {
-                    BatlessError::LanguageDetectionError(format!(
-                        "Could not find syntax for language: {lang}"
-                    ))
+                    BatlessError::language_not_found_with_suggestions(
+                        lang.to_string(),
+                        &LanguageDetector::list_languages(),
+                    )
                 });
         }
 
@@ -158,9 +163,10 @@ impl SyntaxHighlighter {
         let syntax = get_syntax_set()
             .find_syntax_by_name(language)
             .ok_or_else(|| {
-                BatlessError::LanguageDetectionError(format!(
-                    "Could not find syntax for language: {language}"
-                ))
+                BatlessError::language_not_found_with_suggestions(
+                    language.to_string(),
+                    &LanguageDetector::list_languages(),
+                )
             })?;
 
         Self::highlight_with_syntax_and_theme(sample_code, syntax, theme)
@@ -259,7 +265,7 @@ mod tests {
         assert!(result.is_err());
         assert!(matches!(
             result.unwrap_err(),
-            BatlessError::ThemeNotFound(_)
+            BatlessError::ThemeNotFound { .. }
         ));
     }
 

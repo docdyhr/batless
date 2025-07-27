@@ -98,22 +98,25 @@ impl BatlessConfig {
     /// Validate the configuration
     pub fn validate(&self) -> BatlessResult<()> {
         if self.max_lines == 0 {
-            return Err(BatlessError::ConfigurationError(
+            return Err(BatlessError::config_error_with_help(
                 "max_lines must be greater than 0".to_string(),
+                Some("Try using --max-lines with a positive number".to_string()),
             ));
         }
 
         if let Some(max_bytes) = self.max_bytes {
             if max_bytes == 0 {
-                return Err(BatlessError::ConfigurationError(
+                return Err(BatlessError::config_error_with_help(
                     "max_bytes must be greater than 0".to_string(),
+                    Some("Try using --max-bytes with a positive number".to_string()),
                 ));
             }
         }
 
         if self.theme.is_empty() {
-            return Err(BatlessError::ConfigurationError(
+            return Err(BatlessError::config_error_with_help(
                 "theme cannot be empty".to_string(),
+                Some("Use --list-themes to see available themes".to_string()),
             ));
         }
 

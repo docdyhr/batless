@@ -274,7 +274,10 @@ mod tests {
         let result = process_file("nonexistent_file.txt", &config);
 
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), BatlessError::FileNotFound(_)));
+        assert!(matches!(
+            result.unwrap_err(),
+            BatlessError::FileNotFound { .. }
+        ));
     }
 
     #[test]

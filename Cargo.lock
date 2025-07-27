@@ -81,9 +81,10 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "batless"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "clap",
+ "clap_complete",
  "criterion",
  "encoding_rs",
  "is-terminal",
@@ -192,6 +193,15 @@ dependencies = [
  "anstyle",
  "clap_lex",
  "strsim",
+]
+
+[[package]]
+name = "clap_complete"
+version = "4.5.55"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5abde44486daf70c5be8b8f8f1b66c49f86236edf6fa2abadb4d961c4c6229a"
+dependencies = [
+ "clap",
 ]
 
 [[package]]

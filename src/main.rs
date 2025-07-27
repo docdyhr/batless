@@ -2,8 +2,10 @@ use batless::{
     format_output, process_file, BatlessConfig, BatlessResult, LanguageDetector, OutputMode,
     ThemeManager,
 };
-use clap::{Parser, ValueEnum};
+use clap::{CommandFactory, Parser, ValueEnum};
+use clap_complete::{generate, shells::*};
 use is_terminal::IsTerminal;
+use std::io;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -54,6 +56,14 @@ struct Args {
     /// Summary mode: show only important code structures
     #[arg(long)]
     summary: bool,
+
+    /// Generate shell completions for the specified shell
+    #[arg(long, value_enum)]
+    generate_completions: Option<Shell>,
+
+    /// Use predefined AI tool profile (overrides other settings)
+    #[arg(long, value_enum)]
+    profile: Option<AiProfile>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -62,6 +72,63 @@ enum CliOutputMode {
     Highlight,
     Json,
     Summary,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Shell {
+    Bash,
+    Zsh,
+    Fish,
+    #[clap(name = "power-shell")]
+    Power,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum AiProfile {
+    /// Optimized for Claude's context window (4K lines, summary mode)
+    Claude,
+    /// Focused on code suggestions for GitHub Copilot (2K lines, tokens included)
+    Copilot,
+    /// OpenAI ChatGPT optimizations (3K lines, JSON output)
+    Chatgpt,
+    /// General AI assistant profile (5K lines, balanced output)
+    Assistant,
+}
+
+impl AiProfile {
+    fn apply_to_config(self, config: BatlessConfig) -> BatlessConfig {
+        match self {
+            AiProfile::Claude => config
+                .with_max_lines(4000)
+                .with_summary_mode(true)
+                .with_include_tokens(false)
+                .with_use_color(false),
+            AiProfile::Copilot => config
+                .with_max_lines(2000)
+                .with_include_tokens(true)
+                .with_summary_mode(false)
+                .with_use_color(false),
+            AiProfile::Chatgpt => config
+                .with_max_lines(3000)
+                .with_include_tokens(true)
+                .with_summary_mode(false)
+                .with_use_color(false),
+            AiProfile::Assistant => config
+                .with_max_lines(5000)
+                .with_include_tokens(false)
+                .with_summary_mode(true)
+                .with_use_color(false),
+        }
+    }
+
+    fn get_output_mode(self) -> OutputMode {
+        match self {
+            AiProfile::Claude => OutputMode::Summary,
+            AiProfile::Copilot => OutputMode::Json,
+            AiProfile::Chatgpt => OutputMode::Json,
+            AiProfile::Assistant => OutputMode::Summary,
+        }
+    }
 }
 
 impl From<CliOutputMode> for OutputMode {
@@ -92,7 +159,21 @@ fn main() {
 fn run() -> BatlessResult<()> {
     let args = Args::parse();
 
-    // Handle list commands first
+    // Handle completion generation first
+    if let Some(shell) = args.generate_completions {
+        let mut cmd = Args::command();
+        let name = cmd.get_name().to_string();
+
+        match shell {
+            Shell::Bash => generate(Bash, &mut cmd, name, &mut io::stdout()),
+            Shell::Zsh => generate(Zsh, &mut cmd, name, &mut io::stdout()),
+            Shell::Fish => generate(Fish, &mut cmd, name, &mut io::stdout()),
+            Shell::Power => generate(PowerShell, &mut cmd, name, &mut io::stdout()),
+        }
+        return Ok(());
+    }
+
+    // Handle list commands
     if args.list_languages {
         for language in LanguageDetector::list_languages() {
             println!("{language}");
@@ -109,8 +190,9 @@ fn run() -> BatlessResult<()> {
 
     // Require file for other operations
     let file_path = args.file.as_ref().ok_or_else(|| {
-        batless::BatlessError::ConfigurationError(
+        batless::BatlessError::config_error_with_help(
             "File path required (unless using --list-languages or --list-themes)".to_string(),
+            Some("Specify a file to view, or use --help for more options".to_string()),
         )
     })?;
 
@@ -129,8 +211,8 @@ fn run() -> BatlessResult<()> {
         ColorMode::Auto => std::io::stdout().is_terminal(),
     };
 
-    // Create configuration
-    let config = BatlessConfig::new()
+    // Create base configuration
+    let mut config = BatlessConfig::new()
         .with_max_lines(args.max_lines)
         .with_max_bytes(args.max_bytes)
         .with_language(args.language)
@@ -143,6 +225,14 @@ fn run() -> BatlessResult<()> {
         .with_include_tokens(args.include_tokens)
         .with_summary_mode(args.summary || args.mode == CliOutputMode::Summary);
 
+    // Apply AI profile if specified (overrides other settings)
+    let output_mode = if let Some(profile) = args.profile {
+        config = profile.apply_to_config(config);
+        profile.get_output_mode()
+    } else {
+        OutputMode::from(args.mode)
+    };
+
     // Validate configuration
     config.validate()?;
 
@@ -150,7 +240,6 @@ fn run() -> BatlessResult<()> {
     let file_info = process_file(file_path, &config)?;
 
     // Format and output the result
-    let output_mode = OutputMode::from(args.mode);
 
     // Handle summary mode with no important lines
     if output_mode == OutputMode::Summary && file_info.summary_line_count() == 0 {

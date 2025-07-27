@@ -361,7 +361,110 @@ fn test_summary_with_no_important_lines() {
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("No summary-worthy code structures found"));
+    assert!(stdout.contains("// No summary-worthy code structures found"));
+}
+
+#[test]
+fn test_ai_profile_claude() {
+    let test_file = create_test_file("fn main() {\n    println!(\"hello\");\n}\n", ".rs");
+    let output = run_batless(&["--profile", "claude", test_file.path().to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("=== File Summary ==="));
+    assert!(stdout.contains("Language: Rust"));
+}
+
+#[test]
+fn test_ai_profile_copilot() {
+    let test_file = create_test_file("fn main() {\n    println!(\"hello\");\n}\n", ".rs");
+    let output = run_batless(&["--profile", "copilot", test_file.path().to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Should be JSON output with tokens
+    assert!(stdout.contains("\"language\": \"Rust\""));
+    assert!(stdout.contains("\"tokens\":"));
+}
+
+#[test]
+fn test_ai_profile_chatgpt() {
+    let test_file = create_test_file("def hello():\n    print('world')\n", ".py");
+    let output = run_batless(&["--profile", "chatgpt", test_file.path().to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Should be JSON output with tokens
+    assert!(stdout.contains("\"language\": \"Python\""));
+    assert!(stdout.contains("\"tokens\":"));
+}
+
+#[test]
+fn test_ai_profile_assistant() {
+    let test_file = create_test_file("class Test {\n    public void run() {}\n}\n", ".java");
+    let output = run_batless(&["--profile", "assistant", test_file.path().to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Should be summary output
+    assert!(stdout.contains("=== File Summary ==="));
+}
+
+#[test]
+fn test_profile_overrides_other_flags() {
+    let test_file = create_test_file("fn main() {}\n", ".rs");
+    let output = run_batless(&[
+        "--profile",
+        "claude",
+        "--mode",
+        "json", // This should be overridden by claude profile
+        "--max-lines",
+        "1000", // This should be overridden by claude profile
+        test_file.path().to_str().unwrap(),
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Should still be summary output (claude profile), not JSON
+    assert!(stdout.contains("=== File Summary ==="));
+    assert!(!stdout.starts_with("{"));
+}
+
+#[test]
+fn test_shell_completion_generation_bash() {
+    let output = run_batless(&["--generate-completions", "bash"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("_batless()"));
+    assert!(stdout.contains("COMPREPLY=()"));
+}
+
+#[test]
+fn test_shell_completion_generation_zsh() {
+    let output = run_batless(&["--generate-completions", "zsh"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("#compdef batless"));
+}
+
+#[test]
+fn test_shell_completion_generation_fish() {
+    let output = run_batless(&["--generate-completions", "fish"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("complete -c batless"));
+}
+
+#[test]
+fn test_shell_completion_generation_powershell() {
+    let output = run_batless(&["--generate-completions", "power-shell"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("Register-ArgumentCompleter"));
 }
 
 #[test]
