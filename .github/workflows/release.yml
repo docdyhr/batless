@@ -283,7 +283,7 @@ jobs:
               sleep 10
             fi
           done
-          
+
           # Verify download and calculate SHA256
           if [ -f "batless-${VERSION}.tar.gz" ]; then
             SHA256=$(sha256sum "batless-${VERSION}.tar.gz" | cut -d' ' -f1)
@@ -342,11 +342,40 @@ jobs:
           EOF
 
           echo "Formula created successfully"
-          echo "::notice::Homebrew formula created. To update the tap repository, commit and push the formula to https://github.com/docdyhr/homebrew-batless"
+          echo "::notice::Homebrew formula created. The update-homebrew workflow will automatically update the tap repository."
+
+  # Trigger Homebrew tap update
+  update-homebrew:
+    needs: [release]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Trigger Homebrew tap update
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+            const version = tag.replace(/^v/, '');
+
+            console.log(`Triggering Homebrew update for ${tag} (version ${version})`);
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'update-homebrew.yml',
+              ref: 'main',
+              inputs: {
+                version: version,
+                tag: tag
+              }
+            });
+
+            console.log('✅ Homebrew update workflow triggered successfully');
 
   # Post-release notifications and cleanup
   post-release:
-    needs: [release]
+    needs: [release, update-homebrew]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -366,6 +395,7 @@ jobs:
           echo "- [x] GitHub release creation" >> $GITHUB_STEP_SUMMARY
           echo "- [x] Artifact uploads" >> $GITHUB_STEP_SUMMARY
           echo "- [x] Homebrew formula generation" >> $GITHUB_STEP_SUMMARY
+          echo "- [x] Homebrew tap auto-update triggered" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Release Assets" >> $GITHUB_STEP_SUMMARY
           echo "- Linux (x86_64, aarch64)" >> $GITHUB_STEP_SUMMARY
