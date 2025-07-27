@@ -1,7 +1,9 @@
-use batless::{detect_language, highlight_content, process_file, BatlessConfig};
+use batless::{
+    format_output, process_file, BatlessConfig, BatlessResult, LanguageDetector, OutputMode,
+    ThemeManager,
+};
 use clap::{Parser, ValueEnum};
 use is_terminal::IsTerminal;
-use serde_json::json;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -23,7 +25,7 @@ struct Args {
 
     /// Output mode
     #[arg(long, value_enum, default_value = "highlight")]
-    mode: OutputMode,
+    mode: CliOutputMode,
 
     /// Color output control
     #[arg(long, value_enum, default_value = "auto")]
@@ -55,11 +57,22 @@ struct Args {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum OutputMode {
+enum CliOutputMode {
     Plain,
     Highlight,
     Json,
     Summary,
+}
+
+impl From<CliOutputMode> for OutputMode {
+    fn from(mode: CliOutputMode) -> Self {
+        match mode {
+            CliOutputMode::Plain => OutputMode::Plain,
+            CliOutputMode::Highlight => OutputMode::Highlight,
+            CliOutputMode::Json => OutputMode::Json,
+            CliOutputMode::Summary => OutputMode::Summary,
+        }
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -69,29 +82,45 @@ enum ColorMode {
     Never,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("Error: {}", e);
+        std::process::exit(1);
+    }
+}
+
+fn run() -> BatlessResult<()> {
     let args = Args::parse();
 
     // Handle list commands first
     if args.list_languages {
-        for language in batless::list_languages() {
+        for language in LanguageDetector::list_languages() {
             println!("{language}");
         }
         return Ok(());
     }
 
     if args.list_themes {
-        for theme in batless::list_themes() {
+        for theme in ThemeManager::list_themes() {
             println!("{theme}");
         }
         return Ok(());
     }
 
     // Require file for other operations
-    let file_path = args
-        .file
-        .as_ref()
-        .ok_or("File path required (unless using --list-languages or --list-themes)")?;
+    let file_path = args.file.as_ref().ok_or_else(|| {
+        batless::BatlessError::ConfigurationError(
+            "File path required (unless using --list-languages or --list-themes)".to_string(),
+        )
+    })?;
+
+    // Validate language if specified
+    if let Some(ref lang) = args.language {
+        LanguageDetector::validate_language(lang)?;
+    }
+
+    // Validate theme
+    ThemeManager::validate_theme(&args.theme)?;
 
     // Determine if we should use color
     let use_color = match args.color {
@@ -101,172 +130,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Create configuration
-    let config = BatlessConfig {
-        max_lines: args.max_lines,
-        max_bytes: args.max_bytes,
-        language: args.language.clone(),
-        theme: args.theme.clone(),
-        strip_ansi: args.strip_ansi,
-        use_color: use_color
-            && (args.mode == OutputMode::Highlight || args.mode == OutputMode::Summary),
-        include_tokens: args.include_tokens,
-        summary_mode: args.summary || args.mode == OutputMode::Summary,
-    };
+    let config = BatlessConfig::new()
+        .with_max_lines(args.max_lines)
+        .with_max_bytes(args.max_bytes)
+        .with_language(args.language)
+        .with_theme(args.theme)
+        .with_strip_ansi(args.strip_ansi)
+        .with_use_color(
+            use_color
+                && (args.mode == CliOutputMode::Highlight || args.mode == CliOutputMode::Summary),
+        )
+        .with_include_tokens(args.include_tokens)
+        .with_summary_mode(args.summary || args.mode == CliOutputMode::Summary);
 
-    match args.mode {
-        OutputMode::Plain => handle_plain_output(file_path, &config)?,
-        OutputMode::Highlight => handle_highlight_output(file_path, &config)?,
-        OutputMode::Json => handle_json_output(file_path, &config)?,
-        OutputMode::Summary => handle_summary_output(file_path, &config)?,
+    // Validate configuration
+    config.validate()?;
+
+    // Process the file
+    let file_info = process_file(file_path, &config)?;
+
+    // Format and output the result
+    let output_mode = OutputMode::from(args.mode);
+
+    // Handle summary mode with no important lines
+    if output_mode == OutputMode::Summary && file_info.summary_line_count() == 0 {
+        println!("// No summary-worthy code structures found");
+        return Ok(());
     }
 
-    Ok(())
-}
+    let formatted_output = format_output(&file_info, file_path, &config, output_mode)?;
 
-fn handle_plain_output(
-    file_path: &str,
-    config: &BatlessConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let file_info = process_file(file_path, config)?;
+    print!("{}", formatted_output);
 
-    for line in &file_info.lines {
-        if config.strip_ansi {
-            println!("{}", strip_ansi_escapes::strip_str(line));
-        } else {
-            println!("{line}");
+    // Add truncation messages for non-JSON modes
+    if output_mode != OutputMode::Json {
+        if file_info.truncated_by_lines {
+            println!("\n// Output truncated after {} lines", config.max_lines);
         }
-    }
-
-    if file_info.truncated_by_bytes {
-        println!("// Output truncated after {} bytes", file_info.total_bytes);
-    }
-    if file_info.truncated_by_lines {
-        println!("// Output truncated after {} lines", file_info.total_lines);
-    }
-
-    Ok(())
-}
-
-fn handle_highlight_output(
-    file_path: &str,
-    config: &BatlessConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if !config.use_color || config.strip_ansi {
-        // Fall back to plain output
-        return handle_plain_output(file_path, config);
-    }
-
-    let file_info = process_file(file_path, config)?;
-    let content = file_info.lines.join("\n");
-
-    if !content.is_empty() {
-        let highlighted = highlight_content(&content, file_path, config)?;
-        print!("{highlighted}");
-
-        // Add newline if content doesn't end with one
-        if !content.ends_with('\n') {
-            println!();
-        }
-    }
-
-    if file_info.truncated_by_bytes {
-        println!("// Output truncated after {} bytes", file_info.total_bytes);
-    }
-    if file_info.truncated_by_lines {
-        println!("// Output truncated after {} lines", file_info.total_lines);
-    }
-
-    Ok(())
-}
-
-fn handle_json_output(
-    file_path: &str,
-    config: &BatlessConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let file_info = process_file(file_path, config)?;
-
-    // Detect language if not specified
-    let detected_language = if config.language.is_some() {
-        config.language.clone()
-    } else {
-        detect_language(file_path)
-    };
-
-    let mut output = json!({
-        "file": file_path,
-        "lines": file_info.lines,
-        "total_lines": file_info.total_lines,
-        "total_bytes": file_info.total_bytes,
-        "truncated": file_info.truncated,
-        "truncated_by_lines": file_info.truncated_by_lines,
-        "truncated_by_bytes": file_info.truncated_by_bytes,
-        "language": detected_language,
-        "encoding": file_info.encoding,
-        "syntax_errors": file_info.syntax_errors,
-        "mode": "json"
-    });
-
-    // Add optional fields
-    if let Some(tokens) = file_info.tokens {
-        output["tokens"] =
-            serde_json::Value::Array(tokens.into_iter().map(serde_json::Value::String).collect());
-    }
-
-    if let Some(summary_lines) = file_info.summary_lines {
-        output["summary_lines"] = serde_json::Value::Array(
-            summary_lines
-                .into_iter()
-                .map(serde_json::Value::String)
-                .collect(),
-        );
-    }
-
-    println!("{}", serde_json::to_string_pretty(&output)?);
-    Ok(())
-}
-
-fn handle_summary_output(
-    file_path: &str,
-    config: &BatlessConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut summary_config = config.clone();
-    summary_config.summary_mode = true;
-    // Make sure we get all lines for proper summary extraction
-    summary_config.max_lines = usize::MAX;
-
-    let file_info = process_file(file_path, &summary_config)?;
-
-    if let Some(summary_lines) = &file_info.summary_lines {
-        if summary_lines.is_empty() {
-            println!("// No summary-worthy code structures found");
-            return Ok(());
-        }
-
-        // Display only the summary lines, not all content
-        if config.use_color {
-            let content = summary_lines.join("\n");
-            let highlighted = highlight_content(&content, file_path, config)?;
-            print!("{highlighted}");
-            if !content.ends_with('\n') {
-                println!();
-            }
-        } else {
-            for line in summary_lines {
-                if config.strip_ansi {
-                    println!("{}", strip_ansi_escapes::strip_str(line));
-                } else {
-                    println!("{line}");
-                }
+        if file_info.truncated_by_bytes {
+            if let Some(max_bytes) = config.max_bytes {
+                println!("\n// Output truncated after {} bytes", max_bytes);
             }
         }
-
-        println!(
-            "// Summary: {} important lines from {} total lines",
-            summary_lines.len(),
-            file_info.total_lines
-        );
-    } else {
-        println!("// No summary available");
     }
 
     Ok(())
