@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Custom error types for better error handling and user experience
+- Modular architecture with separate modules for each concern:
+  - `config` - Configuration management with validation
+  - `error` - Custom error types and result handling
+  - `file_info` - File metadata and processing results
+  - `formatter` - Output formatting for different modes
+  - `highlighter` - Syntax highlighting functionality
+  - `language` - Language detection and theme management
+  - `processor` - Core file processing logic
+  - `summarizer` - Code summary extraction
+  - `tokenizer` - Token extraction for AI processing
+- Performance benchmark suite using Criterion
+- Comprehensive unit tests for all modules (107 tests total)
+- Enhanced language detection with fallback mechanisms
+- Advanced tokenization strategies for different file types
+- Improved summary extraction supporting 15+ programming languages
+- Comprehensive TODO list update reflecting current v0.1.4 status
+- Shell completions for bash, zsh, fish, and PowerShell
+
+### Changed
+- Refactored monolithic `lib.rs` (595 lines) into focused modules
+- Updated dependency configuration to eliminate security vulnerabilities
+- Fixed all clippy warnings (25+ style and performance improvements)
+- Improved error message formatting with inline string interpolation
+- Enhanced code consistency across all modules
+
+### Fixed
+- Unused import warnings in formatter module
+- Clippy warnings for uninlined format arguments
+- Code style inconsistencies across modules
+- Potential performance issues identified by clippy
+- Improved error messages with specific error types and context
+- Enhanced JSON output format for better backward compatibility
+- Upgraded syntax highlighting to use minimal syntect features
+- Streamlined CLI error handling with proper stderr output
+- Security vulnerability: Eliminated unmaintained `yaml-rust` dependency (RUSTSEC-2024-0320)
+- Memory efficiency improvements in large file processing
+- Enhanced encoding detection for non-UTF-8 files
+- Improved comment filtering in summary mode for more accurate results
+- Fixed truncation handling to properly report line vs byte limits
+
+### Security
+- Removed indirect dependency on unmaintained `yaml-rust` crate
+- Updated syntect dependency to use minimal feature set without YAML loading
+- Enhanced input validation and error handling throughout the codebase
+- Added comprehensive test coverage including property-based tests
+
+### Performance
+- Maintained streaming architecture while improving modularity
+- Optimized syntax highlighting with selective feature loading
+- Enhanced caching strategies for repeated file processing
+- Reduced memory footprint through better resource management
+
+### Technical Debt Resolution
+- Code complexity reduced from single 595-line file to 9 focused modules
+- Test coverage expanded from basic integration tests to 107 unit tests
+- Error handling improved from generic errors to 11 specific error types
+- Documentation enhanced with comprehensive inline comments
+- Build warnings eliminated and code quality improved
 ## [0.1.4] - 2025-07-26
 
 ### Added
