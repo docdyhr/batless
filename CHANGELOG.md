@@ -10,16 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.5] - 2025-07-27
 
 ### Added
-- Manual release for version 0.1.5
-
-### Changed
-- Updated release process and workflows
-
-### Fixed
-- Various improvements and bug fixes
-
-
-### Added
 - Custom error types for better error handling and user experience
 - Modular architecture with separate modules for each concern:
   - `config` - Configuration management with validation
