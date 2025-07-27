@@ -268,7 +268,7 @@ mod tests {
 
     fn create_test_file(content: &str) -> NamedTempFile {
         let mut file = NamedTempFile::new().unwrap();
-        write!(file, "{}", content).unwrap();
+        write!(file, "{content}").unwrap();
         file
     }
 
