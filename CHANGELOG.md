@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2025-07-27
+
 ### Added
 - Custom error types for better error handling and user experience
 - Modular architecture with separate modules for each concern:
