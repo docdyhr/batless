@@ -7,7 +7,7 @@ use crate::config::BatlessConfig;
 use crate::error::{BatlessError, BatlessResult};
 use crate::file_info::FileInfo;
 use crate::highlighter::SyntaxHighlighter;
-use serde_json::{json, Value};
+use serde_json::json;
 
 /// Output formatter for different display modes
 pub struct OutputFormatter;
@@ -81,7 +81,7 @@ impl OutputFormatter {
         let mut output = Vec::new();
 
         // File header
-        output.push(format!("=== File Summary ==="));
+        output.push("=== File Summary ===".to_string());
         output.push(format!(
             "Language: {}",
             file_info.language.as_deref().unwrap_or("Unknown")
@@ -92,7 +92,7 @@ impl OutputFormatter {
 
         if file_info.truncated {
             if let Some(reason) = file_info.truncation_reason() {
-                output.push(format!("Truncated: Yes ({})", reason));
+                output.push(format!("Truncated: Yes ({reason})"));
             } else {
                 output.push("Truncated: Yes".to_string());
             }
@@ -122,7 +122,7 @@ impl OutputFormatter {
             if !tokens.is_empty() {
                 output.push("Sample Tokens:".to_string());
                 for token in tokens.iter().take(20) {
-                    output.push(format!("  {}", token));
+                    output.push(format!("  {token}"));
                 }
 
                 if tokens.len() > 20 {
@@ -136,7 +136,7 @@ impl OutputFormatter {
             output.push(String::new());
             output.push("=== Syntax Errors ===".to_string());
             for error in &file_info.syntax_errors {
-                output.push(format!("  {}", error));
+                output.push(format!("  {error}"));
             }
         }
 
@@ -190,9 +190,9 @@ impl OutputFormatter {
                     "message": error.to_string()
                 });
                 serde_json::to_string_pretty(&error_json)
-                    .unwrap_or_else(|_| format!("{{\"error\": true, \"message\": \"{}\"}}", error))
+                    .unwrap_or_else(|_| format!("{{\"error\": true, \"message\": \"{error}\"}}"))
             }
-            _ => format!("Error processing {}: {}", file_path, error),
+            _ => format!("Error processing {file_path}: {error}"),
         }
     }
 
@@ -335,13 +335,13 @@ pub enum OutputMode {
 
 impl OutputMode {
     /// Parse output mode from string
-    pub fn from_str(s: &str) -> Result<Self, String> {
+    pub fn parse_mode(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
             "plain" => Ok(OutputMode::Plain),
             "highlight" => Ok(OutputMode::Highlight),
             "json" => Ok(OutputMode::Json),
             "summary" => Ok(OutputMode::Summary),
-            _ => Err(format!("Unknown output mode: {}", s)),
+            _ => Err(format!("Unknown output mode: {s}")),
         }
     }
 
@@ -370,6 +370,7 @@ impl OutputMode {
 mod tests {
     use super::*;
     use crate::config::BatlessConfig;
+    use serde_json::Value;
 
     fn create_test_file_info() -> FileInfo {
         FileInfo::with_metadata(10, 256, Some("Rust".to_string()), "UTF-8".to_string())
@@ -445,13 +446,13 @@ mod tests {
 
     #[test]
     fn test_output_mode_parsing() {
-        assert_eq!(OutputMode::from_str("plain").unwrap(), OutputMode::Plain);
-        assert_eq!(OutputMode::from_str("json").unwrap(), OutputMode::Json);
+        assert_eq!(OutputMode::parse_mode("plain").unwrap(), OutputMode::Plain);
+        assert_eq!(OutputMode::parse_mode("json").unwrap(), OutputMode::Json);
         assert_eq!(
-            OutputMode::from_str("HIGHLIGHT").unwrap(),
+            OutputMode::parse_mode("HIGHLIGHT").unwrap(),
             OutputMode::Highlight
         );
-        assert!(OutputMode::from_str("invalid").is_err());
+        assert!(OutputMode::parse_mode("invalid").is_err());
     }
 
     #[test]

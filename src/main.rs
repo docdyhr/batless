@@ -84,7 +84,7 @@ enum ColorMode {
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!("Error: {}", e);
+        eprintln!("Error: {e}");
         std::process::exit(1);
     }
 }
@@ -160,7 +160,7 @@ fn run() -> BatlessResult<()> {
 
     let formatted_output = format_output(&file_info, file_path, &config, output_mode)?;
 
-    print!("{}", formatted_output);
+    print!("{formatted_output}");
 
     // Add truncation messages for non-JSON modes
     if output_mode != OutputMode::Json {
@@ -169,7 +169,7 @@ fn run() -> BatlessResult<()> {
         }
         if file_info.truncated_by_bytes {
             if let Some(max_bytes) = config.max_bytes {
-                println!("\n// Output truncated after {} bytes", max_bytes);
+                println!("\n// Output truncated after {max_bytes} bytes");
             }
         }
     }

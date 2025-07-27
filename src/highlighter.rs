@@ -81,8 +81,7 @@ impl SyntaxHighlighter {
                 .or_else(|| syntax_set.find_syntax_by_extension(lang))
                 .ok_or_else(|| {
                     BatlessError::LanguageDetectionError(format!(
-                        "Could not find syntax for language: {}",
-                        lang
+                        "Could not find syntax for language: {lang}"
                     ))
                 });
         }
@@ -115,7 +114,7 @@ impl SyntaxHighlighter {
         let stripped = strip_ansi_escapes::strip(content);
 
         String::from_utf8(stripped).map_err(|e| {
-            BatlessError::OutputError(format!("Invalid UTF-8 after stripping ANSI codes: {}", e))
+            BatlessError::OutputError(format!("Invalid UTF-8 after stripping ANSI codes: {e}"))
         })
     }
 
@@ -160,8 +159,7 @@ impl SyntaxHighlighter {
             .find_syntax_by_name(language)
             .ok_or_else(|| {
                 BatlessError::LanguageDetectionError(format!(
-                    "Could not find syntax for language: {}",
-                    language
+                    "Could not find syntax for language: {language}"
                 ))
             })?;
 

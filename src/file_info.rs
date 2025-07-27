@@ -124,12 +124,12 @@ impl FileInfo {
 
     /// Check if any tokens were extracted
     pub fn has_tokens(&self) -> bool {
-        self.tokens.as_ref().map_or(false, |t| !t.is_empty())
+        self.tokens.as_ref().is_some_and(|t| !t.is_empty())
     }
 
     /// Check if summary was generated
     pub fn has_summary(&self) -> bool {
-        self.summary_lines.as_ref().map_or(false, |s| !s.is_empty())
+        self.summary_lines.as_ref().is_some_and(|s| !s.is_empty())
     }
 
     /// Get the number of tokens (if any)

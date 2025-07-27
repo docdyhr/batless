@@ -192,8 +192,7 @@ impl FileProcessor {
 
         if !path.is_file() {
             return Err(BatlessError::ProcessingError(format!(
-                "Path '{}' is not a regular file",
-                file_path
+                "Path '{file_path}' is not a regular file"
             )));
         }
 

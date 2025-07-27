@@ -40,41 +40,40 @@ impl fmt::Display for BatlessError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BatlessError::FileNotFound(path) => {
-                write!(f, "File not found: {}", path)
+                write!(f, "File not found: {path}")
             }
             BatlessError::FileReadError { path, source } => {
-                write!(f, "Failed to read file '{}': {}", path, source)
+                write!(f, "Failed to read file '{path}': {source}")
             }
             BatlessError::HighlightError(msg) => {
-                write!(f, "Syntax highlighting failed: {}", msg)
+                write!(f, "Syntax highlighting failed: {msg}")
             }
             BatlessError::ThemeNotFound(theme) => {
                 write!(
                     f,
-                    "Theme '{}' not found. Use --list-themes to see available themes",
-                    theme
+                    "Theme '{theme}' not found. Use --list-themes to see available themes"
                 )
             }
             BatlessError::LanguageDetectionError(msg) => {
-                write!(f, "Language detection failed: {}", msg)
+                write!(f, "Language detection failed: {msg}")
             }
             BatlessError::EncodingError { path, details } => {
-                write!(f, "Encoding error in file '{}': {}", path, details)
+                write!(f, "Encoding error in file '{path}': {details}")
             }
             BatlessError::ProcessingError(msg) => {
-                write!(f, "Processing error: {}", msg)
+                write!(f, "Processing error: {msg}")
             }
             BatlessError::ConfigurationError(msg) => {
-                write!(f, "Configuration error: {}", msg)
+                write!(f, "Configuration error: {msg}")
             }
             BatlessError::JsonSerializationError(err) => {
-                write!(f, "JSON serialization failed: {}", err)
+                write!(f, "JSON serialization failed: {err}")
             }
             BatlessError::OutputError(msg) => {
-                write!(f, "Output error: {}", msg)
+                write!(f, "Output error: {msg}")
             }
             BatlessError::IoError(err) => {
-                write!(f, "I/O error: {}", err)
+                write!(f, "I/O error: {err}")
             }
         }
     }
