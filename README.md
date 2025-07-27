@@ -389,7 +389,7 @@ See [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md) for detailed guidan
 
 ### Development Setup
 ```bash
-git clone https://github.com/your-username/batless.git
+git clone https://github.com/docdyhr/batless.git
 cd batless
 cargo test
 cargo run -- --help
@@ -409,8 +409,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Crates.io](https://crates.io/crates/batless)
 - [Documentation](https://docs.rs/batless)
-- [Repository](https://github.com/your-username/batless)
-- [Issues](https://github.com/your-username/batless/issues)
+- [Repository](https://github.com/docdyhr/batless)
+- [Issues](https://github.com/docdyhr/batless/issues)
 
 ---
 

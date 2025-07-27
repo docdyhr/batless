@@ -2,12 +2,12 @@ name: Enhanced Testing
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Run comprehensive tests weekly
-    - cron: '0 3 * * 1'
+    - cron: "0 3 * * 1"
 
 permissions:
   contents: read
@@ -78,14 +78,10 @@ jobs:
             target
           key: ${{ runner.os }}-proptest-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Add property testing dependencies
+      - name: Verify property testing dependencies
         run: |
-          # Add proptest to Cargo.toml temporarily for this workflow
-          echo "
-          [dev-dependencies.proptest]
-          version = \"1.4\"
-          default-features = false
-          features = [\"std\"]" >> Cargo.toml
+          # Proptest is already in Cargo.toml dev-dependencies
+          echo "Using existing proptest dependency from Cargo.toml"
 
       - name: Run property-based tests
         run: |
@@ -100,34 +96,34 @@ jobs:
           proptest! {
               #[test]
               fn test_process_file_never_panics(
-                  content in ".*", 
+                  content in ".*",
                   max_lines in 1usize..10000,
                   max_bytes in proptest::option::of(1usize..100000)
               ) {
                   let mut file = NamedTempFile::new().unwrap();
                   file.write_all(content.as_bytes()).unwrap();
-                  
+
                   let config = BatlessConfig {
                       max_lines,
                       max_bytes,
                       ..Default::default()
                   };
-                  
+
                   // Should never panic
                   let _result = process_file(file.path().to_str().unwrap(), &config);
               }
-              
-              #[test] 
+
+              #[test]
               fn test_highlight_content_idempotent(content in ".*") {
                   let config = BatlessConfig::default();
-                  
+
                   // Highlighting should be deterministic
                   let result1 = highlight_content(&content, "test.rs", &config);
                   let result2 = highlight_content(&content, "test.rs", &config);
-                  
+
                   prop_assert_eq!(result1.is_ok(), result2.is_ok());
               }
-              
+
               #[test]
               fn test_max_lines_respected(
                   lines in prop::collection::vec(".*", 1..100),
@@ -136,22 +132,22 @@ jobs:
                   let content = lines.join("\n");
                   let mut file = NamedTempFile::new().unwrap();
                   file.write_all(content.as_bytes()).unwrap();
-                  
+
                   let config = BatlessConfig {
                       max_lines,
                       ..Default::default()
                   };
-                  
+
                   if let Ok(result) = process_file(file.path().to_str().unwrap(), &config) {
                       prop_assert!(result.lines.len() <= max_lines);
                   }
               }
           }
           EOF
-          
+
           # Add the module to integration tests
           echo "mod property;" >> tests/integration_tests.rs
-          
+
           cargo test tests::property --verbose
 
   fuzz-testing:
@@ -179,10 +175,10 @@ jobs:
       - name: Initialize fuzz targets
         run: |
           cargo fuzz init
-          
+
           # Create fuzz target for file processing
           cargo fuzz add process_file
-          
+
           cat > fuzz/fuzz_targets/process_file.rs << 'EOF'
           #![no_main]
           use libfuzzer_sys::fuzz_target;
@@ -194,9 +190,9 @@ jobs:
               // Create temporary file with fuzz data
               let mut file = NamedTempFile::new().unwrap();
               let _ = file.write_all(data);
-              
+
               let config = BatlessConfig::default();
-              
+
               // Should not panic or crash
               let _ = process_file(file.path().to_str().unwrap(), &config);
           });
@@ -210,7 +206,7 @@ jobs:
           else
             echo "⚠️ Fuzz testing timed out or encountered issues"
           fi
-          
+
           # Check if any crashes were found
           if [ -d "fuzz/artifacts/process_file" ] && [ "$(ls -A fuzz/artifacts/process_file 2>/dev/null)" ]; then
             echo "❌ Fuzz testing found crashes!"
@@ -237,16 +233,16 @@ jobs:
         run: |
           # Create various large test files
           mkdir -p stress_test_files
-          
+
           # Large text file (10MB)
           dd if=/dev/zero bs=1024 count=10240 | tr '\0' 'A' > stress_test_files/large.txt
-          
+
           # File with very long lines
           python3 -c "print('x' * 100000)" > stress_test_files/long_line.txt
-          
+
           # Binary file
           dd if=/dev/urandom bs=1024 count=1024 > stress_test_files/binary.bin
-          
+
           # Deep nested JSON
           python3 -c "
           import json
