@@ -1,5 +1,6 @@
 use batless::{highlight_content, process_file, BatlessConfig};
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use std::hint::black_box;
 use std::io::Write;
 use tempfile::NamedTempFile;
 
