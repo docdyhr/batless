@@ -59,10 +59,19 @@ Available builds:
 - **macOS**: `x86_64-apple-darwin` (Intel), `aarch64-apple-darwin` (Apple Silicon)  
 - **Windows**: `x86_64-pc-windows-msvc`
 
-### Homebrew (macOS)
+### Homebrew (macOS/Linux)
 ```bash
+# Add the tap (one-time setup)
+brew tap docdyhr/batless
+
+# Install batless
+brew install batless
+
+# Or install directly without adding tap
 brew install docdyhr/batless/batless
 ```
+
+**Homebrew Tap Repository**: [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
 
 ### From Crates.io
 ```bash
@@ -75,6 +84,31 @@ git clone https://github.com/docdyhr/batless.git
 cd batless
 cargo build --release
 ```
+
+## 🍺 Homebrew Tap
+
+The [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless) tap provides the official Homebrew formula for `batless`.
+
+### Features
+- ✅ **Automatically updated** with every release
+- ✅ **Comprehensive testing** included in formula
+- ✅ **Cross-platform** support (macOS & Linux)
+- ✅ **Zero maintenance** - formula stays in sync with releases
+
+### Installation Commands
+```bash
+# Method 1: Add tap first (recommended)
+brew tap docdyhr/batless
+brew install batless
+
+# Method 2: Direct install
+brew install docdyhr/batless/batless
+
+# Upgrade to latest version
+brew upgrade batless
+```
+
+The formula automatically compiles from source using Rust, ensuring optimal performance for your system.
 
 ## 📖 Usage
 
@@ -387,6 +421,30 @@ gh pr merge --squash
 
 See [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md) for detailed guidance.
 
+### Release Automation
+
+This project features fully automated releases and Homebrew tap updates:
+
+- **Automated Releases**: Every git tag triggers cross-platform binary builds, GitHub releases, and crates.io publishing
+- **Homebrew Integration**: The [homebrew-batless](https://github.com/docdyhr/homebrew-batless) tap automatically updates with each release
+- **Zero Maintenance**: Formula SHA256 hashes and versions are calculated and updated automatically
+
+#### Release Process
+```bash
+# Create and push a new tag - everything else is automated
+git tag v0.1.6
+git push origin v0.1.6
+
+# Automated workflows will:
+# ✅ Build binaries for all platforms
+# ✅ Create GitHub release with assets
+# ✅ Publish to crates.io
+# ✅ Update Homebrew tap with correct SHA256
+# ✅ Users get latest version via all install methods
+```
+
+See [`docs/HOMEBREW_AUTOMATION.md`](docs/HOMEBREW_AUTOMATION.md) for technical details.
+
 ### Development Setup
 ```bash
 git clone https://github.com/docdyhr/batless.git
@@ -407,10 +465,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Links
 
-- [Crates.io](https://crates.io/crates/batless)
-- [Documentation](https://docs.rs/batless)
-- [Repository](https://github.com/docdyhr/batless)
-- [Issues](https://github.com/docdyhr/batless/issues)
+- **Main Repository**: [github.com/docdyhr/batless](https://github.com/docdyhr/batless)
+- **Homebrew Tap**: [github.com/docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
+- **Crates.io Package**: [crates.io/crates/batless](https://crates.io/crates/batless)
+- **Documentation**: [docs.rs/batless](https://docs.rs/batless)
+- **Issues & Support**: [github.com/docdyhr/batless/issues](https://github.com/docdyhr/batless/issues)
 
 ---
 
