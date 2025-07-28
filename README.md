@@ -74,9 +74,9 @@ brew install docdyhr/batless/batless
 
 **Homebrew Tap Repository**: [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
 
-### From Crates.io (Coming Soon)
+### From Crates.io
 ```bash
-# Once published, you'll be able to install with:
+# Install the latest version:
 cargo install batless
 ```
 
