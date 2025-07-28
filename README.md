@@ -2,7 +2,7 @@
 
 > The non-blocking code viewer built for automation, not humans.
 
-[![Crates.io](https://img.shields.io/badge/crates.io-coming%20soon-inactive)](https://crates.io/crates/batless)
+[![Crates.io](https://img.shields.io/crates/v/batless)](https://crates.io/crates/batless)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Release](https://img.shields.io/github/v/release/docdyhr/batless?include_prereleases)](https://github.com/docdyhr/batless/releases)
 [![CI](https://github.com/docdyhr/batless/workflows/CI%2FCD/badge.svg)](https://github.com/docdyhr/batless/actions)
