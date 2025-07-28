@@ -1,0 +1,32 @@
+name: Badge Test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"  # Every 6 hours
+
+permissions:
+  contents: read
+
+jobs:
+  test-badges:
+    name: Test Workflow Badges
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check CI/CD Badge
+        run: |
+          # Test that CI/CD workflow badge resolves correctly
+          curl -s -o /dev/null -w "%{http_code}" "https://github.com/docdyhr/batless/workflows/CI%2FCD/badge.svg" | grep -q "200" || exit 1
+          echo "✅ CI/CD badge is accessible"
+      
+      - name: Check Security Badge
+        run: |
+          # Test that Security Review workflow badge resolves correctly  
+          curl -s -o /dev/null -w "%{http_code}" "https://github.com/docdyhr/batless/workflows/Security%20Review/badge.svg" | grep -q "200" || exit 1
+          echo "✅ Security badge is accessible"
+          
+      - name: Check Codecov Badge
+        run: |
+          # Test that Codecov badge resolves correctly
+          curl -s -o /dev/null -w "%{http_code}" "https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg" | grep -q "200" || exit 1
+          echo "✅ Codecov badge is accessible"

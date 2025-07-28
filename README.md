@@ -2,8 +2,9 @@
 
 > The non-blocking code viewer built for automation, not humans.
 
-[![Crates.io](https://img.shields.io/crates/v/batless.svg)](https://crates.io/crates/batless)
+[![Crates.io](https://img.shields.io/badge/crates.io-coming%20soon-inactive)](https://crates.io/crates/batless)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Release](https://img.shields.io/github/v/release/docdyhr/batless?include_prereleases)](https://github.com/docdyhr/batless/releases)
 [![CI](https://github.com/docdyhr/batless/workflows/CI%2FCD/badge.svg)](https://github.com/docdyhr/batless/actions)
 [![Security](https://github.com/docdyhr/batless/workflows/Security%20Review/badge.svg)](https://github.com/docdyhr/batless/actions)
 [![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg)](https://codecov.io/gh/docdyhr/batless)
@@ -73,8 +74,9 @@ brew install docdyhr/batless/batless
 
 **Homebrew Tap Repository**: [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
 
-### From Crates.io
+### From Crates.io (Coming Soon)
 ```bash
+# Once published, you'll be able to install with:
 cargo install batless
 ```
 

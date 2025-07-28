@@ -23,6 +23,7 @@ jobs:
   # Validation and tests
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -54,6 +55,7 @@ jobs:
   # Build cross-platform binaries
   build:
     needs: test
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -162,6 +164,7 @@ jobs:
   release:
     needs: [test, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -276,6 +279,7 @@ jobs:
   post-release:
     needs: [release]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: always()
     steps:
       - name: Release summary

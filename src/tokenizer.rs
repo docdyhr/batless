@@ -446,7 +446,7 @@ mod tests {
 
         let processed = TokenExtractor::post_process_tokens(tokens);
 
-        assert!(!processed.contains(&"".to_string()));
+        assert!(!processed.contains(&String::new()));
         assert!(!processed.contains(&"a".to_string()));
         assert!(processed.contains(&"(".to_string()));
         assert_eq!(processed.iter().filter(|&t| t == "test").count(), 1);
