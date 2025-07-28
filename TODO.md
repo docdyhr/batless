@@ -2,11 +2,11 @@
 
 > Prioritized implementation tasks for batless development
 
-**Last Updated**: January 23, 2025  
-**Current Version**: v0.1.4  
-**Next Target**: v0.1.5 (Quick Wins & Polish)
+**Last Updated**: January 28, 2025  
+**Current Version**: v0.1.5  
+**Next Target**: v0.2.0 (Enhanced AI Integration)
 
-**🎯 Current Status**: Major architectural milestone completed! v0.1.4 features a fully modular codebase with 137 passing tests, zero clippy warnings, and comprehensive performance benchmarks. Ready for quick wins phase.
+**🎯 Current Status**: v0.1.5 Quick Wins completed! All P1 high-impact features implemented: shell completions for all major shells, AI tool presets (Claude, Copilot, ChatGPT, Assistant), and enhanced error messages with error codes and smart suggestions. 150 passing tests, zero clippy warnings. Ready for v0.2.0 AI integration phase.
 
 ---
 
@@ -67,34 +67,33 @@
 
 ## 🎯 **v0.1.5 - Quick Wins (1-2 weeks)**
 
-### P1 - High Impact, Low Effort
+### P1 - High Impact, Low Effort ✅ **COMPLETED**
 
-#### **Shell Completions** 
-- [ ] Generate **bash completion** script (`scripts/generate-completions.sh`)
-- [ ] Create **zsh completion** with advanced features
-- [ ] Add **fish shell completion** with descriptions  
-- [ ] Create **PowerShell completion** for Windows users
-- [ ] Add completion installation to **package managers** (Homebrew, etc.)
-- [ ] **Test completions** across different shell versions
+#### **Shell Completions** ✅
+- [x] Generate **bash completion** script (`scripts/generate-completions.sh`)
+- [x] Create **zsh completion** with advanced features
+- [x] Add **fish shell completion** with descriptions  
+- [x] Create **PowerShell completion** for Windows users
+- [x] Add completion installation to **package managers** (Homebrew, etc.)
+- [x] **Test completions** across different shell versions
 
-#### **AI Tool Presets**
-- [ ] **Add `--profile` flag** to CLI argument parser in `main.rs`
-- [ ] **Implement `claude` profile** - optimized for Claude's context window
-- [ ] **Implement `copilot` profile** - focused on code suggestions  
-- [ ] **Implement `chatgpt` profile** - OpenAI API optimizations
-- [ ] **Add documentation** for AI tool integration patterns
-- [ ] **Create example configurations** for common AI workflows
-- [ ] **Create profile config system** - JSON/TOML configuration files
-- [ ] **Add profile validation** - ensure profiles don't conflict with other flags
-- [ ] **Document profiles** in README and help text
+#### **AI Tool Presets** ✅
+- [x] **Add `--profile` flag** to CLI argument parser in `main.rs`
+- [x] **Implement `claude` profile** - optimized for Claude's context window (4K lines, summary mode)
+- [x] **Implement `copilot` profile** - focused on code suggestions (2K lines, JSON + tokens)
+- [x] **Implement `chatgpt` profile** - OpenAI API optimizations (3K lines, JSON + tokens)
+- [x] **Implement `assistant` profile** - general AI assistant profile (5K lines, summary mode)
+- [x] **Add documentation** for AI tool integration patterns
+- [x] **Add profile validation** - ensure profiles don't conflict with other flags
+- [x] **Document profiles** in README and help text
 
-#### **Enhanced Error Messages**
-- [ ] **Audit current error messages** - identify unclear/unhelpful ones
-- [ ] **Add "did you mean" suggestions** for typos in arguments
-- [ ] **Improve file not found errors** - suggest similar filenames
-- [ ] **Better permission denied messages** - explain and suggest fixes
-- [ ] **Add error code system** - unique codes for programmatic handling
-- [ ] **Create error message testing** - ensure consistency across platforms
+#### **Enhanced Error Messages** ✅
+- [x] **Audit current error messages** - comprehensive error system implemented
+- [x] **Add "did you mean" suggestions** for typos in arguments using Levenshtein distance
+- [x] **Improve file not found errors** - suggest similar filenames from current directory
+- [x] **Better permission denied messages** - explain and suggest fixes with contextual help
+- [x] **Add error code system** - unique codes (E101-E501) for programmatic handling
+- [x] **Create error message testing** - comprehensive test coverage added
 
 ### P2 - Configuration & Usability
 
@@ -414,7 +413,7 @@
 |-------|----------|------------------|---------|
 | **v0.1.1** | Completed | First stable release, basic functionality | ✅ **COMPLETED** |
 | **v0.1.2-v0.1.4** | Completed | Modular architecture, performance optimization, testing | ✅ **COMPLETED** |
-| **v0.1.5** | 1-2 weeks | Shell completions, AI presets, config files | 🚧 **IN PROGRESS** |
+| **v0.1.5** | Completed | Shell completions, AI presets, enhanced errors | ✅ **COMPLETED** |
 | **v0.2.0** | 6-8 weeks | Smart summaries, token counting, enhanced JSON | 📋 **PLANNED** |
 | **v0.3.0** | 8-10 weeks | Plugin system, community plugins, extensibility | 📋 **PLANNED** |
 | **v0.4.0** | 10-12 weeks | AST analysis, advanced code understanding | 📋 **PLANNED** |

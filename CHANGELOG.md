@@ -7,9 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.5] - 2025-07-27
+## [0.1.5] - 2025-01-28
 
 ### Added
+- **Shell completions** for bash, zsh, fish, and PowerShell (`--generate-completions` flag)
+- **AI tool presets** via `--profile` flag with optimized configurations:
+  - `claude`: 4K lines, summary mode for Claude's context window
+  - `copilot`: 2K lines, JSON + tokens for GitHub Copilot integration  
+  - `chatgpt`: 3K lines, JSON + tokens for OpenAI ChatGPT
+  - `assistant`: 5K lines, summary mode for general AI assistants
+- **Enhanced error messages** with contextual help and suggestions:
+  - Error codes (E101-E501) for programmatic handling
+  - "Did you mean" suggestions using Levenshtein distance algorithm
+  - Smart file suggestions from current directory for typos
+  - Improved permission denied messages with actionable advice
 - Custom error types for better error handling and user experience
 - Modular architecture with separate modules for each concern:
   - `config` - Configuration management with validation

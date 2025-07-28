@@ -51,7 +51,7 @@ jobs:
           # Download source tarball with retry logic
           for i in {1..3}; do
             echo "Attempt $i: Downloading source tarball..."
-            if curl -L --fail "https://github.com/docdyhr/batless/archive/refs/tags/${TAG}.tar.gz" -o "batless-${VERSION}.tar.gz"; then
+            if curl -L --fail "https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz" -o "batless-${VERSION}.tar.gz"; then
               echo "✅ Download successful"
               break
             else
@@ -87,11 +87,11 @@ jobs:
           cat > batless.rb << EOF
           class Batless < Formula
             desc "Non-blocking, AI-friendly code viewer inspired by bat"
-            homepage "https://github.com/docdyhr/batless"
-            url "https://github.com/docdyhr/batless/archive/refs/tags/${TAG}.tar.gz"
+            homepage "https://github.com/${{ github.repository }}"
+            url "https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz"
             sha256 "${SHA256}"
             license "MIT"
-            head "https://github.com/docdyhr/batless.git", branch: "main"
+            head "https://github.com/${{ github.repository }}.git", branch: "main"
 
             depends_on "rust" => :build
 
@@ -147,7 +147,7 @@ jobs:
           git config --global user.email "bot@batless.dev"
 
           # Clone the homebrew tap repository
-          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/docdyhr/homebrew-batless.git homebrew-tap
+          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-batless.git homebrew-tap
           cd homebrew-tap
 
           # Update the formula
@@ -214,7 +214,7 @@ jobs:
           echo "### 🍺 Installation Commands" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
           echo "# Add the tap (one-time setup)" >> $GITHUB_STEP_SUMMARY
-          echo "brew tap docdyhr/batless" >> $GITHUB_STEP_SUMMARY
+          echo "brew tap ${{ github.repository_owner }}/batless" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# Install or upgrade batless" >> $GITHUB_STEP_SUMMARY
           echo "brew install batless" >> $GITHUB_STEP_SUMMARY
@@ -223,9 +223,9 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [Homebrew Tap Repository](https://github.com/docdyhr/homebrew-batless)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Release ${TAG}](https://github.com/docdyhr/batless/releases/tag/${TAG})" >> $GITHUB_STEP_SUMMARY
-          echo "- [Formula File](https://github.com/docdyhr/homebrew-batless/blob/master/Formula/batless.rb)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Homebrew Tap Repository](https://github.com/${{ github.repository_owner }}/homebrew-batless)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Release ${TAG}](https://github.com/${{ github.repository }}/releases/tag/${TAG})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Formula File](https://github.com/${{ github.repository_owner }}/homebrew-batless/blob/master/Formula/batless.rb)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ **Users can now install batless ${VERSION} via Homebrew!**" >> $GITHUB_STEP_SUMMARY
 
@@ -237,7 +237,7 @@ jobs:
           echo "🧪 Testing Homebrew installation..."
 
           # Add the tap and install
-          brew tap docdyhr/batless
+          brew tap ${{ github.repository_owner }}/batless
           brew install batless --verbose
 
           # Test the installation

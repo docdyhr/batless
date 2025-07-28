@@ -6,6 +6,54 @@
 use std::fmt;
 use std::path::Path;
 
+/// Error codes for programmatic handling
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ErrorCode {
+    /// File system errors (100-199)
+    FileNotFound = 101,
+    FileReadError = 102,
+    PermissionDenied = 103,
+    EncodingError = 104,
+
+    /// Syntax highlighting errors (200-299)
+    HighlightError = 201,
+    ThemeNotFound = 202,
+    LanguageNotFound = 203,
+    LanguageDetectionError = 204,
+
+    /// Processing errors (300-399)
+    ProcessingError = 301,
+    ConfigurationError = 302,
+
+    /// Output errors (400-499)
+    JsonSerializationError = 401,
+    OutputError = 402,
+
+    /// Generic errors (500-599)
+    IoError = 501,
+}
+
+impl ErrorCode {
+    /// Get the error code as a string for display
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ErrorCode::FileNotFound => "E101",
+            ErrorCode::FileReadError => "E102",
+            ErrorCode::PermissionDenied => "E103",
+            ErrorCode::EncodingError => "E104",
+            ErrorCode::HighlightError => "E201",
+            ErrorCode::ThemeNotFound => "E202",
+            ErrorCode::LanguageNotFound => "E203",
+            ErrorCode::LanguageDetectionError => "E204",
+            ErrorCode::ProcessingError => "E301",
+            ErrorCode::ConfigurationError => "E302",
+            ErrorCode::JsonSerializationError => "E401",
+            ErrorCode::OutputError => "E402",
+            ErrorCode::IoError => "E501",
+        }
+    }
+}
+
 /// Main error type for batless operations
 #[derive(Debug)]
 pub enum BatlessError {
@@ -56,9 +104,10 @@ pub enum BatlessError {
 
 impl fmt::Display for BatlessError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let error_code = self.error_code();
         match self {
             BatlessError::FileNotFound { path, suggestions } => {
-                write!(f, "File not found: {path}")?;
+                write!(f, "[{}] File not found: {path}", error_code.as_str())?;
                 if !suggestions.is_empty() {
                     write!(f, "\n\nDid you mean:")?;
                     for suggestion in suggestions.iter().take(3) {
@@ -68,16 +117,28 @@ impl fmt::Display for BatlessError {
                 Ok(())
             }
             BatlessError::FileReadError { path, source } => {
-                write!(f, "Failed to read file '{path}': {source}")
+                write!(
+                    f,
+                    "[{}] Failed to read file '{path}': {source}",
+                    error_code.as_str()
+                )
             }
             BatlessError::PermissionDenied { path, help } => {
-                write!(f, "Permission denied: {path}\n\nHelp: {help}")
+                write!(
+                    f,
+                    "[{}] Permission denied: {path}\n\nHelp: {help}",
+                    error_code.as_str()
+                )
             }
             BatlessError::HighlightError(msg) => {
-                write!(f, "Syntax highlighting failed: {msg}")
+                write!(
+                    f,
+                    "[{}] Syntax highlighting failed: {msg}",
+                    error_code.as_str()
+                )
             }
             BatlessError::ThemeNotFound { theme, suggestions } => {
-                write!(f, "Theme '{theme}' not found")?;
+                write!(f, "[{}] Theme '{theme}' not found", error_code.as_str())?;
                 if !suggestions.is_empty() {
                     write!(f, "\n\nDid you mean:")?;
                     for suggestion in suggestions.iter().take(3) {
@@ -90,7 +151,11 @@ impl fmt::Display for BatlessError {
                 language,
                 suggestions,
             } => {
-                write!(f, "Language '{language}' not found")?;
+                write!(
+                    f,
+                    "[{}] Language '{language}' not found",
+                    error_code.as_str()
+                )?;
                 if !suggestions.is_empty() {
                     write!(f, "\n\nDid you mean:")?;
                     for suggestion in suggestions.iter().take(3) {
@@ -100,29 +165,45 @@ impl fmt::Display for BatlessError {
                 write!(f, "\n\nUse --list-languages to see all available languages")
             }
             BatlessError::LanguageDetectionError(msg) => {
-                write!(f, "Language detection failed: {msg}")
+                write!(
+                    f,
+                    "[{}] Language detection failed: {msg}",
+                    error_code.as_str()
+                )
             }
             BatlessError::EncodingError { path, details } => {
-                write!(f, "Encoding error in file '{path}': {details}")
+                write!(
+                    f,
+                    "[{}] Encoding error in file '{path}': {details}",
+                    error_code.as_str()
+                )
             }
             BatlessError::ProcessingError(msg) => {
-                write!(f, "Processing error: {msg}")
+                write!(f, "[{}] Processing error: {msg}", error_code.as_str())
             }
             BatlessError::ConfigurationError { message, help } => {
-                write!(f, "Configuration error: {message}")?;
+                write!(
+                    f,
+                    "[{}] Configuration error: {message}",
+                    error_code.as_str()
+                )?;
                 if let Some(help_text) = help {
                     write!(f, "\n\nHelp: {help_text}")?;
                 }
                 Ok(())
             }
             BatlessError::JsonSerializationError(err) => {
-                write!(f, "JSON serialization failed: {err}")
+                write!(
+                    f,
+                    "[{}] JSON serialization failed: {err}",
+                    error_code.as_str()
+                )
             }
             BatlessError::OutputError(msg) => {
-                write!(f, "Output error: {msg}")
+                write!(f, "[{}] Output error: {msg}", error_code.as_str())
             }
             BatlessError::IoError(err) => {
-                write!(f, "I/O error: {err}")
+                write!(f, "[{}] I/O error: {err}", error_code.as_str())
             }
         }
     }
@@ -140,6 +221,25 @@ impl std::error::Error for BatlessError {
 }
 
 impl BatlessError {
+    /// Get the error code for this error
+    pub fn error_code(&self) -> ErrorCode {
+        match self {
+            BatlessError::FileNotFound { .. } => ErrorCode::FileNotFound,
+            BatlessError::FileReadError { .. } => ErrorCode::FileReadError,
+            BatlessError::PermissionDenied { .. } => ErrorCode::PermissionDenied,
+            BatlessError::HighlightError(_) => ErrorCode::HighlightError,
+            BatlessError::ThemeNotFound { .. } => ErrorCode::ThemeNotFound,
+            BatlessError::LanguageNotFound { .. } => ErrorCode::LanguageNotFound,
+            BatlessError::LanguageDetectionError(_) => ErrorCode::LanguageDetectionError,
+            BatlessError::EncodingError { .. } => ErrorCode::EncodingError,
+            BatlessError::ProcessingError(_) => ErrorCode::ProcessingError,
+            BatlessError::ConfigurationError { .. } => ErrorCode::ConfigurationError,
+            BatlessError::JsonSerializationError(_) => ErrorCode::JsonSerializationError,
+            BatlessError::OutputError(_) => ErrorCode::OutputError,
+            BatlessError::IoError(_) => ErrorCode::IoError,
+        }
+    }
+
     /// Create a FileNotFound error with file suggestions
     pub fn file_not_found_with_suggestions(path: String) -> Self {
         let suggestions = Self::suggest_similar_files(&path);
@@ -387,5 +487,27 @@ mod tests {
         let json_error = serde_json::from_str::<serde_json::Value>("invalid json").unwrap_err();
         let error = BatlessError::from(json_error);
         assert!(matches!(error, BatlessError::JsonSerializationError(_)));
+    }
+
+    #[test]
+    fn test_error_codes() {
+        let error = BatlessError::FileNotFound {
+            path: "test.rs".to_string(),
+            suggestions: vec![],
+        };
+        assert_eq!(error.error_code(), ErrorCode::FileNotFound);
+        assert_eq!(error.error_code().as_str(), "E101");
+
+        let error = BatlessError::ThemeNotFound {
+            theme: "invalid".to_string(),
+            suggestions: vec![],
+        };
+        assert_eq!(error.error_code(), ErrorCode::ThemeNotFound);
+        assert_eq!(error.error_code().as_str(), "E202");
+
+        // Test that error codes are included in display output
+        let display = error.to_string();
+        assert!(display.contains("[E202]"));
+        assert!(display.contains("Theme 'invalid' not found"));
     }
 }
