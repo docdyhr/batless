@@ -160,11 +160,17 @@ fn benchmark_startup_operations(c: &mut Criterion) {
 
     // Benchmark validation operations
     group.bench_function("validate_theme", |b| {
-        b.iter(|| black_box(ThemeManager::validate_theme("base16-ocean.dark").unwrap()))
+        b.iter(|| {
+            ThemeManager::validate_theme("base16-ocean.dark").unwrap();
+            black_box(())
+        })
     });
 
     group.bench_function("validate_language", |b| {
-        b.iter(|| black_box(LanguageDetector::validate_language("rust").unwrap()))
+        b.iter(|| {
+            LanguageDetector::validate_language("rust").unwrap();
+            black_box(())
+        })
     });
 
     group.finish();
@@ -193,7 +199,12 @@ fn benchmark_config_operations(c: &mut Criterion) {
     ];
 
     for (name, config) in configs {
-        group.bench_function(name, |b| b.iter(|| black_box(config.validate().unwrap())));
+        group.bench_function(name, |b| {
+            b.iter(|| {
+                config.validate().unwrap();
+                black_box(())
+            })
+        });
     }
 
     group.finish();
