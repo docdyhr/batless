@@ -76,6 +76,7 @@ build/
 # Test artifacts
 test_file*.txt
 demo_output.txt
+test.json
 
 # Release artifacts
 *.tar.gz

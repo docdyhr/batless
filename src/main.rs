@@ -249,7 +249,12 @@ fn run() -> BatlessResult<()> {
 
     let formatted_output = format_output(&file_info, file_path, &config, output_mode)?;
 
-    print!("{formatted_output}");
+    // Print output with newline only for JSON mode to avoid shell prompt appearing
+    if output_mode == OutputMode::Json {
+        println!("{formatted_output}");
+    } else {
+        print!("{formatted_output}");
+    }
 
     // Add truncation messages for non-JSON modes
     if output_mode != OutputMode::Json {
