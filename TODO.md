@@ -2,11 +2,11 @@
 
 > Prioritized implementation tasks for batless development
 
-**Last Updated**: January 28, 2025  
-**Current Version**: v0.1.5  
+**Last Updated**: January 29, 2025  
+**Current Version**: v0.1.6  
 **Next Target**: v0.2.0 (Enhanced AI Integration)
 
-**🎯 Current Status**: v0.1.5 **COMPLETED** and published to crates.io! All P1 and P2 tasks delivered: shell completions, AI tool presets, enhanced error messages, complete configuration system with file support and precedence logic, performance optimizations (90% startup time reduction), comprehensive testing infrastructure (167 tests), and performance regression monitoring. Repository is in excellent condition with zero clippy warnings and all CI/CD pipelines passing. Ready to begin v0.2.0 enhanced AI integration phase.
+**🎯 Current Status**: v0.1.6 **COMPLETED** with all P2 implementations! Delivered complete configuration system with file-based config (.batlessrc, batless.toml), precedence logic, 90% startup time improvement (195ms → 2ms), performance regression testing with CI/CD integration, and comprehensive cross-platform validation. All 167 tests passing, zero clippy warnings, clean repository state. Ready to begin v0.2.0 enhanced AI integration phase.
 
 ---
 
