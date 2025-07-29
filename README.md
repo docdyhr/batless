@@ -280,6 +280,141 @@ View all supported languages:
 batless --list-languages
 ```
 
+## ⚙️ Configuration
+
+`batless` supports flexible configuration through files and command-line arguments, with a clear precedence hierarchy:
+
+**Configuration Precedence** (highest to lowest):
+1. Command-line arguments
+2. Project-level config (`.batlessrc`, `batless.toml`)
+3. User home config (`~/.batlessrc`, `~/.config/batless/config.toml`)
+4. System defaults
+
+### Configuration Files
+
+#### TOML Format (Recommended)
+Create `batless.toml` in your project root or `~/.config/batless/config.toml`:
+
+```toml
+# Maximum lines to display
+max_lines = 15000
+
+# Maximum bytes to process (optional)
+max_bytes = 1048576  # 1MB
+
+# Override language detection
+language = "rust"
+
+# Theme for syntax highlighting
+theme = "monokai"
+
+# Color output control
+use_color = true
+
+# Strip ANSI escape sequences
+strip_ansi = false
+
+# Include tokens in JSON output
+include_tokens = false
+
+# Enable summary mode by default
+summary_mode = true
+```
+
+#### JSON Format (.batlessrc)
+Create `.batlessrc` in your project root or home directory:
+
+```json
+{
+  "max_lines": 8000,
+  "theme": "github",
+  "use_color": true,
+  "summary_mode": false,
+  "include_tokens": true
+}
+```
+
+### Configuration Examples
+
+#### Project-Specific Settings
+For a Rust project, create `batless.toml`:
+```toml
+# Optimize for Rust development
+max_lines = 20000
+theme = "base16-ocean.dark"
+language = "rust"
+summary_mode = true
+use_color = true
+```
+
+#### AI Assistant Profile
+For AI code analysis, create `.batlessrc`:
+```json
+{
+  "max_lines": 5000,
+  "theme": "github",
+  "use_color": false,
+  "summary_mode": true,
+  "include_tokens": false
+}
+```
+
+#### CI/CD Pipeline Settings
+For automation environments:
+```toml
+max_lines = 1000
+use_color = false
+strip_ansi = true
+summary_mode = false
+```
+
+### Custom Config File
+Use `--config` to specify a custom configuration file:
+
+```bash
+# Use specific config file
+batless --config my-config.toml src/main.rs
+
+# Override with command line args
+batless --config team-settings.toml --max-lines 500 src/lib.rs
+```
+
+### Configuration Discovery
+`batless` automatically searches for config files in this order:
+
+1. **Project level**: `.batlessrc`, `batless.toml`
+2. **User home**: `~/.batlessrc`, `~/.config/batless/config.toml`
+3. **System level**: System config directories
+
+### AI Tool Profiles
+Instead of manual configuration, use built-in AI profiles:
+
+```bash
+# Claude-optimized (4K lines, summary mode)
+batless --profile claude src/main.rs
+
+# GitHub Copilot (2K lines, JSON + tokens)
+batless --profile copilot src/main.rs
+
+# ChatGPT-optimized (3K lines, JSON + tokens)
+batless --profile chatgpt src/main.rs
+
+# General AI assistant (5K lines, summary)
+batless --profile assistant src/main.rs
+```
+
+### Validation and Help
+`batless` validates all configuration and provides helpful error messages:
+
+```bash
+# Example validation error
+$ batless --max-lines 0 src/main.rs
+Error: max_lines must be greater than 0
+Help: Try using --max-lines with a positive number (e.g., --max-lines 1000)
+```
+
+Common configuration patterns and their use cases are documented in the [project wiki](https://github.com/docdyhr/batless/wiki/Configuration-Examples).
+
 ## 🆚 Why batless instead of bat?
 
 ### When to use `batless`

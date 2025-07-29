@@ -64,6 +64,10 @@ struct Args {
     /// Use predefined AI tool profile (overrides other settings)
     #[arg(long, value_enum)]
     profile: Option<AiProfile>,
+
+    /// Configuration file path (defaults to auto-discovery)
+    #[arg(long)]
+    config: Option<String>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -211,19 +215,46 @@ fn run() -> BatlessResult<()> {
         ColorMode::Auto => std::io::stdout().is_terminal(),
     };
 
-    // Create base configuration
-    let mut config = BatlessConfig::new()
-        .with_max_lines(args.max_lines)
-        .with_max_bytes(args.max_bytes)
-        .with_language(args.language)
-        .with_theme(args.theme)
-        .with_strip_ansi(args.strip_ansi)
-        .with_use_color(
-            use_color
-                && (args.mode == CliOutputMode::Highlight || args.mode == CliOutputMode::Summary),
-        )
-        .with_include_tokens(args.include_tokens)
-        .with_summary_mode(args.summary || args.mode == CliOutputMode::Summary);
+    // Load base configuration from files first
+    let mut config = if let Some(config_path) = &args.config {
+        // Load from specific config file
+        let path = std::path::Path::new(config_path);
+        if path.extension() == Some(std::ffi::OsStr::new("toml")) {
+            BatlessConfig::from_file(path)?
+        } else {
+            BatlessConfig::from_json_file(path)?
+        }
+    } else {
+        // Load with precedence from standard locations
+        BatlessConfig::load_with_precedence()?
+    };
+
+    // Apply CLI arguments (highest precedence)
+    if args.max_lines != 10000 {  // Only override if not default
+        config = config.with_max_lines(args.max_lines);
+    }
+    if args.max_bytes.is_some() {
+        config = config.with_max_bytes(args.max_bytes);
+    }
+    if args.language.is_some() {
+        config = config.with_language(args.language);
+    }
+    if args.theme != "base16-ocean.dark" {  // Only override if not default
+        config = config.with_theme(args.theme);
+    }
+    if args.strip_ansi {
+        config = config.with_strip_ansi(args.strip_ansi);
+    }
+    config = config.with_use_color(
+        use_color
+            && (args.mode == CliOutputMode::Highlight || args.mode == CliOutputMode::Summary),
+    );
+    if args.include_tokens {
+        config = config.with_include_tokens(args.include_tokens);
+    }
+    if args.summary || args.mode == CliOutputMode::Summary {
+        config = config.with_summary_mode(true);
+    }
 
     // Apply AI profile if specified (overrides other settings)
     let output_mode = if let Some(profile) = args.profile {
