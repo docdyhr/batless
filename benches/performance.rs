@@ -176,15 +176,24 @@ fn benchmark_config_operations(c: &mut Criterion) {
     // Test config validation performance
     let configs = vec![
         ("default", BatlessConfig::default()),
-        ("with_limits", BatlessConfig::default().with_max_lines(5000).with_max_bytes(Some(1_000_000))),
-        ("with_summary", BatlessConfig::default().with_summary_mode(true)),
-        ("with_tokens", BatlessConfig::default().with_include_tokens(true)),
+        (
+            "with_limits",
+            BatlessConfig::default()
+                .with_max_lines(5000)
+                .with_max_bytes(Some(1_000_000)),
+        ),
+        (
+            "with_summary",
+            BatlessConfig::default().with_summary_mode(true),
+        ),
+        (
+            "with_tokens",
+            BatlessConfig::default().with_include_tokens(true),
+        ),
     ];
 
     for (name, config) in configs {
-        group.bench_function(name, |b| {
-            b.iter(|| black_box(config.validate().unwrap()))
-        });
+        group.bench_function(name, |b| b.iter(|| black_box(config.validate().unwrap())));
     }
 
     group.finish();
