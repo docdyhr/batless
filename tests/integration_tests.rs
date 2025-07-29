@@ -119,7 +119,7 @@ fn test_max_bytes_limit() {
         file.path().to_str().unwrap(),
         "--mode=plain",
         "--max-bytes=25",
-        "--max-lines=100",  // Large line limit so bytes limit takes effect
+        "--max-lines=100", // Large line limit so bytes limit takes effect
     ]);
 
     assert!(output.status.success());

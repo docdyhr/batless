@@ -303,11 +303,11 @@ mod tests {
     #[test]
     fn test_process_file_with_byte_limit() -> BatlessResult<()> {
         // Create content larger than byte limit
-        let large_content = "a".repeat(2000);  // 2000 characters
+        let large_content = "a".repeat(2000); // 2000 characters
         let file = create_test_file(&large_content);
         let config = BatlessConfig::default()
-            .with_max_bytes(Some(1000))  // 1KB limit
-            .with_max_lines(100);  // Large line limit
+            .with_max_bytes(Some(1000)) // 1KB limit
+            .with_max_lines(100); // Large line limit
 
         let result = FileProcessor::process_file(file.path().to_str().unwrap(), &config)?;
 

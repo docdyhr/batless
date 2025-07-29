@@ -230,7 +230,8 @@ fn run() -> BatlessResult<()> {
     };
 
     // Apply CLI arguments (highest precedence)
-    if args.max_lines != 10000 {  // Only override if not default
+    if args.max_lines != 10000 {
+        // Only override if not default
         config = config.with_max_lines(args.max_lines);
     }
     if args.max_bytes.is_some() {
@@ -239,15 +240,15 @@ fn run() -> BatlessResult<()> {
     if args.language.is_some() {
         config = config.with_language(args.language);
     }
-    if args.theme != "base16-ocean.dark" {  // Only override if not default
+    if args.theme != "base16-ocean.dark" {
+        // Only override if not default
         config = config.with_theme(args.theme);
     }
     if args.strip_ansi {
         config = config.with_strip_ansi(args.strip_ansi);
     }
     config = config.with_use_color(
-        use_color
-            && (args.mode == CliOutputMode::Highlight || args.mode == CliOutputMode::Summary),
+        use_color && (args.mode == CliOutputMode::Highlight || args.mode == CliOutputMode::Summary),
     );
     if args.include_tokens {
         config = config.with_include_tokens(args.include_tokens);

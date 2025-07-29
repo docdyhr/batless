@@ -124,14 +124,23 @@ impl BatlessConfig {
         if self.max_lines == 0 {
             return Err(BatlessError::config_error_with_help(
                 "max_lines must be greater than 0".to_string(),
-                Some("Try using --max-lines with a positive number (e.g., --max-lines 1000)".to_string()),
+                Some(
+                    "Try using --max-lines with a positive number (e.g., --max-lines 1000)"
+                        .to_string(),
+                ),
             ));
         }
 
         if self.max_lines > 1_000_000 {
             return Err(BatlessError::config_error_with_help(
-                format!("max_lines is unusually large ({}). This may cause performance issues", self.max_lines),
-                Some("Consider using a smaller value like 10000, or use --max-bytes instead".to_string()),
+                format!(
+                    "max_lines is unusually large ({}). This may cause performance issues",
+                    self.max_lines
+                ),
+                Some(
+                    "Consider using a smaller value like 10000, or use --max-bytes instead"
+                        .to_string(),
+                ),
             ));
         }
 
@@ -140,13 +149,19 @@ impl BatlessConfig {
             if max_bytes == 0 {
                 return Err(BatlessError::config_error_with_help(
                     "max_bytes must be greater than 0".to_string(),
-                    Some("Try using --max-bytes with a positive number (e.g., --max-bytes 1048576)".to_string()),
+                    Some(
+                        "Try using --max-bytes with a positive number (e.g., --max-bytes 1048576)"
+                            .to_string(),
+                    ),
                 ));
             }
 
-            if max_bytes > 100_000_000 {  // 100MB
+            if max_bytes > 100_000_000 {
+                // 100MB
                 return Err(BatlessError::config_error_with_help(
-                    format!("max_bytes is unusually large ({max_bytes}). This may cause memory issues"),
+                    format!(
+                        "max_bytes is unusually large ({max_bytes}). This may cause memory issues"
+                    ),
                     Some("Consider using a smaller value like 10485760 (10MB)".to_string()),
                 ));
             }
@@ -169,7 +184,10 @@ impl BatlessConfig {
             }
 
             // Check for obviously invalid characters
-            if language.chars().any(|c| c.is_whitespace() || c.is_control()) {
+            if language
+                .chars()
+                .any(|c| c.is_whitespace() || c.is_control())
+            {
                 return Err(BatlessError::config_error_with_help(
                     format!("language name contains invalid characters: '{language}'"),
                     Some("Language names should contain only alphanumeric characters, hyphens, and underscores".to_string()),
@@ -181,7 +199,10 @@ impl BatlessConfig {
         if self.theme.is_empty() {
             return Err(BatlessError::config_error_with_help(
                 "theme cannot be empty".to_string(),
-                Some("Use --list-themes to see available themes, or try 'base16-ocean.dark'".to_string()),
+                Some(
+                    "Use --list-themes to see available themes, or try 'base16-ocean.dark'"
+                        .to_string(),
+                ),
             ));
         }
 
@@ -203,7 +224,10 @@ impl BatlessConfig {
                         "max_lines ({}) is much larger than what max_bytes ({}) would allow",
                         self.max_lines, max_bytes
                     ),
-                    Some("Consider adjusting either max_lines or max_bytes to be more balanced".to_string()),
+                    Some(
+                        "Consider adjusting either max_lines or max_bytes to be more balanced"
+                            .to_string(),
+                    ),
                 ));
             }
         }
@@ -243,14 +267,22 @@ impl BatlessConfig {
     pub fn from_file<P: AsRef<Path>>(path: P) -> BatlessResult<Self> {
         let content = fs::read_to_string(path.as_ref()).map_err(|e| {
             BatlessError::config_error_with_help(
-                format!("Failed to read config file '{}': {}", path.as_ref().display(), e),
+                format!(
+                    "Failed to read config file '{}': {}",
+                    path.as_ref().display(),
+                    e
+                ),
                 Some("Check that the file exists and has proper permissions".to_string()),
             )
         })?;
 
         let config: BatlessConfig = toml::from_str(&content).map_err(|e| {
             BatlessError::config_error_with_help(
-                format!("Failed to parse config file '{}': {}", path.as_ref().display(), e),
+                format!(
+                    "Failed to parse config file '{}': {}",
+                    path.as_ref().display(),
+                    e
+                ),
                 Some("Check the TOML syntax - use 'batless --help' for valid options".to_string()),
             )
         })?;
@@ -263,14 +295,22 @@ impl BatlessConfig {
     pub fn from_json_file<P: AsRef<Path>>(path: P) -> BatlessResult<Self> {
         let content = fs::read_to_string(path.as_ref()).map_err(|e| {
             BatlessError::config_error_with_help(
-                format!("Failed to read config file '{}': {}", path.as_ref().display(), e),
+                format!(
+                    "Failed to read config file '{}': {}",
+                    path.as_ref().display(),
+                    e
+                ),
                 Some("Check that the file exists and has proper permissions".to_string()),
             )
         })?;
 
         let config: BatlessConfig = serde_json::from_str(&content).map_err(|e| {
             BatlessError::config_error_with_help(
-                format!("Failed to parse config file '{}': {}", path.as_ref().display(), e),
+                format!(
+                    "Failed to parse config file '{}': {}",
+                    path.as_ref().display(),
+                    e
+                ),
                 Some("Check the JSON syntax - use 'batless --help' for valid options".to_string()),
             )
         })?;
@@ -290,7 +330,11 @@ impl BatlessConfig {
 
         fs::write(path.as_ref(), content).map_err(|e| {
             BatlessError::config_error_with_help(
-                format!("Failed to write config file '{}': {}", path.as_ref().display(), e),
+                format!(
+                    "Failed to write config file '{}': {}",
+                    path.as_ref().display(),
+                    e
+                ),
                 Some("Check that the directory exists and has write permissions".to_string()),
             )
         })
@@ -463,7 +507,7 @@ mod tests {
         let config = BatlessConfig::default()
             .with_max_lines(5000)
             .with_theme("monokai".to_string());
-        
+
         let toml_str = toml::to_string_pretty(&config).unwrap();
         assert!(toml_str.contains("max_lines = 5000"));
         assert!(toml_str.contains("theme = \"monokai\""));
@@ -478,7 +522,7 @@ mod tests {
         let config = BatlessConfig::default()
             .with_max_lines(3000)
             .with_include_tokens(true);
-        
+
         let json_str = serde_json::to_string_pretty(&config).unwrap();
         let deserialized: BatlessConfig = serde_json::from_str(&json_str).unwrap();
         assert_eq!(deserialized.max_lines, 3000);
@@ -506,14 +550,18 @@ mod tests {
     fn test_config_file_discovery() {
         let paths = BatlessConfig::find_config_files();
         assert!(!paths.is_empty());
-        assert!(paths.iter().any(|p| p.file_name() == Some(std::ffi::OsStr::new(".batlessrc"))));
-        assert!(paths.iter().any(|p| p.file_name() == Some(std::ffi::OsStr::new("batless.toml"))));
+        assert!(paths
+            .iter()
+            .any(|p| p.file_name() == Some(std::ffi::OsStr::new(".batlessrc"))));
+        assert!(paths
+            .iter()
+            .any(|p| p.file_name() == Some(std::ffi::OsStr::new("batless.toml"))));
     }
 
     #[test]
     fn test_load_from_toml_file() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let toml_content = r#"
 max_lines = 15000
@@ -534,8 +582,8 @@ summary_mode = true
 
     #[test]
     fn test_load_from_json_file() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let json_content = r#"{
   "max_lines": 8000,
@@ -556,8 +604,8 @@ summary_mode = true
 
     #[test]
     fn test_invalid_toml_config() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
+        use tempfile::NamedTempFile;
 
         let invalid_toml = r#"
 max_lines = "not_a_number"
@@ -623,7 +671,10 @@ max_lines = "not_a_number"
         let config = BatlessConfig::default().with_language(Some("rust lang".to_string()));
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("invalid characters"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("invalid characters"));
     }
 
     #[test]
@@ -637,11 +688,14 @@ max_lines = "not_a_number"
     #[test]
     fn test_validation_conflicting_limits() {
         let config = BatlessConfig::default()
-            .with_max_lines(1_000_000)  // Extremely large line limit
-            .with_max_bytes(Some(100));  // Very small byte limit
+            .with_max_lines(1_000_000) // Extremely large line limit
+            .with_max_bytes(Some(100)); // Very small byte limit
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("much larger than what max_bytes"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("much larger than what max_bytes"));
     }
 
     #[test]
@@ -651,7 +705,10 @@ max_lines = "not_a_number"
             .with_summary_mode(true);
         let result = config.validate();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("cannot both be enabled"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("cannot both be enabled"));
     }
 
     #[test]
