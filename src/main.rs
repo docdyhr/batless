@@ -1,7 +1,4 @@
-use batless::{
-    format_output, process_file, BatlessConfig, BatlessResult, LanguageDetector, OutputMode,
-    ThemeManager,
-};
+use batless::{BatlessConfig, BatlessResult, OutputMode};
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, shells::*};
 use is_terminal::IsTerminal;
@@ -179,14 +176,14 @@ fn run() -> BatlessResult<()> {
 
     // Handle list commands
     if args.list_languages {
-        for language in LanguageDetector::list_languages() {
+        for language in batless::LanguageDetector::list_languages() {
             println!("{language}");
         }
         return Ok(());
     }
 
     if args.list_themes {
-        for theme in ThemeManager::list_themes() {
+        for theme in batless::ThemeManager::list_themes() {
             println!("{theme}");
         }
         return Ok(());
@@ -199,14 +196,6 @@ fn run() -> BatlessResult<()> {
             Some("Specify a file to view, or use --help for more options".to_string()),
         )
     })?;
-
-    // Validate language if specified
-    if let Some(ref lang) = args.language {
-        LanguageDetector::validate_language(lang)?;
-    }
-
-    // Validate theme
-    ThemeManager::validate_theme(&args.theme)?;
 
     // Determine if we should use color
     let use_color = match args.color {
@@ -268,8 +257,14 @@ fn run() -> BatlessResult<()> {
     // Validate configuration
     config.validate()?;
 
+    // Validate language and theme just before processing (to avoid loading heavy syntax sets for fast operations)
+    if let Some(ref lang) = config.language {
+        batless::LanguageDetector::validate_language(lang)?;
+    }
+    batless::ThemeManager::validate_theme(&config.theme)?;
+
     // Process the file
-    let file_info = process_file(file_path, &config)?;
+    let file_info = batless::process_file(file_path, &config)?;
 
     // Format and output the result
 
@@ -279,7 +274,7 @@ fn run() -> BatlessResult<()> {
         return Ok(());
     }
 
-    let formatted_output = format_output(&file_info, file_path, &config, output_mode)?;
+    let formatted_output = batless::format_output(&file_info, file_path, &config, output_mode)?;
 
     // Print output with newline only for JSON mode to avoid shell prompt appearing
     if output_mode == OutputMode::Json {

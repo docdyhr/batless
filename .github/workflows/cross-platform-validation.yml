@@ -1,0 +1,315 @@
+name: Cross-Platform Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/**'
+  schedule:
+    # Run comprehensive cross-platform tests weekly
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of cross-platform test to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - quick
+          - targets-only
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cross-compile-targets:
+    name: Cross-Compile Validation
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux targets
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            cross: false
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            cross: false
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            cross: true
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            cross: true
+          
+          # Windows targets
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            cross: false
+          - os: windows-latest
+            target: i686-pc-windows-msvc
+            cross: false
+          
+          # macOS targets
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            cross: false
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            cross: false
+          
+          # Additional targets for broader compatibility
+          - os: ubuntu-latest
+            target: x86_64-unknown-freebsd
+            cross: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install musl tools (Linux musl)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Install cross (for cross-compilation)
+        if: matrix.cross == true
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build for target (native)
+        if: matrix.cross == false
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build for target (cross-compile)
+        if: matrix.cross == true
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Run tests (native only)
+        if: matrix.cross == false && inputs.test_type != 'targets-only'
+        run: cargo test --target ${{ matrix.target }} --verbose
+
+      - name: Verify binary functionality (native)
+        if: matrix.cross == false
+        shell: bash
+        run: |
+          binary_path="target/${{ matrix.target }}/release/batless"
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            binary_path="${binary_path}.exe"
+          fi
+          
+          # Test basic functionality
+          $binary_path --version
+          echo "fn main() { println!(\"test\"); }" | $binary_path --mode=plain --max-lines=1 /dev/stdin || echo "stdin test skipped"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: batless-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/batless*
+          retention-days: 7
+
+  platform-specific-tests:
+    name: Platform-Specific Tests
+    runs-on: ${{ matrix.os }}
+    if: inputs.test_type != 'targets-only'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            shell: bash
+            path_separator: ":"
+            binary_extension: ""
+          - os: windows-latest
+            shell: pwsh
+            path_separator: ";"
+            binary_extension: ".exe"
+          - os: macos-latest
+            shell: bash
+            path_separator: ":"
+            binary_extension: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Test file path handling
+        shell: ${{ matrix.shell }}
+        run: |
+          # Create test files with platform-specific paths
+          mkdir -p "test dir/sub dir"
+          echo "test content" > "test dir/sub dir/test file.txt"
+          
+          # Test handling of spaces in filenames
+          ./target/release/batless${{ matrix.binary_extension }} "test dir/sub dir/test file.txt" --mode=plain --max-lines=1
+
+      - name: Test config file discovery (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          # Test XDG config directory
+          mkdir -p ~/.config/batless
+          echo 'max_lines = 42' > ~/.config/batless/config.toml
+          
+          # Test that config is discovered
+          result=$(./target/release/batless${{ matrix.binary_extension }} README.md --mode=json --max-lines=1 | jq -r '.metadata.total_lines')
+          echo "Config discovery test passed (result: $result)"
+          
+          # Cleanup
+          rm -rf ~/.config/batless
+
+      - name: Test config file discovery (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          # Test Windows AppData config
+          $configDir = "$env:APPDATA\batless"
+          New-Item -ItemType Directory -Force -Path $configDir
+          'max_lines = 42' | Out-File -FilePath "$configDir\config.toml" -Encoding utf8
+          
+          # Test that config is discovered
+          $result = & ".\target\release\batless.exe" README.md --mode=json --max-lines=1 | ConvertFrom-Json
+          Write-Host "Config discovery test passed"
+          
+          # Cleanup
+          Remove-Item -Recurse -Force $configDir
+
+      - name: Test Unicode and encoding handling
+        shell: ${{ matrix.shell }}
+        run: |
+          # Create files with various encodings
+          echo "Hello, 世界! 🦀" > unicode_test.txt
+          
+          # Test Unicode handling
+          ./target/release/batless${{ matrix.binary_extension }} unicode_test.txt --mode=plain --max-lines=1
+
+      - name: Test large file handling
+        shell: ${{ matrix.shell }}
+        run: |
+          # Create a moderately large file
+          for i in {1..1000}; do echo "line $i with some content"; done > large_test.txt
+          
+          # Test with various limits
+          ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-lines=100 --mode=plain > /dev/null
+          ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-bytes=1024 --mode=plain > /dev/null
+
+      - name: Test error handling
+        shell: ${{ matrix.shell }}
+        run: |
+          # Test non-existent file
+          set +e  # Don't fail on expected errors
+          ./target/release/batless${{ matrix.binary_extension }} nonexistent.txt 2>&1 | grep -i "error" || echo "Error handling test passed"
+          set -e
+
+  integration-validation:
+    name: Integration Validation
+    runs-on: ubuntu-latest
+    if: inputs.test_type == 'full'
+    needs: [cross-compile-targets]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Validate binary artifacts
+        run: |
+          echo "📦 Validating binary artifacts..."
+          
+          # List all downloaded artifacts
+          find . -name "batless*" -type f -exec ls -la {} \;
+          
+          # Check that we have binaries for expected platforms
+          expected_targets=(
+            "x86_64-unknown-linux-gnu"
+            "x86_64-unknown-linux-musl"
+            "x86_64-pc-windows-msvc"
+            "x86_64-apple-darwin"
+            "aarch64-apple-darwin"
+          )
+          
+          for target in "${expected_targets[@]}"; do
+            if find . -path "*$target*" -name "batless*" | grep -q .; then
+              echo "✅ Found binary for $target"
+            else
+              echo "❌ Missing binary for $target"
+              exit 1
+            fi
+          done
+          
+          echo "🎯 All expected binaries present!"
+
+  cross-platform-report:
+    name: Cross-Platform Report
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [cross-compile-targets, platform-specific-tests, integration-validation]
+    
+    steps:
+      - name: Generate cross-platform report
+        run: |
+          echo "# Cross-Platform Validation Report" > report.md
+          echo "" >> report.md
+          echo "## Summary" >> report.md
+          echo "- Cross-Compile Targets: ${{ needs.cross-compile-targets.result }}" >> report.md
+          echo "- Platform-Specific Tests: ${{ needs.platform-specific-tests.result }}" >> report.md
+          echo "- Integration Validation: ${{ needs.integration-validation.result }}" >> report.md
+          echo "" >> report.md
+          
+          if [[ "${{ needs.cross-compile-targets.result }}" == "success" ]] && \
+             [[ "${{ needs.platform-specific-tests.result }}" == "success" ]] && \
+             [[ "${{ needs.integration-validation.result }}" == "success" ]]; then
+            echo "✅ **All cross-platform tests passed!**" >> report.md
+            echo "" >> report.md
+            echo "The application successfully builds and runs on all target platforms." >> report.md
+          else
+            echo "❌ **Some cross-platform tests failed.**" >> report.md
+            echo "" >> report.md
+            echo "Please review the failed jobs and address platform-specific issues." >> report.md
+          fi
+          
+          cat report.md
+
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

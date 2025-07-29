@@ -1,4 +1,4 @@
-use batless::{highlight_content, process_file, BatlessConfig};
+use batless::{highlight_content, process_file, BatlessConfig, LanguageDetector, ThemeManager};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::hint::black_box;
 use std::io::Write;
@@ -137,11 +137,66 @@ fn benchmark_max_lines_limits(c: &mut Criterion) {
     group.finish();
 }
 
+fn benchmark_startup_operations(c: &mut Criterion) {
+    let mut group = c.benchmark_group("startup_operations");
+
+    // Benchmark operations that should be fast and not load heavy syntax sets
+    group.bench_function("list_languages", |b| {
+        b.iter(|| black_box(LanguageDetector::list_languages()))
+    });
+
+    group.bench_function("list_themes", |b| {
+        b.iter(|| black_box(ThemeManager::list_themes()))
+    });
+
+    // Benchmark config loading with precedence
+    group.bench_function("config_default", |b| {
+        b.iter(|| black_box(BatlessConfig::default()))
+    });
+
+    group.bench_function("config_load_with_precedence", |b| {
+        b.iter(|| black_box(BatlessConfig::load_with_precedence().unwrap()))
+    });
+
+    // Benchmark validation operations
+    group.bench_function("validate_theme", |b| {
+        b.iter(|| black_box(ThemeManager::validate_theme("base16-ocean.dark").unwrap()))
+    });
+
+    group.bench_function("validate_language", |b| {
+        b.iter(|| black_box(LanguageDetector::validate_language("rust").unwrap()))
+    });
+
+    group.finish();
+}
+
+fn benchmark_config_operations(c: &mut Criterion) {
+    let mut group = c.benchmark_group("config_operations");
+
+    // Test config validation performance
+    let configs = vec![
+        ("default", BatlessConfig::default()),
+        ("with_limits", BatlessConfig::default().with_max_lines(5000).with_max_bytes(Some(1_000_000))),
+        ("with_summary", BatlessConfig::default().with_summary_mode(true)),
+        ("with_tokens", BatlessConfig::default().with_include_tokens(true)),
+    ];
+
+    for (name, config) in configs {
+        group.bench_function(name, |b| {
+            b.iter(|| black_box(config.validate().unwrap()))
+        });
+    }
+
+    group.finish();
+}
+
 criterion_group!(
     benches,
     benchmark_process_file,
     benchmark_highlight_content,
     benchmark_summary_mode,
-    benchmark_max_lines_limits
+    benchmark_max_lines_limits,
+    benchmark_startup_operations,
+    benchmark_config_operations
 );
 criterion_main!(benches);

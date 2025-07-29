@@ -9,7 +9,7 @@ use std::path::Path;
 use syntect::highlighting::ThemeSet;
 use syntect::parsing::SyntaxSet;
 
-// Cache syntax and theme sets for better performance
+// Cache syntax and theme sets for better performance - loaded only when needed
 lazy_static! {
     static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
     static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();

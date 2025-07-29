@@ -1,0 +1,116 @@
+name: Performance Regression Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'benches/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'benches/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  performance-check:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for comparison
+        
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+        
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Install criterion and dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y bc
+        
+    - name: Restore baseline benchmarks (if available)
+      id: restore-baseline
+      uses: actions/cache/restore@v4
+      with:
+        path: benchmark_baseline.txt
+        key: performance-baseline-${{ github.repository }}-${{ github.ref_name }}
+        restore-keys: |
+          performance-baseline-${{ github.repository }}-main
+          performance-baseline-${{ github.repository }}-
+          
+    - name: Build benchmarks
+      run: cargo build --release --benches
+      
+    - name: Run performance regression check
+      run: ./scripts/check_performance.sh
+      continue-on-error: true
+      id: perf-check
+      
+    - name: Save baseline for future runs (main branch only)
+      if: github.ref_name == 'main' && github.event_name == 'push'
+      uses: actions/cache/save@v4
+      with:
+        path: benchmark_baseline.txt
+        key: performance-baseline-${{ github.repository }}-${{ github.ref_name }}-${{ github.sha }}
+        
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: benchmark-results
+        path: |
+          benchmark_*.txt
+          target/criterion/
+        retention-days: 30
+        
+    - name: Comment on PR (if regression detected)
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## ⚠️ Performance Regression Detected
+            
+            The performance regression check has detected significant slowdowns in this PR.
+            
+            Please review the benchmark results in the workflow logs and consider optimizing the changes.
+            
+            **Threshold:** 25% performance degradation
+            **Action Required:** Review and optimize performance-critical code paths.
+            
+            View detailed results in the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
+          })
+          
+    - name: Fail workflow if regression detected
+      if: steps.perf-check.outcome == 'failure'
+      run: |
+        echo "❌ Performance regression detected - see logs above"
+        exit 1
