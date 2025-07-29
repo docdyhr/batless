@@ -194,9 +194,10 @@ impl BatlessConfig {
 
         // Check for reasonable limits combination
         if let Some(max_bytes) = self.max_bytes {
-            // Rough estimate: average line length of 80 characters
-            let estimated_lines_from_bytes = max_bytes / 80;
-            if self.max_lines > estimated_lines_from_bytes * 10 {
+            // Rough estimate: average line length of 20 characters (more conservative)
+            // Only warn if the mismatch is really extreme (more than 100x difference)
+            let estimated_lines_from_bytes = (max_bytes / 20).max(1); // At least 1 line
+            if self.max_lines > estimated_lines_from_bytes * 100 {
                 return Err(BatlessError::config_error_with_help(
                     format!(
                         "max_lines ({}) is much larger than what max_bytes ({}) would allow",
@@ -636,8 +637,8 @@ max_lines = "not_a_number"
     #[test]
     fn test_validation_conflicting_limits() {
         let config = BatlessConfig::default()
-            .with_max_lines(100_000)
-            .with_max_bytes(Some(1000));  // Very small byte limit with large line limit
+            .with_max_lines(1_000_000)  // Extremely large line limit
+            .with_max_bytes(Some(100));  // Very small byte limit
         let result = config.validate();
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("much larger than what max_bytes"));

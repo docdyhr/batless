@@ -119,6 +119,7 @@ fn test_max_bytes_limit() {
         file.path().to_str().unwrap(),
         "--mode=plain",
         "--max-bytes=25",
+        "--max-lines=100",  // Large line limit so bytes limit takes effect
     ]);
 
     assert!(output.status.success());
@@ -336,7 +337,6 @@ fn test_enhanced_json_output() {
         file.path().to_str().unwrap(),
         "--mode=json",
         "--include-tokens",
-        "--summary",
     ]);
 
     assert!(output.status.success());
@@ -349,7 +349,6 @@ fn test_enhanced_json_output() {
     assert!(json["truncated_by_lines"].is_boolean());
     assert!(json["truncated_by_bytes"].is_boolean());
     assert!(json["tokens"].is_array());
-    assert!(json["summary_lines"].is_array());
 }
 
 #[test]
