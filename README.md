@@ -23,12 +23,14 @@
 ## ✨ Features
 
 ### Non-Blocking Guarantees
+
 - 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
 - ⚡ **NEVER waits for input** - always streams output immediately
 - 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
 - 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
 
 ### Core Features
+
 - 🎨 **Syntax highlighting** for 100+ languages via syntect
 - 📊 **Multiple output modes**: plain, highlighted, JSON, summary
 - 🔍 **Language auto-detection** with manual override support
@@ -36,6 +38,7 @@
 - 💾 **Memory efficient** - true streaming, never loads full files
 
 ### Built for Automation
+
 - 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
 - 📋 **Summary mode** extracts functions, classes, imports only
 - 🔤 **Token extraction** for LLM context processing
@@ -47,6 +50,7 @@
 ## 🚀 Installation
 
 ### GitHub Releases (Recommended)
+
 Download pre-compiled binaries for your platform:
 
 ```bash
@@ -58,11 +62,13 @@ wget https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.1-x
 ```
 
 Available builds:
+
 - **Linux**: `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-gnu`
-- **macOS**: `x86_64-apple-darwin` (Intel), `aarch64-apple-darwin` (Apple Silicon)  
+- **macOS**: `x86_64-apple-darwin` (Intel), `aarch64-apple-darwin` (Apple Silicon)
 - **Windows**: `x86_64-pc-windows-msvc`
 
 ### Homebrew (macOS/Linux)
+
 ```bash
 # Add the tap (one-time setup)
 brew tap docdyhr/batless
@@ -77,12 +83,27 @@ brew install docdyhr/batless/batless
 **Homebrew Tap Repository**: [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
 
 ### From Crates.io
+
 ```bash
 # Install the latest version:
 cargo install batless
 ```
 
+### Docker (Containerized Environments)
+
+```bash
+# Quick syntax highlighting in any environment
+docker run --rm -v $(pwd):/workspace ghcr.io/docdyhr/batless:latest /workspace/src/main.rs
+
+# JSON output for CI/CD pipelines
+docker run --rm -v $(pwd):/workspace ghcr.io/docdyhr/batless:latest --mode=json /workspace/src/main.rs
+
+# Summary mode for AI code analysis
+docker run --rm -v $(pwd):/workspace ghcr.io/docdyhr/batless:latest --mode=summary /workspace/src/
+```
+
 ### From Source
+
 ```bash
 git clone https://github.com/docdyhr/batless.git
 cd batless
@@ -94,12 +115,14 @@ cargo build --release
 The [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless) tap provides the official Homebrew formula for `batless`.
 
 ### Features
+
 - ✅ **Automatically updated** with every release
 - ✅ **Comprehensive testing** included in formula
 - ✅ **Cross-platform** support (macOS & Linux)
 - ✅ **Zero maintenance** - formula stays in sync with releases
 
 ### Installation Commands
+
 ```bash
 # Method 1: Add tap first (recommended)
 brew tap docdyhr/batless
@@ -117,6 +140,7 @@ The formula automatically compiles from source using Rust, ensuring optimal perf
 ## 📖 Usage
 
 ### Basic Usage
+
 ```bash
 # View a file with syntax highlighting
 batless src/main.rs
@@ -129,6 +153,7 @@ batless --mode=json src/main.rs
 ```
 
 ### Limiting Output
+
 ```bash
 # Limit to first 50 lines
 batless --max-lines=50 large-file.py
@@ -141,6 +166,7 @@ batless --max-lines=100 --max-bytes=5000 file.txt
 ```
 
 ### Language and Syntax
+
 ```bash
 # Auto-detect language (default)
 batless script.py
@@ -153,6 +179,7 @@ batless --language=help
 ```
 
 ### Color and Themes
+
 ```bash
 # Control color output
 batless --color=always file.rs    # Force colors
@@ -172,12 +199,14 @@ batless --strip-ansi file.rs
 ```
 
 ### Enhanced JSON Mode Examples
+
 ```bash
 # Get structured file info with enhanced metadata
 batless --mode=json --max-lines=10 src/main.rs
 ```
 
 Output:
+
 ```json
 {
   "file": "src/main.rs",
@@ -195,6 +224,7 @@ Output:
 ```
 
 ### AI-Friendly Summary Mode
+
 ```bash
 # Extract only important code structures (perfect for AI context)
 batless --mode=summary src/main.rs
@@ -204,12 +234,14 @@ batless --mode=summary --max-lines=50 complex-file.py
 ```
 
 ### Advanced JSON with Tokens and Summary
+
 ```bash
 # Full AI analysis with tokens and code summary
 batless --mode=json --include-tokens --summary src/main.rs
 ```
 
 Enhanced output:
+
 ```json
 {
   "file": "src/main.rs",
@@ -225,9 +257,72 @@ Enhanced output:
 }
 ```
 
+## 🐳 Docker Usage
+
+### Container-Based Code Analysis
+
+```bash
+# Basic syntax highlighting
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/docdyhr/batless:latest /workspace/src/main.rs
+
+# JSON output for CI/CD integration
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/docdyhr/batless:latest --mode=json /workspace/src/main.rs
+
+# AI-friendly summary extraction
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/docdyhr/batless:latest --mode=summary /workspace/src/
+```
+
+### CI/CD Pipeline Integration
+
+```yaml
+# GitHub Actions example
+- name: Analyze code structure
+  run: |
+    docker run --rm -v ${{ github.workspace }}:/workspace \
+      ghcr.io/docdyhr/batless:latest \
+      --mode=json --max-lines=100 /workspace/src/main.rs | \
+      jq '.summary_lines | length'
+
+# GitLab CI example
+analyze_code:
+  image: docker:latest
+  script:
+    - docker run --rm -v $PWD:/workspace
+        ghcr.io/docdyhr/batless:latest
+        --mode=summary /workspace/src/
+```
+
+### Kubernetes Jobs
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: code-analysis
+spec:
+  template:
+    spec:
+      containers:
+      - name: batless
+        image: ghcr.io/docdyhr/batless:latest
+        args: ["--mode=json", "/workspace/src/main.rs"]
+        volumeMounts:
+        - name: source-code
+          mountPath: /workspace
+      volumes:
+      - name: source-code
+        hostPath:
+          path: /path/to/source
+      restartPolicy: Never
+```
+
 ## 🤖 AI Assistant Integration
 
 ### Claude Code Assistant
+
 ```bash
 # Get code structure for AI analysis
 batless --mode=summary --max-lines=50 complex-file.py
@@ -240,6 +335,7 @@ batless --list-languages | grep -i python
 ```
 
 ### CI/CD Pipelines
+
 ```bash
 # Show code during build failures (non-blocking)
 batless --color=never --max-lines=30 failing-test.js
@@ -254,6 +350,7 @@ batless --mode=json src/main.rs | jq '{language, encoding, total_lines, truncate
 ## 🎨 Available Themes
 
 Popular themes include:
+
 - `base16-ocean.dark` (default)
 - `InspiredGitHub`
 - `Solarized (dark)`
@@ -262,6 +359,7 @@ Popular themes include:
 - `1337`
 
 View all available themes:
+
 ```bash
 batless --list-themes
 ```
@@ -269,6 +367,7 @@ batless --list-themes
 ## 🗣️ Supported Languages
 
 Support for 100+ languages including:
+
 - Rust, Python, JavaScript, TypeScript
 - C, C++, Java, Go, Swift
 - HTML, CSS, JSON, YAML, TOML
@@ -276,6 +375,7 @@ Support for 100+ languages including:
 - And many more...
 
 View all supported languages:
+
 ```bash
 batless --list-languages
 ```
@@ -285,6 +385,7 @@ batless --list-languages
 `batless` supports flexible configuration through files and command-line arguments, with a clear precedence hierarchy:
 
 **Configuration Precedence** (highest to lowest):
+
 1. Command-line arguments
 2. Project-level config (`.batlessrc`, `batless.toml`)
 3. User home config (`~/.batlessrc`, `~/.config/batless/config.toml`)
@@ -293,6 +394,7 @@ batless --list-languages
 ### Configuration Files
 
 #### TOML Format (Recommended)
+
 Create `batless.toml` in your project root or `~/.config/batless/config.toml`:
 
 ```toml
@@ -322,6 +424,7 @@ summary_mode = true
 ```
 
 #### JSON Format (.batlessrc)
+
 Create `.batlessrc` in your project root or home directory:
 
 ```json
@@ -337,7 +440,9 @@ Create `.batlessrc` in your project root or home directory:
 ### Configuration Examples
 
 #### Project-Specific Settings
+
 For a Rust project, create `batless.toml`:
+
 ```toml
 # Optimize for Rust development
 max_lines = 20000
@@ -348,7 +453,9 @@ use_color = true
 ```
 
 #### AI Assistant Profile
+
 For AI code analysis, create `.batlessrc`:
+
 ```json
 {
   "max_lines": 5000,
@@ -360,7 +467,9 @@ For AI code analysis, create `.batlessrc`:
 ```
 
 #### CI/CD Pipeline Settings
+
 For automation environments:
+
 ```toml
 max_lines = 1000
 use_color = false
@@ -369,6 +478,7 @@ summary_mode = false
 ```
 
 ### Custom Config File
+
 Use `--config` to specify a custom configuration file:
 
 ```bash
@@ -380,6 +490,7 @@ batless --config team-settings.toml --max-lines 500 src/lib.rs
 ```
 
 ### Configuration Discovery
+
 `batless` automatically searches for config files in this order:
 
 1. **Project level**: `.batlessrc`, `batless.toml`
@@ -387,6 +498,7 @@ batless --config team-settings.toml --max-lines 500 src/lib.rs
 3. **System level**: System config directories
 
 ### AI Tool Profiles
+
 Instead of manual configuration, use built-in AI profiles:
 
 ```bash
@@ -404,6 +516,7 @@ batless --profile assistant src/main.rs
 ```
 
 ### Validation and Help
+
 `batless` validates all configuration and provides helpful error messages:
 
 ```bash
@@ -418,6 +531,7 @@ Common configuration patterns and their use cases are documented in the [project
 ## 🆚 Why batless instead of bat?
 
 ### When to use `batless`
+
 - ✅ **CI/CD pipelines** - Guaranteed to never hang waiting for input
 - ✅ **AI assistants** - Clean output with JSON mode and code summaries
 - ✅ **Automation scripts** - Predictable, streaming behavior
@@ -425,6 +539,7 @@ Common configuration patterns and their use cases are documented in the [project
 - ✅ **Headless environments** - No terminal detection or pager issues
 
 ### When to use `bat`
+
 - ✅ **Interactive terminal use** - Rich features like paging and git integration
 - ✅ **Human code review** - Line numbers, file headers, and decorations
 - ✅ **Git workflows** - Shows inline diffs and modifications
@@ -451,6 +566,7 @@ Common configuration patterns and their use cases are documented in the [project
 ## 🛠️ Development
 
 ### Running Tests
+
 ```bash
 # Run all tests
 cargo test
@@ -466,6 +582,7 @@ cargo bench
 ```
 
 ### Building & Quality Checks
+
 ```bash
 # Build release
 cargo build --release
@@ -485,10 +602,11 @@ cargo llvm-cov --html
 ```
 
 ### Security & Testing
+
 This project maintains high security and quality standards:
 
 - ✅ **90%+ test coverage** with unit, integration, and property-based tests
-- ✅ **Daily security audits** with automated vulnerability scanning  
+- ✅ **Daily security audits** with automated vulnerability scanning
 - ✅ **Fuzz testing** for crash resistance and input validation
 - ✅ **Memory safety** verification with Valgrind
 - ✅ **Supply chain security** with OSSF Scorecard monitoring
@@ -499,6 +617,7 @@ See [SECURITY_TESTING.md](SECURITY_TESTING.md) for detailed security measures.
 ## 📊 Performance
 
 `batless` is designed for speed and low memory usage:
+
 - **Streaming**: Never loads entire files into memory
 - **Fast startup**: Cached syntax sets and optimized loading
 - **Efficient highlighting**: Pre-loaded syntax and theme sets
@@ -506,6 +625,7 @@ See [SECURITY_TESTING.md](SECURITY_TESTING.md) for detailed security measures.
 - **Memory efficient**: Constant memory usage regardless of file size
 
 Enhanced benchmarks on a 10MB Python file:
+
 ```
 batless (optimized): 95ms (streaming + cached)
 batless (summary): 45ms (structure only)
@@ -532,6 +652,7 @@ This repository uses branch protection rules to ensure code quality and security
 - **GPG signed commits recommended** - For authenticity verification
 
 #### Quick Setup
+
 ```bash
 # Setup branch protection (one-time)
 gh auth login
@@ -542,6 +663,7 @@ gh auth login
 ```
 
 #### Development Workflow
+
 ```bash
 # 1. Create feature branch
 git checkout -b feature/my-feature
@@ -569,6 +691,7 @@ This project features fully automated releases and Homebrew tap updates:
 - **Zero Maintenance**: Formula SHA256 hashes and versions are calculated and updated automatically
 
 #### Release Process
+
 ```bash
 # Create and push a new tag - everything else is automated
 git tag v0.1.6
@@ -585,6 +708,7 @@ git push origin v0.1.6
 See [`docs/HOMEBREW_AUTOMATION.md`](docs/HOMEBREW_AUTOMATION.md) for technical details.
 
 ### Development Setup
+
 ```bash
 git clone https://github.com/docdyhr/batless.git
 cd batless
