@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This release represents a major milestone in batless development, introducing comprehensive AI integration features that make batless the premier tool for AI-assisted code analysis.
 
 #### Added
+
 - **🔢 SummaryLevel Enum System**: Granular control over summary detail levels
   - `--summary-level <LEVEL>`: Choose from none/minimal/standard/detailed
   - Replaces boolean summary mode with fine-grained control
@@ -35,21 +36,25 @@ This release represents a major milestone in batless development, introducing co
   - Detailed validation error messages with helpful suggestions
 
 #### Enhanced
+
 - **AI Profile System**: All profiles now use new SummaryLevel enum
 - **CLI Integration**: 7 new flags seamlessly integrated with existing interface
 - **Testing**: 2 new tests added (now 145 total), all passing
 - **Error Handling**: Enhanced JSON validation with specific error messages
 
 #### Technical
+
 - **New Modules**: `token_counter.rs` (416 lines) and `json_schema.rs` (400+ lines)
 - **Performance**: Minimal overhead added, startup time maintained under 5ms
 - **Code Quality**: Zero build warnings, comprehensive test coverage
 - **Backward Compatibility**: All existing functionality preserved
 
 ### Breaking Changes
+
 - None - this release maintains full backward compatibility
 
 ### Migration Guide
+
 - Existing users can immediately benefit from new features without any changes
 - Consider migrating from `--summary` to `--summary-level standard` for future compatibility
 - New JSON schema validation helps ensure AI tool compatibility
@@ -57,10 +62,11 @@ This release represents a major milestone in batless development, introducing co
 ## [0.1.5] - 2025-01-28
 
 ### Added
+
 - **Shell completions** for bash, zsh, fish, and PowerShell (`--generate-completions` flag)
 - **AI tool presets** via `--profile` flag with optimized configurations:
   - `claude`: 4K lines, summary mode for Claude's context window
-  - `copilot`: 2K lines, JSON + tokens for GitHub Copilot integration  
+  - `copilot`: 2K lines, JSON + tokens for GitHub Copilot integration
   - `chatgpt`: 3K lines, JSON + tokens for OpenAI ChatGPT
   - `assistant`: 5K lines, summary mode for general AI assistants
 - **Enhanced error messages** with contextual help and suggestions:
@@ -88,6 +94,7 @@ This release represents a major milestone in batless development, introducing co
 - Shell completions for bash, zsh, fish, and PowerShell
 
 ### Changed
+
 - Refactored monolithic `lib.rs` (595 lines) into focused modules
 - Updated dependency configuration to eliminate security vulnerabilities
 - Fixed all clippy warnings (25+ style and performance improvements)
@@ -95,6 +102,7 @@ This release represents a major milestone in batless development, introducing co
 - Enhanced code consistency across all modules
 
 ### Fixed
+
 - Unused import warnings in formatter module
 - Clippy warnings for uninlined format arguments
 - Code style inconsistencies across modules
@@ -110,36 +118,43 @@ This release represents a major milestone in batless development, introducing co
 - Fixed truncation handling to properly report line vs byte limits
 
 ### Security
+
 - Removed indirect dependency on unmaintained `yaml-rust` crate
 - Updated syntect dependency to use minimal feature set without YAML loading
 - Enhanced input validation and error handling throughout the codebase
 - Added comprehensive test coverage including property-based tests
 
 ### Performance
+
 - Maintained streaming architecture while improving modularity
 - Optimized syntax highlighting with selective feature loading
 - Enhanced caching strategies for repeated file processing
 - Reduced memory footprint through better resource management
 
 ### Technical Debt Resolution
+
 - Code complexity reduced from single 595-line file to 9 focused modules
 - Test coverage expanded from basic integration tests to 107 unit tests
 - Error handling improved from generic errors to 11 specific error types
 - Documentation enhanced with comprehensive inline comments
 - Build warnings eliminated and code quality improved
+
 ## [0.1.4] - 2025-07-26
 
 ### Added
+
 - PR-based release workflow that respects branch protection rules
 - Comprehensive development guide with release process documentation
 - Benchmark files and performance test results
 
 ### Changed
+
 - Updated release process to use PRs instead of direct main branch pushes
 - Enhanced CLAUDE.md with development workflow guidelines
 - Improved CI/CD automation with branch protection compliance
 
 ### Fixed
+
 - Release workflow failures due to branch protection rules
 - Cargo.lock tracking for binary crate reproducible builds
 - Missing GH_TOKEN in GitHub Actions workflows
@@ -147,29 +162,34 @@ This release represents a major milestone in batless development, introducing co
 ## [0.1.3] - 2025-07-25
 
 ### Added
+
 - Manual workflow dispatch system for granular CI/CD control
 - Repository health check automation with issue creation
 - Comprehensive performance benchmarking with regression detection
 - Enhanced dependency management with grouped Dependabot updates
 
 ### Changed
+
 - Optimized CI/CD workflows with consolidated caching strategy
 - Enhanced error handling with graceful failures and proper timeouts
 - Updated security tools with locked dependencies and latest versions
 - Improved release process with retry logic and better artifact management
 
 ### Fixed
+
 - Replaced deprecated `actions/upload-release-asset@v1` with modern alternatives
 - Fixed caching inefficiencies with restore keys and matrix strategy support
 - Enhanced workflow stability with better external dependency handling
 
 ### Security
+
 - Updated OSSF Scorecard to latest version with proper token handling
 - Enhanced security audit workflows with better reporting
 - Replaced unmaintained `atty` dependency with `is-terminal` to fix RUSTSEC-2024-0375 and RUSTSEC-2021-0145
 - Updated author information in Cargo.toml
 
 ### Performance
+
 - Implemented comprehensive benchmarking suite with criterion
 - Added performance regression detection in CI/CD
 - Performance baseline documentation in `docs/PERFORMANCE_BASELINE.md`
@@ -177,21 +197,25 @@ This release represents a major milestone in batless development, introducing co
 ## [0.1.1] - 2025-07-23
 
 ### Added
+
 - Comprehensive release infrastructure with GitHub Actions
-- Cross-platform binary builds (Linux, macOS, Windows) 
+- Cross-platform binary builds (Linux, macOS, Windows)
 - Automated Homebrew tap updates
 - Enhanced CI/CD pipeline for releases
 
 ### Changed
+
 - Replaced unmaintained `atty` dependency with `is-terminal` for better security
 - Simplified release workflow for faster build times
 - Improved release automation scripts
 
 ### Fixed
+
 - Security vulnerability in dependency chain
 - Release workflow compatibility issues
 
 ### Infrastructure
+
 - Set up automated crates.io publishing
 - Added cross-platform binary distribution
 - Enhanced security scanning and dependency management
@@ -199,12 +223,13 @@ This release represents a major milestone in batless development, introducing co
 ## [0.1.0] - 2025-07-22
 
 ### Added
+
 - 🎯 **Core batless functionality** - non-blocking code viewer for AI and automation
 - 🎨 **Syntax highlighting** for 100+ programming languages via syntect
 - 📊 **Multiple output modes**: plain, highlight, JSON, and summary
 - 🤖 **AI-optimized features**:
   - Summary mode extracts functions, classes, imports
-  - Token extraction for LLM context processing  
+  - Token extraction for LLM context processing
   - JSON output with metadata and structure
 - ⚡ **Performance features**:
   - Smart file limiting by lines and bytes
@@ -222,6 +247,7 @@ This release represents a major milestone in batless development, introducing co
   - GitHub Actions CI/CD pipeline
 
 ### Features for AI Assistants
+
 - Always non-blocking output (never hangs or waits for input)
 - Clean, predictable output format
 - JSON mode for structured data extraction
@@ -229,6 +255,7 @@ This release represents a major milestone in batless development, introducing co
 - No decorations or interactive elements
 
 ### Features for CI/CD
+
 - Guaranteed streaming output
 - Configurable color control for different environments
 - Error handling that doesn't break pipelines
@@ -236,6 +263,7 @@ This release represents a major milestone in batless development, introducing co
 - Single binary with no external dependencies
 
 ### Technical Details
+
 - Built with Rust for performance and safety
 - Uses syntect for syntax highlighting
 - Clap for CLI argument parsing
@@ -244,6 +272,7 @@ This release represents a major milestone in batless development, introducing co
 - Fast startup time with lazy loading
 
 ### Comparison with `bat`
+
 - ✅ Never blocks (unlike `bat` which can use `less`)
 - ✅ JSON output mode (not available in `bat`)
 - ✅ Byte limiting support (not in `bat`)

@@ -1,6 +1,6 @@
 use batless::{
-    BatlessConfig, BatlessResult, OutputMode, SummaryLevel, 
-    TokenCounter, AiModel, JsonSchemaValidator
+    AiModel, BatlessConfig, BatlessResult, JsonSchemaValidator, OutputMode, SummaryLevel,
+    TokenCounter,
 };
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, shells::*};
@@ -261,7 +261,9 @@ fn run() -> BatlessResult<()> {
             }
             None => {
                 eprintln!("Error: Unknown schema format '{}'", format);
-                eprintln!("Available schemas: file_info, json_output, token_count, processing_stats");
+                eprintln!(
+                    "Available schemas: file_info, json_output, token_count, processing_stats"
+                );
                 std::process::exit(1);
             }
         }
@@ -402,7 +404,8 @@ fn run() -> BatlessResult<()> {
     let final_file_info = if args.fit_context {
         let content = file_info.lines.join("\n");
         let counter = TokenCounter::new(args.ai_model.into());
-        let (truncated_content, was_truncated) = counter.truncate_to_fit(&content, args.prompt_tokens);
+        let (truncated_content, was_truncated) =
+            counter.truncate_to_fit(&content, args.prompt_tokens);
 
         if was_truncated {
             println!("📐 Context Fitting Applied:");
@@ -414,7 +417,8 @@ fn run() -> BatlessResult<()> {
             println!();
 
             // Create new FileInfo with truncated content
-            let truncated_lines: Vec<String> = truncated_content.lines().map(|s| s.to_string()).collect();
+            let truncated_lines: Vec<String> =
+                truncated_content.lines().map(|s| s.to_string()).collect();
             file_info
                 .with_lines(truncated_lines)
                 .with_truncation(true, false, false) // Mark as truncated, but not by normal limits
@@ -433,7 +437,8 @@ fn run() -> BatlessResult<()> {
         return Ok(());
     }
 
-    let formatted_output = batless::format_output(&final_file_info, file_path, &config, output_mode)?;
+    let formatted_output =
+        batless::format_output(&final_file_info, file_path, &config, output_mode)?;
 
     // Validate JSON output if requested
     if args.validate_json && output_mode == OutputMode::Json {

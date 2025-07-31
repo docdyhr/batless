@@ -24,10 +24,16 @@ impl JsonSchemaValidator {
 
     /// Load all built-in schemas for different output modes
     fn load_builtin_schemas(&mut self) {
-        self.schemas.insert("file_info".to_string(), self.file_info_schema());
-        self.schemas.insert("json_output".to_string(), self.json_output_schema());
-        self.schemas.insert("token_count".to_string(), self.token_count_schema());
-        self.schemas.insert("processing_stats".to_string(), self.processing_stats_schema());
+        self.schemas
+            .insert("file_info".to_string(), self.file_info_schema());
+        self.schemas
+            .insert("json_output".to_string(), self.json_output_schema());
+        self.schemas
+            .insert("token_count".to_string(), self.token_count_schema());
+        self.schemas.insert(
+            "processing_stats".to_string(),
+            self.processing_stats_schema(),
+        );
     }
 
     /// Validate JSON against a specific schema
@@ -35,24 +41,30 @@ impl JsonSchemaValidator {
         let schema = self.schemas.get(schema_name).ok_or_else(|| {
             BatlessError::config_error_with_help(
                 format!("Unknown schema: {}", schema_name),
-                Some("Available schemas: file_info, json_output, token_count, processing_stats".to_string()),
+                Some(
+                    "Available schemas: file_info, json_output, token_count, processing_stats"
+                        .to_string(),
+                ),
             )
         })?;
 
         self.validate_against_schema(json_value, schema)
-            .map_err(|e| BatlessError::config_error_with_help(
-                format!("JSON validation failed for schema '{}': {}", schema_name, e),
-                Some("Check the JSON output format matches the expected schema".to_string()),
-            ))
+            .map_err(|e| {
+                BatlessError::config_error_with_help(
+                    format!("JSON validation failed for schema '{}': {}", schema_name, e),
+                    Some("Check the JSON output format matches the expected schema".to_string()),
+                )
+            })
     }
 
     /// Validate JSON string against a schema
     pub fn validate_json_string(&self, schema_name: &str, json_str: &str) -> BatlessResult<()> {
-        let json_value: Value = serde_json::from_str(json_str)
-            .map_err(|e| BatlessError::config_error_with_help(
+        let json_value: Value = serde_json::from_str(json_str).map_err(|e| {
+            BatlessError::config_error_with_help(
                 format!("Invalid JSON: {}", e),
                 Some("Ensure the JSON is properly formatted".to_string()),
-            ))?;
+            )
+        })?;
 
         self.validate(schema_name, &json_value)
     }
@@ -86,7 +98,8 @@ impl JsonSchemaValidator {
                 }
 
                 if let Some(required) = schema_obj.get("required") {
-                    if let (Value::Object(value_obj), Value::Array(req_fields)) = (value, required) {
+                    if let (Value::Object(value_obj), Value::Array(req_fields)) = (value, required)
+                    {
                         for field in req_fields {
                             if let Value::String(field_name) = field {
                                 if !value_obj.contains_key(field_name) {
@@ -111,11 +124,16 @@ impl JsonSchemaValidator {
                     return Ok(());
                 }
             }
-            let type_names: Vec<String> = types.iter()
+            let type_names: Vec<String> = types
+                .iter()
                 .filter_map(|v| v.as_str())
                 .map(|s| s.to_string())
                 .collect();
-            return Err(format!("Type mismatch: expected one of {:?}, got {}", type_names, self.get_value_type(value)));
+            return Err(format!(
+                "Type mismatch: expected one of {:?}, got {}",
+                type_names,
+                self.get_value_type(value)
+            ));
         }
 
         let expected_type = schema_type.as_str().unwrap_or("unknown");
@@ -132,7 +150,11 @@ impl JsonSchemaValidator {
         };
 
         if !matches {
-            return Err(format!("Type mismatch: expected {}, got {}", expected_type, self.get_value_type(value)));
+            return Err(format!(
+                "Type mismatch: expected {}, got {}",
+                expected_type,
+                self.get_value_type(value)
+            ));
         }
 
         Ok(())
@@ -276,12 +298,15 @@ pub fn validate_batless_output(json_str: &str) -> BatlessResult<()> {
 /// Get the JSON schema for a specific output format
 pub fn get_json_schema(schema_name: &str) -> BatlessResult<Value> {
     let validator = JsonSchemaValidator::new();
-    validator.get_schema(schema_name)
-        .cloned()
-        .ok_or_else(|| BatlessError::config_error_with_help(
+    validator.get_schema(schema_name).cloned().ok_or_else(|| {
+        BatlessError::config_error_with_help(
             format!("Schema '{}' not found", schema_name),
-            Some(format!("Available schemas: {}", validator.schema_names().join(", "))),
-        ))
+            Some(format!(
+                "Available schemas: {}",
+                validator.schema_names().join(", ")
+            )),
+        )
+    })
 }
 
 #[cfg(test)]
@@ -361,7 +386,9 @@ mod tests {
             "context_usage_percent": 12.5
         });
 
-        assert!(validator.validate("token_count", &valid_token_count).is_ok());
+        assert!(validator
+            .validate("token_count", &valid_token_count)
+            .is_ok());
     }
 
     #[test]
@@ -386,7 +413,9 @@ mod tests {
             "context_usage_percent": 12.5
         }"#;
 
-        assert!(validator.validate_json_string("token_count", json_str).is_ok());
+        assert!(validator
+            .validate_json_string("token_count", json_str)
+            .is_ok());
     }
 
     #[test]
