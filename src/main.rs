@@ -208,10 +208,14 @@ impl From<CliSummaryLevel> for SummaryLevel {
 enum CliAiModel {
     /// OpenAI GPT-4 family
     Gpt4,
+    /// OpenAI GPT-4 Turbo with enhanced capabilities
+    Gpt4Turbo,
     /// OpenAI GPT-3.5 family
     Gpt35,
     /// Anthropic Claude family
     Claude,
+    /// Anthropic Claude-3.5 Sonnet with enhanced capabilities
+    Claude35Sonnet,
     /// Generic model estimation
     Generic,
 }
@@ -220,8 +224,10 @@ impl From<CliAiModel> for AiModel {
     fn from(model: CliAiModel) -> Self {
         match model {
             CliAiModel::Gpt4 => AiModel::Gpt4,
+            CliAiModel::Gpt4Turbo => AiModel::Gpt4Turbo,
             CliAiModel::Gpt35 => AiModel::Gpt35,
             CliAiModel::Claude => AiModel::Claude,
+            CliAiModel::Claude35Sonnet => AiModel::Claude35Sonnet,
             CliAiModel::Generic => AiModel::Generic,
         }
     }

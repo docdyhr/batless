@@ -14,10 +14,14 @@ use serde::{Deserialize, Serialize};
 pub enum AiModel {
     /// OpenAI GPT-4 family (including GPT-4 Turbo)
     Gpt4,
+    /// OpenAI GPT-4 Turbo with enhanced capabilities
+    Gpt4Turbo,
     /// OpenAI GPT-3.5 family
     Gpt35,
-    /// Anthropic Claude family (Claude-3, Claude-3.5)
+    /// Anthropic Claude-3 family
     Claude,
+    /// Anthropic Claude-3.5 Sonnet with enhanced capabilities
+    Claude35Sonnet,
     /// Generic model using simple word-based estimation
     Generic,
 }
@@ -26,11 +30,15 @@ impl AiModel {
     /// Parse model from string
     pub fn parse(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
-            "gpt4" | "gpt-4" | "gpt-4-turbo" => Ok(Self::Gpt4),
+            "gpt4" | "gpt-4" => Ok(Self::Gpt4),
+            "gpt4-turbo" | "gpt-4-turbo" | "gpt4turbo" => Ok(Self::Gpt4Turbo),
             "gpt35" | "gpt-3.5" | "gpt-3.5-turbo" => Ok(Self::Gpt35),
-            "claude" | "claude-3" | "claude-3.5" => Ok(Self::Claude),
+            "claude" | "claude-3" => Ok(Self::Claude),
+            "claude-3.5" | "claude-3.5-sonnet" | "claude35" | "claude35sonnet" => {
+                Ok(Self::Claude35Sonnet)
+            }
             "generic" => Ok(Self::Generic),
-            _ => Err(format!("Unknown AI model: {}", s)),
+            _ => Err(format!("Unknown AI model: {s}")),
         }
     }
 
@@ -38,8 +46,10 @@ impl AiModel {
     pub const fn as_str(&self) -> &'static str {
         match self {
             Self::Gpt4 => "gpt-4",
+            Self::Gpt4Turbo => "gpt-4-turbo",
             Self::Gpt35 => "gpt-3.5",
             Self::Claude => "claude",
+            Self::Claude35Sonnet => "claude-3.5-sonnet",
             Self::Generic => "generic",
         }
     }
@@ -47,19 +57,21 @@ impl AiModel {
     /// Get approximate context window size for this model
     pub const fn context_window(&self) -> usize {
         match self {
-            Self::Gpt4 => 128_000,   // GPT-4 Turbo
-            Self::Gpt35 => 16_384,   // GPT-3.5 Turbo
-            Self::Claude => 200_000, // Claude-3.5 Sonnet
-            Self::Generic => 8_192,  // Conservative default
+            Self::Gpt4 => 128_000,           // GPT-4 Turbo
+            Self::Gpt4Turbo => 128_000,      // GPT-4 Turbo (same as GPT-4)
+            Self::Gpt35 => 16_384,           // GPT-3.5 Turbo
+            Self::Claude => 200_000,         // Claude-3
+            Self::Claude35Sonnet => 200_000, // Claude-3.5 Sonnet (same as Claude-3)
+            Self::Generic => 8_192,          // Conservative default
         }
     }
 
     /// Get tokens per word ratio (approximate)
     fn tokens_per_word(&self) -> f64 {
         match self {
-            Self::Gpt4 | Self::Gpt35 => 1.3, // GPT models: ~1.3 tokens per word
-            Self::Claude => 1.2,             // Claude: slightly more efficient
-            Self::Generic => 1.5,            // Conservative estimate
+            Self::Gpt4 | Self::Gpt4Turbo | Self::Gpt35 => 1.3, // GPT models: ~1.3 tokens per word
+            Self::Claude | Self::Claude35Sonnet => 1.2,        // Claude: slightly more efficient
+            Self::Generic => 1.5,                              // Conservative estimate
         }
     }
 }
@@ -290,8 +302,10 @@ impl TokenCounter {
     /// Estimate tokens based on model-specific patterns
     fn estimate_tokens(&self, text: &str, words: usize) -> usize {
         match self.model {
-            AiModel::Gpt4 | AiModel::Gpt35 => self.estimate_gpt_tokens(text, words),
-            AiModel::Claude => self.estimate_claude_tokens(text, words),
+            AiModel::Gpt4 | AiModel::Gpt4Turbo | AiModel::Gpt35 => {
+                self.estimate_gpt_tokens(text, words)
+            }
+            AiModel::Claude | AiModel::Claude35Sonnet => self.estimate_claude_tokens(text, words),
             AiModel::Generic => self.estimate_generic_tokens(words),
         }
     }
@@ -519,5 +533,78 @@ mod tests {
         assert!(word_ratio > 0.5 && word_ratio < 2.0,
                "Word count estimation should be within reasonable range. Expected: {}, Got: {}, Ratio: {:.2}",
                expected_words, count.words, word_ratio);
+    }
+
+    #[test]
+    fn test_new_ai_models() {
+        // Test GPT-4 Turbo
+        let gpt4_turbo = TokenCounter::new(AiModel::Gpt4Turbo);
+        assert_eq!(gpt4_turbo.model(), AiModel::Gpt4Turbo);
+        assert_eq!(gpt4_turbo.model().context_window(), 128_000);
+        assert_eq!(gpt4_turbo.model().as_str(), "gpt-4-turbo");
+
+        // Test Claude-3.5 Sonnet
+        let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
+        assert_eq!(claude35.model(), AiModel::Claude35Sonnet);
+        assert_eq!(claude35.model().context_window(), 200_000);
+        assert_eq!(claude35.model().as_str(), "claude-3.5-sonnet");
+
+        // Test parsing
+        assert_eq!(AiModel::parse("gpt-4-turbo").unwrap(), AiModel::Gpt4Turbo);
+        assert_eq!(AiModel::parse("claude-3.5-sonnet").unwrap(), AiModel::Claude35Sonnet);
+    }
+
+    #[test]
+    fn test_new_models_token_estimation() {
+        let test_text = "fn main() {\n    println!(\"Hello, world!\");\n}";
+
+        // Test GPT-4 Turbo token counting
+        let gpt4_turbo = TokenCounter::new(AiModel::Gpt4Turbo);
+        let gpt4_turbo_count = gpt4_turbo.count_tokens(test_text);
+        assert!(gpt4_turbo_count.tokens > 0);
+        assert_eq!(gpt4_turbo_count.model, AiModel::Gpt4Turbo);
+
+        // Test Claude-3.5 Sonnet token counting
+        let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
+        let claude35_count = claude35.count_tokens(test_text);
+        assert!(claude35_count.tokens > 0);
+        assert_eq!(claude35_count.model, AiModel::Claude35Sonnet);
+
+        // Compare with original models - should use similar estimation patterns
+        let gpt4 = TokenCounter::new(AiModel::Gpt4);
+        let gpt4_count = gpt4.count_tokens(test_text);
+        
+        let claude = TokenCounter::new(AiModel::Claude);
+        let claude_count = claude.count_tokens(test_text);
+
+        // GPT-4 Turbo should estimate similarly to GPT-4
+        assert_eq!(gpt4_turbo_count.tokens, gpt4_count.tokens);
+        
+        // Claude-3.5 Sonnet should estimate similarly to Claude
+        assert_eq!(claude35_count.tokens, claude_count.tokens);
+    }
+
+    #[test]
+    fn test_new_models_context_fitting() {
+        let test_text = "word ".repeat(1000);
+
+        // Test GPT-4 Turbo context fitting
+        let gpt4_turbo = TokenCounter::new(AiModel::Gpt4Turbo);
+        assert!(gpt4_turbo.fits_with_prompt(&test_text, 500));
+        
+        let max_length = gpt4_turbo.max_content_length(1000);
+        assert!(max_length > 0);
+        assert!(max_length < 128_000 * 10); // Sanity check
+
+        // Test Claude-3.5 Sonnet context fitting
+        let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
+        assert!(claude35.fits_with_prompt(&test_text, 500));
+        
+        let max_length_claude = claude35.max_content_length(1000);
+        assert!(max_length_claude > 0);
+        assert!(max_length_claude < 200_000 * 10); // Sanity check
+
+        // Claude should have larger max content length due to bigger context window
+        assert!(max_length_claude > max_length);
     }
 }
