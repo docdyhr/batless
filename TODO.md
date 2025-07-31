@@ -48,6 +48,7 @@ After 6 months of development, v0.2.0 is now **COMPLETE AND RELEASED** on July 3
 ### ✅ **v0.2.0 Release Complete!**
 
 - **✅ Git Release**: Tag v0.2.0 created and pushed
+- **✅ GitHub Release**: [Published on GitHub Releases](https://github.com/docdyhr/batless/releases/tag/v0.2.0)
 - **✅ Repository**: All changes committed and synchronized
 - **✅ Testing**: All 145 tests passing with comprehensive coverage
 - **✅ Build**: Clean release build with zero warnings
@@ -284,26 +285,49 @@ After 6 months of development, v0.2.0 is now **COMPLETE AND RELEASED** on July 3
 
 ## 🎯 **v0.2.1 - Next Development Phase**
 
-### 🚀 **Planned v0.2.1 Features (September 2025)**
+### 🚀 **Planned v0.2.1 Features (August-September 2025)**
 
-**Focus**: Enhanced AI features, performance optimization, and user experience improvements based on v0.2.0 feedback.
+**Focus**: Enhanced user experience, performance optimization, and advanced AI features based on v0.2.0 feedback.
 
-#### **P1 - High Priority Enhancements**
+#### **P0 - Critical Enhancements (August 2025)**
 
-1. **Advanced AI Profiles**
-   - Enhanced token counting precision for different AI models
-   - Custom user-defined AI profiles
-   - Profile-specific optimization settings
+1. **Enhanced Error Handling & User Experience**
+   - Improve JSON validation error messages with specific field guidance
+   - Add progress indicators for large file processing (>100KB)
+   - Better handling of edge cases in token counting
+   - Enhanced CLI help with examples for each feature
 
 2. **Performance Optimizations**
-   - Faster startup times for large projects
-   - Memory usage improvements for token counting
-   - Streaming JSON output for very large files
+   - Optimize token counting for very large files (>1MB)
+   - Implement lazy loading for JSON schema validation
+   - Reduce memory footprint for token analysis
+   - Cache tokenization results for repeated processing
 
-3. **User Experience Improvements**
-   - Better error messages for JSON validation failures
-   - Enhanced CLI help and documentation
-   - Improved progress indicators for large file processing
+3. **Advanced AI Model Support**
+   - Add support for newer AI models (GPT-4 Turbo, Claude-3.5 Sonnet)
+   - Implement more precise token counting algorithms
+   - Add support for function calling token estimation
+   - Context-aware prompt optimization suggestions
+
+#### **P1 - High Value Features (September 2025)**
+
+4. **Custom AI Profiles**
+   - User-defined AI profiles with custom settings
+   - Profile templates for different use cases
+   - Save and share profile configurations
+   - Profile validation and optimization suggestions
+
+5. **Enhanced JSON Output**
+   - Streaming JSON output for very large files
+   - Partial content processing with resume capability
+   - JSON schema versioning and migration support
+   - Better error context in validation failures
+
+6. **Developer Experience Improvements**
+   - Interactive configuration wizard (`batless --configure`)
+   - Better integration examples in documentation
+   - CLI autocompletion improvements
+   - Debug mode with detailed processing information
 
 ---
 

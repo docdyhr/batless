@@ -79,19 +79,39 @@ impl JsonSchemaValidator {
         self.schemas.get(name)
     }
 
-    /// Basic JSON schema validation (simplified implementation)
+    /// Basic JSON schema validation with enhanced error messages
     fn validate_against_schema(&self, value: &Value, schema: &Value) -> Result<(), String> {
+        self.validate_against_schema_with_path(value, schema, "")
+    }
+
+    /// Validate with path tracking for better error messages
+    fn validate_against_schema_with_path(
+        &self,
+        value: &Value,
+        schema: &Value,
+        path: &str,
+    ) -> Result<(), String> {
         match (value, schema) {
             (_, Value::Object(schema_obj)) => {
                 if let Some(schema_type) = schema_obj.get("type") {
-                    self.validate_type(value, schema_type)?;
+                    self.validate_type_with_path(value, schema_type, path)?;
                 }
 
                 if let Some(properties) = schema_obj.get("properties") {
                     if let (Value::Object(value_obj), Value::Object(props)) = (value, properties) {
                         for (key, prop_schema) in props {
+                            let prop_path = if path.is_empty() {
+                                key.clone()
+                            } else {
+                                format!("{path}.{key}")
+                            };
+
                             if let Some(prop_value) = value_obj.get(key) {
-                                self.validate_against_schema(prop_value, prop_schema)?;
+                                self.validate_against_schema_with_path(
+                                    prop_value,
+                                    prop_schema,
+                                    &prop_path,
+                                )?;
                             }
                         }
                     }
@@ -103,7 +123,15 @@ impl JsonSchemaValidator {
                         for field in req_fields {
                             if let Value::String(field_name) = field {
                                 if !value_obj.contains_key(field_name) {
-                                    return Err(format!("Missing required field: {}", field_name));
+                                    let field_path = if path.is_empty() {
+                                        field_name.clone()
+                                    } else {
+                                        format!("{path}.{field_name}")
+                                    };
+
+                                    return Err(format!(
+                                        "Missing required field: '{field_path}'\n  Expected: This field is required for AI compatibility\n  Suggestion: Add the missing field to your JSON output"
+                                    ));
                                 }
                             }
                         }
@@ -115,23 +143,37 @@ impl JsonSchemaValidator {
         }
     }
 
-    /// Validate value type against schema type
-    fn validate_type(&self, value: &Value, schema_type: &Value) -> Result<(), String> {
+    /// Validate value type against schema type with enhanced error messages
+    fn validate_type_with_path(
+        &self,
+        value: &Value,
+        schema_type: &Value,
+        path: &str,
+    ) -> Result<(), String> {
         // Handle array of types (e.g., ["string", "null"])
         if let Value::Array(types) = schema_type {
             for type_option in types {
-                if let Ok(()) = self.validate_type(value, type_option) {
+                if self
+                    .validate_type_with_path(value, type_option, path)
+                    .is_ok()
+                {
                     return Ok(());
                 }
             }
             let type_names: Vec<String> = types
                 .iter()
                 .filter_map(|v| v.as_str())
-                .map(|s| s.to_string())
+                .map(ToString::to_string)
                 .collect();
+
+            let field_info = if path.is_empty() {
+                "root".to_string()
+            } else {
+                format!("'{path}'")
+            };
+
             return Err(format!(
-                "Type mismatch: expected one of {:?}, got {}",
-                type_names,
+                "Type mismatch at {field_info}: expected one of {type_names:?}, got {}\n  Expected: One of the allowed types for AI compatibility\n  Suggestion: Convert the value to match the expected type",
                 self.get_value_type(value)
             ));
         }
@@ -150,9 +192,13 @@ impl JsonSchemaValidator {
         };
 
         if !matches {
+            let field_info = if path.is_empty() {
+                "root".to_string()
+            } else {
+                format!("'{path}'")
+            };
             return Err(format!(
-                "Type mismatch: expected {}, got {}",
-                expected_type,
+                "Type mismatch at {field_info}: expected {expected_type}, got {}\n  Expected: Correct data type for AI compatibility\n  Suggestion: Convert the value to the expected type",
                 self.get_value_type(value)
             ));
         }
@@ -161,7 +207,7 @@ impl JsonSchemaValidator {
     }
 
     /// Get the type name of a JSON value
-    fn get_value_type(&self, value: &Value) -> &'static str {
+    const fn get_value_type(&self, value: &Value) -> &'static str {
         match value {
             Value::String(_) => "string",
             Value::Number(_) => "number",
@@ -442,5 +488,45 @@ mod tests {
         let result = validate_batless_output(json_str);
         // For now, just ensure it runs without panicking
         let _ = result;
+    }
+
+    #[test]
+    fn test_enhanced_error_messages() {
+        let validator = JsonSchemaValidator::new();
+
+        // Test missing required field with enhanced error
+        let incomplete_token_count = json!({
+            "words": 100,
+            "characters": 500,
+            "model": "gpt-4",
+            "fits_in_context": true
+            // Missing required "tokens" field
+        });
+
+        let result = validator.validate("token_count", &incomplete_token_count);
+        assert!(result.is_err());
+
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("Missing required field"));
+        assert!(error_msg.contains("Expected: This field is required for AI compatibility"));
+        assert!(error_msg.contains("Suggestion: Add the missing field"));
+
+        // Test type mismatch with enhanced error
+        let wrong_type_token_count = json!({
+            "tokens": "not_a_number", // Should be number
+            "words": 100,
+            "characters": 500,
+            "model": "gpt-4",
+            "fits_in_context": true,
+            "context_usage_percent": 12.5
+        });
+
+        let result = validator.validate("token_count", &wrong_type_token_count);
+        assert!(result.is_err());
+
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("Type mismatch"));
+        assert!(error_msg.contains("Expected: Correct data type for AI compatibility"));
+        assert!(error_msg.contains("Suggestion: Convert the value to the expected type"));
     }
 }
