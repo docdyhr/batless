@@ -50,15 +50,13 @@ jobs:
           flags: unittests
           name: batless-coverage
           verbose: true
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Generate coverage summary
         run: |
           # Extract coverage percentage
           COVERAGE=$(cargo llvm-cov report --workspace | grep -oP 'TOTAL.*?(\d+\.\d+)%' | grep -oP '\d+\.\d+')
           echo "COVERAGE_PERCENT=$COVERAGE" >> $GITHUB_ENV
-          
+
           # Generate summary
           echo "# Coverage Report" > coverage-summary.md
           echo "" >> coverage-summary.md
@@ -131,7 +129,7 @@ jobs:
         with:
           path: ~/.cargo/bin
           key: ${{ runner.os }}-quality-tools-v2
-      
+
       - name: Install quality tools
         run: |
           # Install tools only if not cached
@@ -177,7 +175,7 @@ jobs:
         run: |
           TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true | wc -l)
           echo "Found $TODO_COUNT TODO/FIXME comments"
-          
+
           if [ $TODO_COUNT -gt 10 ]; then
             echo "❌ Too many TODO/FIXME comments ($TODO_COUNT > 10)"
             grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true
@@ -213,13 +211,13 @@ jobs:
           # Generate documentation coverage report
           rustup toolchain install nightly
           cargo +nightly doc --all-features --no-deps -Zunstable-options -Zrustdoc-map
-          
+
           # Check documentation completeness
           DOC_COVERAGE=$(cargo +nightly rustdoc --all-features -- --show-coverage 2>&1 | \
             grep -oP '\d+\.\d+(?=% \(\d+/\d+ documented\))' | tail -1 || echo "0")
-          
+
           echo "Documentation coverage: $DOC_COVERAGE%"
-          
+
           # Skip coverage check if no data available
           if [ "$DOC_COVERAGE" = "0" ]; then
             echo "⚠️ Documentation coverage data not available, skipping check"
@@ -231,7 +229,7 @@ jobs:
           fi
 
   complexity-analysis:
-    name: Code Complexity Analysis  
+    name: Code Complexity Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -245,17 +243,17 @@ jobs:
         run: |
           echo "# Code Complexity Analysis" > complexity-report.md
           echo "" >> complexity-report.md
-          
+
           echo "## Lines of Code" >> complexity-report.md
           echo '```' >> complexity-report.md
           tokei >> complexity-report.md
           echo '```' >> complexity-report.md
           echo "" >> complexity-report.md
-          
+
           # Get total lines of Rust code
           RUST_LINES=$(tokei --output json | jq -r '.Rust.code // 0')
           echo "Total Rust SLOC: $RUST_LINES" >> complexity-report.md
-          
+
           # Check if codebase is getting too large
           if [ $RUST_LINES -gt 10000 ]; then
             echo "⚠️ Codebase is getting large ($RUST_LINES SLOC)" >> complexity-report.md
@@ -268,18 +266,18 @@ jobs:
           # Check for overly complex functions (simple heuristic)
           echo "" >> complexity-report.md
           echo "## Function Complexity Warnings" >> complexity-report.md
-          
+
           COMPLEX_FUNCTIONS=$(grep -n "fn " src/**/*.rs | while read line; do
             file=$(echo $line | cut -d: -f1)
             line_num=$(echo $line | cut -d: -f2)
-            
+
             # Count lines in function (simple heuristic)
             func_lines=$(sed -n "${line_num},/^}/p" "$file" | wc -l)
             if [ $func_lines -gt 50 ]; then
               echo "$file:$line_num - Function has $func_lines lines"
             fi
           done)
-          
+
           if [ -n "$COMPLEX_FUNCTIONS" ]; then
             echo "⚠️ Functions with >50 lines:" >> complexity-report.md
             echo '```' >> complexity-report.md
@@ -306,11 +304,11 @@ jobs:
           echo "# Quality Gate Results" > quality-summary.md
           echo "" >> quality-summary.md
           echo "- Code Coverage: ${{ needs.code-coverage.result }}" >> quality-summary.md
-          echo "- Code Quality: ${{ needs.code-quality.result }}" >> quality-summary.md  
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> quality-summary.md
           echo "- Documentation: ${{ needs.documentation-quality.result }}" >> quality-summary.md
           echo "- Complexity Analysis: ${{ needs.complexity-analysis.result }}" >> quality-summary.md
           echo "" >> quality-summary.md
-          
+
           # Determine overall status
           if [[ "${{ needs.code-coverage.result }}" == "success" && \
                 "${{ needs.code-quality.result }}" == "success" && \
@@ -318,12 +316,12 @@ jobs:
             echo "🎉 All quality gates passed!" >> quality-summary.md
             echo "QUALITY_STATUS=success" >> $GITHUB_ENV
           else
-            echo "❌ Some quality gates failed" >> quality-summary.md  
+            echo "❌ Some quality gates failed" >> quality-summary.md
             echo "QUALITY_STATUS=failure" >> $GITHUB_ENV
           fi
 
       - name: Fail if quality gates don't pass
-        if: env.QUALITY_STATUS == 'failure'
+        if: needs.code-coverage.result != 'success' || needs.code-quality.result != 'success' || needs.documentation-quality.result != 'success'
         run: |
           echo "Quality gates failed. Please fix the issues before merging."
           exit 1

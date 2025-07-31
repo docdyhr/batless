@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
@@ -201,7 +201,7 @@ jobs:
         run: |
           # Run with shorter timeout for CI
           timeout 60 cargo fuzz run process_file -- -max_total_time=30 -verbosity=0 || true
-          
+
           # Check if any crashes were found
           if [ -d "fuzz/artifacts/process_file" ] && [ "$(ls -A fuzz/artifacts/process_file 2>/dev/null)" ]; then
             echo "❌ Fuzz testing found crashes!"
@@ -278,7 +278,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust ${{ matrix.rust }}
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
 

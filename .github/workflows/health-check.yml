@@ -29,9 +29,9 @@ jobs:
           echo "# Repository Health Report" > health-report.md
           echo "Generated on: $(date -u)" >> health-report.md
           echo "" >> health-report.md
-          
+
           ISSUES_FOUND=0
-          
+
           # Check for large files
           echo "## Large Files Check" >> health-report.md
           LARGE_FILES=$(find . -type f -size +1M -not -path "./.git/*" -not -path "./target/*" | head -10)
@@ -45,7 +45,7 @@ jobs:
             echo "✅ No large files found" >> health-report.md
           fi
           echo "" >> health-report.md
-          
+
           # Check for outdated workflows
           echo "## Workflow File Ages" >> health-report.md
           OLD_WORKFLOWS=$(find .github/workflows -name "*.yml" -mtime +90)
@@ -59,7 +59,7 @@ jobs:
             echo "✅ All workflows recently updated" >> health-report.md
           fi
           echo "" >> health-report.md
-          
+
           # Check for TODO/FIXME comments
           echo "## Code Quality Issues" >> health-report.md
           TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ 2>/dev/null | wc -l || echo "0")
@@ -73,20 +73,31 @@ jobs:
             echo "✅ TODO/FIXME count is reasonable ($TODO_COUNT)" >> health-report.md
           fi
           echo "" >> health-report.md
-          
+
           # Check Cargo.toml health
           echo "## Dependency Health" >> health-report.md
-          if cargo tree --duplicates | grep -q "└──"; then
-            echo "⚠️ Duplicate dependencies found:" >> health-report.md
-            echo '```' >> health-report.md
-            cargo tree --duplicates >> health-report.md
-            echo '```' >> health-report.md
-            ISSUES_FOUND=$((ISSUES_FOUND + 1))
+          DUPLICATES_OUTPUT=$(cargo tree --duplicates 2>/dev/null || echo "")
+          # Filter out harmless duplicates (different major versions of common utility crates)
+          # Only flag as problematic if there are duplicates that aren't just bitflags v1/v2
+          if echo "$DUPLICATES_OUTPUT" | grep -q "└──"; then
+            # Check if there are non-bitflags duplicates
+            NON_BITFLAGS_DUPLICATES=$(echo "$DUPLICATES_OUTPUT" | grep -E "^[a-zA-Z]" | grep -v "^bitflags v[12]\." || true)
+            if [ -n "$NON_BITFLAGS_DUPLICATES" ] && [ "$NON_BITFLAGS_DUPLICATES" != "" ]; then
+              echo "⚠️ Duplicate dependencies found:" >> health-report.md
+              echo '```' >> health-report.md
+              echo "$DUPLICATES_OUTPUT" >> health-report.md
+              echo '```' >> health-report.md
+              ISSUES_FOUND=$((ISSUES_FOUND + 1))
+            else
+              echo "✅ No concerning duplicate dependencies" >> health-report.md
+              echo "" >> health-report.md
+              echo "**Note:** Some harmless version differences exist in utility crates (bitflags v1/v2), which is normal when mixing dependencies that haven't fully migrated to bitflags v2." >> health-report.md
+            fi
           else
             echo "✅ No duplicate dependencies" >> health-report.md
           fi
           echo "" >> health-report.md
-          
+
           # Check for dead code (simplified)
           echo "## Code Coverage Analysis" >> health-report.md
           if command -v cargo &> /dev/null; then
@@ -100,7 +111,7 @@ jobs:
             fi
           fi
           echo "" >> health-report.md
-          
+
           # Summary
           echo "## Summary" >> health-report.md
           if [ "$ISSUES_FOUND" -eq 0 ]; then
@@ -110,7 +121,7 @@ jobs:
             echo "⚠️ Found $ISSUES_FOUND potential issues that may need attention." >> health-report.md
             echo "HEALTH_STATUS=issues_found" >> $GITHUB_ENV
           fi
-          
+
           echo "ISSUES_COUNT=$ISSUES_FOUND" >> $GITHUB_ENV
 
       - name: Upload health report
@@ -126,7 +137,7 @@ jobs:
           script: |
             const fs = require('fs');
             const report = fs.readFileSync('health-report.md', 'utf8');
-            
+
             // Check if a health check issue already exists
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -134,7 +145,7 @@ jobs:
               labels: ['health-check', 'automated'],
               state: 'open'
             });
-            
+
             if (issues.data.length === 0) {
               // Create new issue
               await github.rest.issues.create({

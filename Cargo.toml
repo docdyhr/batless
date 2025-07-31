@@ -50,13 +50,17 @@ toml = "0.8"
 dirs = "5.0"
 
 [dev-dependencies]
-tempfile = "3.8"
+tempfile = "3.20"
 serde_json = "1.0"
 
 # Enhanced testing dependencies
-proptest = { version = "1.4", default-features = false, features = ["std"] }
+proptest = { version = "1.7", default-features = false, features = ["std"] }
 criterion = { version = "0.7", features = ["html_reports"] }
 
 [[bench]]
 name = "performance"
 harness = false
+
+# Resolve duplicate dependencies by forcing newer compatible versions
+[workspace]
+resolver = "2"

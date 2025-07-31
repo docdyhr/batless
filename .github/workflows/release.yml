@@ -157,8 +157,7 @@ jobs:
         with:
           name: batless-${{ matrix.target }}
           path: |
-            ${{ env.ARCHIVE_NAME }}
-            ${{ env.CHECKSUM_FILE }}
+            batless-*-${{ matrix.target }}.*
 
   # Create GitHub release and publish to crates.io
   release:
@@ -260,7 +259,7 @@ jobs:
           VERSION="${{ steps.release-info.outputs.version }}"
 
           # Log into GitHub Container Registry
-          echo ${{ secrets.GITHUB_TOKEN }} | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
 
           # Extract metadata for Docker
           IMAGE_ID=$REGISTRY/$IMAGE_NAME
