@@ -8,6 +8,56 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Summary extraction level for code analysis
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+pub enum SummaryLevel {
+    /// No summary extraction
+    #[default]
+    None,
+    /// Minimal summary: functions and exports only
+    Minimal,
+    /// Standard summary: functions, classes, imports (current behavior)
+    Standard,
+    /// Detailed summary: includes comments, complexity metrics
+    Detailed,
+}
+
+impl SummaryLevel {
+    /// Parse summary level from string
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the input string doesn't match any valid summary level
+    pub fn parse(s: &str) -> Result<Self, String> {
+        match s.to_lowercase().as_str() {
+            "none" | "false" | "off" => Ok(Self::None),
+            "minimal" | "min" => Ok(Self::Minimal),
+            "standard" | "std" | "true" | "on" => Ok(Self::Standard),
+            "detailed" | "detail" | "full" => Ok(Self::Detailed),
+            _ => Err(format!(
+                "Unknown summary level: {s}. Valid options: none, minimal, standard, detailed"
+            )),
+        }
+    }
+
+    /// Get string representation
+    #[must_use]
+    pub const fn as_str(&self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Minimal => "minimal",
+            Self::Standard => "standard",
+            Self::Detailed => "detailed",
+        }
+    }
+
+    /// Check if summary extraction is enabled
+    #[must_use]
+    pub const fn is_enabled(&self) -> bool {
+        !matches!(self, Self::None)
+    }
+}
+
 /// Configuration structure for batless operations
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BatlessConfig {
@@ -32,7 +82,10 @@ pub struct BatlessConfig {
     /// Whether to include tokens in JSON output
     #[serde(default)]
     pub include_tokens: bool,
-    /// Whether to enable summary mode
+    /// Summary extraction level
+    #[serde(default)]
+    pub summary_level: SummaryLevel,
+    /// Whether to enable summary mode (deprecated, use summary_level)
     #[serde(default)]
     pub summary_mode: bool,
 }
@@ -59,6 +112,7 @@ impl Default for BatlessConfig {
             strip_ansi: false,
             use_color: true,
             include_tokens: false,
+            summary_level: SummaryLevel::None,
             summary_mode: false,
         }
     }
@@ -115,7 +169,33 @@ impl BatlessConfig {
     /// Set summary mode
     pub fn with_summary_mode(mut self, summary_mode: bool) -> Self {
         self.summary_mode = summary_mode;
+        // For backward compatibility, map boolean to SummaryLevel
+        if summary_mode {
+            self.summary_level = SummaryLevel::Standard;
+        } else {
+            self.summary_level = SummaryLevel::None;
+        }
         self
+    }
+
+    /// Set summary level
+    pub fn with_summary_level(mut self, summary_level: SummaryLevel) -> Self {
+        // Update deprecated summary_mode for backward compatibility
+        self.summary_mode = summary_level.is_enabled();
+        self.summary_level = summary_level;
+        self
+    }
+
+    /// Get effective summary level (considering both new and deprecated fields)
+    pub fn effective_summary_level(&self) -> SummaryLevel {
+        // Priority: summary_level takes precedence over deprecated summary_mode
+        if self.summary_level != SummaryLevel::None {
+            self.summary_level.clone()
+        } else if self.summary_mode {
+            SummaryLevel::Standard
+        } else {
+            SummaryLevel::None
+        }
     }
 
     /// Validate the configuration

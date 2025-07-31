@@ -1,4 +1,7 @@
-use batless::{BatlessConfig, BatlessResult, OutputMode};
+use batless::{
+    BatlessConfig, BatlessResult, OutputMode, SummaryLevel, 
+    TokenCounter, AiModel, JsonSchemaValidator
+};
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, shells::*};
 use is_terminal::IsTerminal;
@@ -50,9 +53,37 @@ struct Args {
     #[arg(long)]
     include_tokens: bool,
 
-    /// Summary mode: show only important code structures
+    /// Summary mode: show only important code structures (deprecated, use --summary-level)
     #[arg(long)]
     summary: bool,
+
+    /// Summary level: control detail level of summary output
+    #[arg(long, value_enum)]
+    summary_level: Option<CliSummaryLevel>,
+
+    /// Count tokens for AI model context estimation
+    #[arg(long)]
+    count_tokens: bool,
+
+    /// AI model for token counting
+    #[arg(long, value_enum, default_value = "generic")]
+    ai_model: CliAiModel,
+
+    /// Fit content within AI model context window (truncate if needed)
+    #[arg(long)]
+    fit_context: bool,
+
+    /// Estimate prompt token overhead when fitting context
+    #[arg(long, default_value = "500")]
+    prompt_tokens: usize,
+
+    /// Validate JSON output against schema
+    #[arg(long)]
+    validate_json: bool,
+
+    /// Get JSON schema for specified output format
+    #[arg(long)]
+    get_schema: Option<String>,
 
     /// Generate shell completions for the specified shell
     #[arg(long, value_enum)]
@@ -101,23 +132,23 @@ impl AiProfile {
         match self {
             AiProfile::Claude => config
                 .with_max_lines(4000)
-                .with_summary_mode(true)
+                .with_summary_level(SummaryLevel::Standard)
                 .with_include_tokens(false)
                 .with_use_color(false),
             AiProfile::Copilot => config
                 .with_max_lines(2000)
                 .with_include_tokens(true)
-                .with_summary_mode(false)
+                .with_summary_level(SummaryLevel::None)
                 .with_use_color(false),
             AiProfile::Chatgpt => config
                 .with_max_lines(3000)
                 .with_include_tokens(true)
-                .with_summary_mode(false)
+                .with_summary_level(SummaryLevel::None)
                 .with_use_color(false),
             AiProfile::Assistant => config
                 .with_max_lines(5000)
                 .with_include_tokens(false)
-                .with_summary_mode(true)
+                .with_summary_level(SummaryLevel::Detailed)
                 .with_use_color(false),
         }
     }
@@ -150,6 +181,52 @@ enum ColorMode {
     Never,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum CliSummaryLevel {
+    /// No summary, show full file
+    None,
+    /// Minimal summary with only critical structures
+    Minimal,
+    /// Standard summary with most important code
+    Standard,
+    /// Detailed summary with comprehensive information
+    Detailed,
+}
+
+impl From<CliSummaryLevel> for SummaryLevel {
+    fn from(level: CliSummaryLevel) -> Self {
+        match level {
+            CliSummaryLevel::None => SummaryLevel::None,
+            CliSummaryLevel::Minimal => SummaryLevel::Minimal,
+            CliSummaryLevel::Standard => SummaryLevel::Standard,
+            CliSummaryLevel::Detailed => SummaryLevel::Detailed,
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum CliAiModel {
+    /// OpenAI GPT-4 family
+    Gpt4,
+    /// OpenAI GPT-3.5 family
+    Gpt35,
+    /// Anthropic Claude family
+    Claude,
+    /// Generic model estimation
+    Generic,
+}
+
+impl From<CliAiModel> for AiModel {
+    fn from(model: CliAiModel) -> Self {
+        match model {
+            CliAiModel::Gpt4 => AiModel::Gpt4,
+            CliAiModel::Gpt35 => AiModel::Gpt35,
+            CliAiModel::Claude => AiModel::Claude,
+            CliAiModel::Generic => AiModel::Generic,
+        }
+    }
+}
+
 fn main() {
     if let Err(e) = run() {
         eprintln!("Error: {e}");
@@ -172,6 +249,22 @@ fn run() -> BatlessResult<()> {
             Shell::Power => generate(PowerShell, &mut cmd, name, &mut io::stdout()),
         }
         return Ok(());
+    }
+
+    // Handle JSON schema commands
+    if let Some(format) = args.get_schema {
+        let validator = JsonSchemaValidator::new();
+        match validator.get_schema(&format) {
+            Some(schema) => {
+                println!("{}", serde_json::to_string_pretty(schema)?);
+                return Ok(());
+            }
+            None => {
+                eprintln!("Error: Unknown schema format '{}'", format);
+                eprintln!("Available schemas: file_info, json_output, token_count, processing_stats");
+                std::process::exit(1);
+            }
+        }
     }
 
     // Handle list commands
@@ -242,7 +335,12 @@ fn run() -> BatlessResult<()> {
     if args.include_tokens {
         config = config.with_include_tokens(args.include_tokens);
     }
-    if args.summary || args.mode == CliOutputMode::Summary {
+
+    // Handle summary level (new preferred method)
+    if let Some(summary_level) = args.summary_level {
+        config = config.with_summary_level(summary_level.into());
+    } else if args.summary || args.mode == CliOutputMode::Summary {
+        // Fallback to deprecated --summary flag for backward compatibility
         config = config.with_summary_mode(true);
     }
 
@@ -266,15 +364,93 @@ fn run() -> BatlessResult<()> {
     // Process the file
     let file_info = batless::process_file(file_path, &config)?;
 
+    // Handle token counting if requested
+    if args.count_tokens {
+        let content = file_info.lines.join("\n");
+        let counter = TokenCounter::new(args.ai_model.into());
+        let token_count = counter.count_tokens(&content);
+
+        println!("Token Count Analysis:");
+        println!("  Model: {}", token_count.model.as_str());
+        println!("  Tokens: {}", token_count.tokens);
+        println!("  Words: {}", token_count.words);
+        println!("  Characters: {}", token_count.characters);
+        println!("  Context window: {}", token_count.model.context_window());
+        println!(
+            "  Fits in context: {}",
+            if token_count.fits_in_context {
+                "✓"
+            } else {
+                "✗"
+            }
+        );
+        println!("  Context usage: {:.1}%", token_count.context_usage_percent);
+
+        if !token_count.fits_in_context {
+            println!(
+                "  ⚠️  Content exceeds context window by {} tokens",
+                token_count
+                    .tokens
+                    .saturating_sub(token_count.model.context_window())
+            );
+        }
+
+        println!(); // Empty line before normal output
+    }
+
+    // Handle context fitting if requested
+    let final_file_info = if args.fit_context {
+        let content = file_info.lines.join("\n");
+        let counter = TokenCounter::new(args.ai_model.into());
+        let (truncated_content, was_truncated) = counter.truncate_to_fit(&content, args.prompt_tokens);
+
+        if was_truncated {
+            println!("📐 Context Fitting Applied:");
+            println!("  Model: {}", counter.model().as_str());
+            println!("  Prompt tokens reserved: {}", args.prompt_tokens);
+            println!("  Content truncated to fit context window");
+            println!("  Original length: {} chars", content.len());
+            println!("  Truncated length: {} chars", truncated_content.len());
+            println!();
+
+            // Create new FileInfo with truncated content
+            let truncated_lines: Vec<String> = truncated_content.lines().map(|s| s.to_string()).collect();
+            file_info
+                .with_lines(truncated_lines)
+                .with_truncation(true, false, false) // Mark as truncated, but not by normal limits
+        } else {
+            file_info
+        }
+    } else {
+        file_info
+    };
+
     // Format and output the result
 
     // Handle summary mode with no important lines
-    if output_mode == OutputMode::Summary && file_info.summary_line_count() == 0 {
+    if output_mode == OutputMode::Summary && final_file_info.summary_line_count() == 0 {
         println!("// No summary-worthy code structures found");
         return Ok(());
     }
 
-    let formatted_output = batless::format_output(&file_info, file_path, &config, output_mode)?;
+    let formatted_output = batless::format_output(&final_file_info, file_path, &config, output_mode)?;
+
+    // Validate JSON output if requested
+    if args.validate_json && output_mode == OutputMode::Json {
+        let validator = JsonSchemaValidator::new();
+        match serde_json::from_str::<serde_json::Value>(&formatted_output) {
+            Ok(json_value) => {
+                if let Err(e) = validator.validate("json_output", &json_value) {
+                    eprintln!("⚠️  JSON validation warning: {}", e);
+                    eprintln!("   Output may not be fully AI-compatible");
+                }
+            }
+            Err(e) => {
+                eprintln!("⚠️  JSON parsing error: {}", e);
+                eprintln!("   Output is not valid JSON");
+            }
+        }
+    }
 
     // Print output with newline only for JSON mode to avoid shell prompt appearing
     if output_mode == OutputMode::Json {
@@ -285,10 +461,10 @@ fn run() -> BatlessResult<()> {
 
     // Add truncation messages for non-JSON modes
     if output_mode != OutputMode::Json {
-        if file_info.truncated_by_lines {
+        if final_file_info.truncated_by_lines {
             println!("\n// Output truncated after {} lines", config.max_lines);
         }
-        if file_info.truncated_by_bytes {
+        if final_file_info.truncated_by_bytes {
             if let Some(max_bytes) = config.max_bytes {
                 println!("\n// Output truncated after {max_bytes} bytes");
             }

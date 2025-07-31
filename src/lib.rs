@@ -8,19 +8,23 @@ pub mod error;
 pub mod file_info;
 pub mod formatter;
 pub mod highlighter;
+pub mod json_schema;
 pub mod language;
 pub mod processor;
 pub mod summarizer;
+pub mod token_counter;
 pub mod tokenizer;
 
 // Re-export commonly used types
-pub use config::BatlessConfig;
+pub use config::{BatlessConfig, SummaryLevel};
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};
 pub use highlighter::SyntaxHighlighter;
+pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValidator};
 pub use language::{LanguageDetector, ThemeManager};
 pub use processor::FileProcessor;
+pub use token_counter::{AiModel, TokenCount, TokenCounter};
 
 /// Main entry point for processing a file with batless
 pub fn process_file(file_path: &str, config: &BatlessConfig) -> BatlessResult<FileInfo> {
