@@ -9,7 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Summary extraction level for code analysis
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, Hash)]
 pub enum SummaryLevel {
     /// No summary extraction
     #[default]
@@ -88,6 +88,14 @@ pub struct CustomProfile {
     pub output_mode: Option<String>,
     /// AI model preference
     pub ai_model: Option<String>,
+    /// Enable streaming JSON output for large files
+    pub streaming_json: Option<bool>,
+    /// Chunk size for streaming output (in lines)
+    pub streaming_chunk_size: Option<usize>,
+    /// Enable resume capability with checkpoint support
+    pub enable_resume: Option<bool>,
+    /// Enable debug mode
+    pub debug: Option<bool>,
     /// Tags for profile categorization
     #[serde(default)]
     pub tags: Vec<String>,
@@ -118,6 +126,10 @@ impl CustomProfile {
             summary_level: None,
             output_mode: None,
             ai_model: None,
+            streaming_json: None,
+            streaming_chunk_size: None,
+            enable_resume: None,
+            debug: None,
             tags: Vec::new(),
             created_at: None,
             updated_at: None,
@@ -237,14 +249,14 @@ impl CustomProfile {
         let content = if path.extension().and_then(|s| s.to_str()) == Some("toml") {
             toml::to_string_pretty(self).map_err(|e| {
                 BatlessError::config_error_with_help(
-                    format!("Failed to serialize profile to TOML: {}", e),
+                    format!("Failed to serialize profile to TOML: {e}"),
                     Some("Check that all profile fields contain valid data".to_string()),
                 )
             })?
         } else {
             serde_json::to_string_pretty(self).map_err(|e| {
                 BatlessError::config_error_with_help(
-                    format!("Failed to serialize profile to JSON: {}", e),
+                    format!("Failed to serialize profile to JSON: {e}"),
                     Some("Check that all profile fields contain valid data".to_string()),
                 )
             })?
@@ -341,6 +353,21 @@ pub struct BatlessConfig {
     /// Whether to enable summary mode (deprecated, use summary_level)
     #[serde(default)]
     pub summary_mode: bool,
+    /// Enable streaming JSON output for large files
+    #[serde(default)]
+    pub streaming_json: bool,
+    /// Chunk size for streaming output (in lines)
+    #[serde(default = "default_streaming_chunk_size")]
+    pub streaming_chunk_size: usize,
+    /// Enable resume capability with checkpoint support
+    #[serde(default)]
+    pub enable_resume: bool,
+    /// Schema version for JSON output compatibility
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
+    /// Enable debug mode with detailed processing information
+    #[serde(default)]
+    pub debug: bool,
 }
 
 fn default_max_lines() -> usize {
@@ -355,6 +382,14 @@ fn default_use_color() -> bool {
     true
 }
 
+fn default_streaming_chunk_size() -> usize {
+    1000
+}
+
+fn default_schema_version() -> String {
+    "2.1".to_string()
+}
+
 impl Default for BatlessConfig {
     fn default() -> Self {
         Self {
@@ -367,6 +402,11 @@ impl Default for BatlessConfig {
             include_tokens: false,
             summary_level: SummaryLevel::None,
             summary_mode: false,
+            streaming_json: false,
+            streaming_chunk_size: default_streaming_chunk_size(),
+            enable_resume: false,
+            schema_version: default_schema_version(),
+            debug: false,
         }
     }
 }
@@ -436,6 +476,36 @@ impl BatlessConfig {
         // Update deprecated summary_mode for backward compatibility
         self.summary_mode = summary_level.is_enabled();
         self.summary_level = summary_level;
+        self
+    }
+
+    /// Enable streaming JSON output
+    pub fn with_streaming_json(mut self, streaming_json: bool) -> Self {
+        self.streaming_json = streaming_json;
+        self
+    }
+
+    /// Set streaming chunk size
+    pub fn with_streaming_chunk_size(mut self, chunk_size: usize) -> Self {
+        self.streaming_chunk_size = chunk_size;
+        self
+    }
+
+    /// Enable resume capability
+    pub fn with_enable_resume(mut self, enable_resume: bool) -> Self {
+        self.enable_resume = enable_resume;
+        self
+    }
+
+    /// Set schema version
+    pub fn with_schema_version(mut self, version: String) -> Self {
+        self.schema_version = version;
+        self
+    }
+
+    /// Enable debug mode
+    pub fn with_debug(mut self, debug: bool) -> Self {
+        self.debug = debug;
         self
     }
 
@@ -565,11 +635,56 @@ impl BatlessConfig {
             }
         }
 
+        // Validate streaming chunk size
+        if self.streaming_chunk_size == 0 {
+            return Err(BatlessError::config_error_with_help(
+                "streaming_chunk_size must be greater than 0".to_string(),
+                Some("Try using a value like 1000 for good streaming performance".to_string()),
+            ));
+        }
+
+        if self.streaming_chunk_size > 10000 {
+            return Err(BatlessError::config_error_with_help(
+                format!(
+                    "streaming_chunk_size is unusually large ({}). This may cause memory issues",
+                    self.streaming_chunk_size
+                ),
+                Some(
+                    "Consider using a smaller value like 1000-5000 for better memory usage"
+                        .to_string(),
+                ),
+            ));
+        }
+
+        // Validate schema version format
+        if !self
+            .schema_version
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+        {
+            return Err(BatlessError::config_error_with_help(
+                format!("Invalid schema version format: '{}'", self.schema_version),
+                Some("Schema version should contain only alphanumeric characters, dots, and hyphens (e.g., '2.1', '2.1-beta')".to_string()),
+            ));
+        }
+
         // Validate logical combinations
         if self.include_tokens && self.summary_mode {
             return Err(BatlessError::config_error_with_help(
                 "include_tokens and summary_mode cannot both be enabled".to_string(),
                 Some("Choose either token extraction or summary mode, not both".to_string()),
+            ));
+        }
+
+        // Validate streaming options
+        if self.streaming_json && self.enable_resume && self.max_lines < self.streaming_chunk_size {
+            return Err(BatlessError::config_error_with_help(
+                "When using streaming with resume, max_lines should be larger than chunk_size"
+                    .to_string(),
+                Some(format!(
+                    "Try increasing --max-lines to at least {} or reducing --streaming-chunk-size",
+                    self.streaming_chunk_size
+                )),
             ));
         }
 
@@ -1089,6 +1204,10 @@ max_lines = "not_a_number"
             summary_level: Some(SummaryLevel::Standard),
             output_mode: Some("json".to_string()),
             ai_model: Some("gpt4-turbo".to_string()),
+            streaming_json: Some(false),
+            streaming_chunk_size: Some(1000),
+            enable_resume: Some(false),
+            debug: Some(false),
             tags: vec!["coding".to_string(), "development".to_string()],
             created_at: None,
             updated_at: None,
@@ -1123,6 +1242,10 @@ max_lines = "not_a_number"
             summary_level: None,
             output_mode: None,
             ai_model: None,
+            streaming_json: None,
+            streaming_chunk_size: None,
+            enable_resume: None,
+            debug: None,
             tags: Vec::new(),
             created_at: None,
             updated_at: None,
@@ -1174,6 +1297,10 @@ max_lines = "not_a_number"
             summary_level: None,
             output_mode: Some("summary".to_string()),
             ai_model: Some("claude35-sonnet".to_string()),
+            streaming_json: None,
+            streaming_chunk_size: None,
+            enable_resume: None,
+            debug: None,
             tags: Vec::new(),
             created_at: None,
             updated_at: None,

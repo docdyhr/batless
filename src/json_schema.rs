@@ -34,15 +34,19 @@ impl JsonSchemaValidator {
             "processing_stats".to_string(),
             self.processing_stats_schema(),
         );
+        self.schemas.insert(
+            "streaming_chunk".to_string(),
+            crate::streaming::StreamingProcessor::get_streaming_schema(),
+        );
     }
 
     /// Validate JSON against a specific schema
     pub fn validate(&self, schema_name: &str, json_value: &Value) -> BatlessResult<()> {
         let schema = self.schemas.get(schema_name).ok_or_else(|| {
             BatlessError::config_error_with_help(
-                format!("Unknown schema: {}", schema_name),
+                format!("Unknown schema: {schema_name}"),
                 Some(
-                    "Available schemas: file_info, json_output, token_count, processing_stats"
+                    "Available schemas: file_info, json_output, token_count, processing_stats, streaming_chunk"
                         .to_string(),
                 ),
             )
@@ -51,7 +55,7 @@ impl JsonSchemaValidator {
         self.validate_against_schema(json_value, schema)
             .map_err(|e| {
                 BatlessError::config_error_with_help(
-                    format!("JSON validation failed for schema '{}': {}", schema_name, e),
+                    format!("JSON validation failed for schema '{schema_name}': {e}"),
                     Some("Check the JSON output format matches the expected schema".to_string()),
                 )
             })
@@ -61,7 +65,7 @@ impl JsonSchemaValidator {
     pub fn validate_json_string(&self, schema_name: &str, json_str: &str) -> BatlessResult<()> {
         let json_value: Value = serde_json::from_str(json_str).map_err(|e| {
             BatlessError::config_error_with_help(
-                format!("Invalid JSON: {}", e),
+                format!("Invalid JSON: {e}"),
                 Some("Ensure the JSON is properly formatted".to_string()),
             )
         })?;
@@ -346,7 +350,7 @@ pub fn get_json_schema(schema_name: &str) -> BatlessResult<Value> {
     let validator = JsonSchemaValidator::new();
     validator.get_schema(schema_name).cloned().ok_or_else(|| {
         BatlessError::config_error_with_help(
-            format!("Schema '{}' not found", schema_name),
+            format!("Schema '{schema_name}' not found"),
             Some(format!(
                 "Available schemas: {}",
                 validator.schema_names().join(", ")
@@ -386,7 +390,7 @@ mod tests {
 
         let result = validator.validate("file_info", &valid_json);
         if let Err(e) = &result {
-            println!("Validation error: {}", e);
+            println!("Validation error: {e}");
         }
         assert!(result.is_ok());
     }

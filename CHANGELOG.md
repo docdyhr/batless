@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-07-31
+
+### 🧙 Enhanced User Experience & Streaming Features
+
+This release completes the v0.2.1 milestone with significant improvements to developer experience and powerful new streaming capabilities for handling large files.
+
+#### Added
+
+- **🌊 Streaming JSON Output**: Process very large files efficiently with streaming
+  - `--streaming-json`: Enable streaming mode for large file processing
+  - `--streaming-chunk-size <SIZE>`: Configure chunk size (default: 1000 lines)
+  - Schema versioning with JSON output versioned as "2.1"
+  - Chunk-based processing with metadata and checksums
+- **⏯️ Resume Capability**: Checkpoint and resume interrupted processing
+  - `--enable-resume`: Enable checkpoint-based resuming
+  - `--checkpoint <FILE>`: Specify checkpoint file location
+  - Configuration compatibility validation for safe resuming
+- **🧙 Interactive Configuration Wizard**: User-friendly profile setup
+  - `--configure`: Launch interactive configuration wizard
+  - `--list-profiles`: Display all available custom profiles
+  - `--edit-profile <PATH>`: Edit existing profiles interactively
+  - Comprehensive profile management with timestamps and validation
+- **🔍 Debug Mode**: Detailed processing information for troubleshooting
+  - `--debug`: Enable debug output with timing and processing details
+  - File statistics, processing time, and configuration details
+  - Helpful for performance tuning and issue diagnosis
+
+#### Enhanced
+
+- **📊 JSON Schema System**: Added streaming chunk schema support
+  - New `streaming_chunk` schema for validating streaming output
+  - Enhanced error messages with field-level validation
+  - Schema version tracking for compatibility
+- **⚙️ Configuration System**: Extended with new streaming and debug options
+  - Support for streaming configuration in custom profiles
+  - Debug mode configuration persistence
+  - Enhanced validation for streaming parameters
+
+#### Developer Experience
+
+- **🎯 Comprehensive CLI**: All new features fully integrated into help system
+- **📝 Enhanced Documentation**: Complete CLI help for all new options
+- **🧪 Test Coverage**: 162 tests covering all new functionality
+- **🔒 Security**: Full security audit passed with no vulnerabilities
+- **⚡ Performance**: Optimized for large file processing with streaming
+
+#### Technical Details
+
+- Added `streaming.rs` module for streaming JSON functionality
+- Added `wizard.rs` module for interactive configuration management
+- Extended configuration system with streaming and debug support
+- Enhanced JSON schema validation with streaming support
+- Added chrono dependency for timestamp management
+- Maintained full backward compatibility with existing features
+
 ## [0.2.0] - 2025-07-31
 
 ### 🚀 Major Release: Enhanced AI Integration

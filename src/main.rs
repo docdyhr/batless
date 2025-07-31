@@ -100,6 +100,38 @@ struct Args {
     /// Configuration file path (defaults to auto-discovery)
     #[arg(long)]
     config: Option<String>,
+
+    /// Enable streaming JSON output for large files
+    #[arg(long)]
+    streaming_json: bool,
+
+    /// Chunk size for streaming output (in lines)
+    #[arg(long, default_value = "1000")]
+    streaming_chunk_size: usize,
+
+    /// Enable resume capability with checkpoint support
+    #[arg(long)]
+    enable_resume: bool,
+
+    /// Checkpoint file path for resuming
+    #[arg(long)]
+    checkpoint: Option<String>,
+
+    /// Run interactive configuration wizard
+    #[arg(long)]
+    configure: bool,
+
+    /// List available custom profiles
+    #[arg(long)]
+    list_profiles: bool,
+
+    /// Edit existing custom profile
+    #[arg(long)]
+    edit_profile: Option<String>,
+
+    /// Enable debug mode with detailed processing information
+    #[arg(long)]
+    debug: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -270,7 +302,7 @@ fn run() -> BatlessResult<()> {
                 return Ok(());
             }
             None => {
-                eprintln!("Error: Unknown schema format '{}'", format);
+                eprintln!("Error: Unknown schema format '{format}'");
                 eprintln!(
                     "Available schemas: file_info, json_output, token_count, processing_stats"
                 );
@@ -294,10 +326,22 @@ fn run() -> BatlessResult<()> {
         return Ok(());
     }
 
+    if args.configure {
+        return batless::ConfigurationWizard::run();
+    }
+
+    if args.list_profiles {
+        return batless::ConfigurationWizard::list_profiles();
+    }
+
+    if let Some(profile_path) = args.edit_profile {
+        return batless::ConfigurationWizard::edit_profile(&profile_path);
+    }
+
     // Require file for other operations
     let file_path = args.file.as_ref().ok_or_else(|| {
         batless::BatlessError::config_error_with_help(
-            "File path required (unless using --list-languages or --list-themes)".to_string(),
+            "File path required (unless using --list-languages, --list-themes, --configure, --list-profiles, or --edit-profile)".to_string(),
             Some("Specify a file to view, or use --help for more options".to_string()),
         )
     })?;
@@ -347,6 +391,18 @@ fn run() -> BatlessResult<()> {
     if args.include_tokens {
         config = config.with_include_tokens(args.include_tokens);
     }
+    if args.streaming_json {
+        config = config.with_streaming_json(args.streaming_json);
+    }
+    if args.streaming_chunk_size != 1000 {
+        config = config.with_streaming_chunk_size(args.streaming_chunk_size);
+    }
+    if args.enable_resume {
+        config = config.with_enable_resume(args.enable_resume);
+    }
+    if args.debug {
+        config = config.with_debug(args.debug);
+    }
 
     // Handle summary level (new preferred method)
     if let Some(summary_level) = args.summary_level {
@@ -389,8 +445,86 @@ fn run() -> BatlessResult<()> {
     }
     batless::ThemeManager::validate_theme(&config.theme)?;
 
-    // Process the file
+    // Check if streaming JSON is requested
+    if config.streaming_json && output_mode == OutputMode::Json {
+        // Handle streaming JSON output
+        use batless::StreamingProcessor;
+
+        // Load checkpoint if resume is enabled and checkpoint file exists
+        let checkpoint = if config.enable_resume {
+            if let Some(checkpoint_path) = &args.checkpoint {
+                if std::path::Path::new(checkpoint_path).exists() {
+                    Some(StreamingProcessor::load_checkpoint(std::path::Path::new(
+                        checkpoint_path,
+                    ))?)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // Process with streaming
+        let chunks = StreamingProcessor::process_streaming(file_path, &config, checkpoint)?;
+
+        for chunk_result in chunks {
+            let chunk = chunk_result?;
+
+            // Output the chunk as JSON
+            let json_output = serde_json::to_string_pretty(&chunk)
+                .map_err(batless::BatlessError::JsonSerializationError)?;
+            println!("{json_output}");
+
+            // Save checkpoint if resume is enabled
+            if config.enable_resume && !chunk.is_final {
+                if let Some(checkpoint_path) = &args.checkpoint {
+                    StreamingProcessor::save_checkpoint(
+                        &chunk.checkpoint,
+                        std::path::Path::new(checkpoint_path),
+                    )?;
+                }
+            }
+
+            // Add separator between chunks (except for the last one)
+            if !chunk.is_final {
+                println!("---"); // Chunk separator
+            }
+        }
+
+        return Ok(());
+    }
+
+    // Process the file normally (non-streaming)
+    let start_time = std::time::Instant::now();
+
+    if config.debug {
+        eprintln!("🔍 DEBUG: Starting file processing...");
+        eprintln!("🔍 DEBUG: File: {file_path}");
+        eprintln!(
+            "🔍 DEBUG: Config: max_lines={}, max_bytes={:?}, language={:?}",
+            config.max_lines, config.max_bytes, config.language
+        );
+        eprintln!("🔍 DEBUG: Output mode: {}", output_mode.as_str());
+    }
+
     let file_info = batless::process_file(file_path, &config)?;
+
+    let processing_time = start_time.elapsed();
+    if config.debug {
+        eprintln!("🔍 DEBUG: Processing completed in {processing_time:?}");
+        eprintln!(
+            "🔍 DEBUG: File stats: {} lines, {} bytes, language: {:?}",
+            file_info.total_lines, file_info.total_bytes, file_info.language
+        );
+        eprintln!(
+            "🔍 DEBUG: Truncated: {}, Errors: {}",
+            file_info.truncated,
+            file_info.syntax_errors.len()
+        );
+    }
 
     // Handle token counting if requested
     if args.count_tokens {
@@ -472,12 +606,12 @@ fn run() -> BatlessResult<()> {
         match serde_json::from_str::<serde_json::Value>(&formatted_output) {
             Ok(json_value) => {
                 if let Err(e) = validator.validate("json_output", &json_value) {
-                    eprintln!("⚠️  JSON validation warning: {}", e);
+                    eprintln!("⚠️  JSON validation warning: {e}");
                     eprintln!("   Output may not be fully AI-compatible");
                 }
             }
             Err(e) => {
-                eprintln!("⚠️  JSON parsing error: {}", e);
+                eprintln!("⚠️  JSON parsing error: {e}");
                 eprintln!("   Output is not valid JSON");
             }
         }

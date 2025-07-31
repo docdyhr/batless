@@ -11,9 +11,11 @@ pub mod highlighter;
 pub mod json_schema;
 pub mod language;
 pub mod processor;
+pub mod streaming;
 pub mod summarizer;
 pub mod token_counter;
 pub mod tokenizer;
+pub mod wizard;
 
 // Re-export commonly used types
 pub use config::{BatlessConfig, CustomProfile, SummaryLevel};
@@ -24,7 +26,9 @@ pub use highlighter::SyntaxHighlighter;
 pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValidator};
 pub use language::{LanguageDetector, ThemeManager};
 pub use processor::FileProcessor;
+pub use streaming::{StreamingCheckpoint, StreamingChunk, StreamingProcessor};
 pub use token_counter::{AiModel, TokenCount, TokenCounter};
+pub use wizard::ConfigurationWizard;
 
 /// Main entry point for processing a file with batless
 pub fn process_file(file_path: &str, config: &BatlessConfig) -> BatlessResult<FileInfo> {

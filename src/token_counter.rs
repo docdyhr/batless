@@ -42,6 +42,18 @@ impl AiModel {
         }
     }
 
+    /// Get all available AI models
+    pub fn all() -> Vec<Self> {
+        vec![
+            Self::Gpt4,
+            Self::Gpt4Turbo,
+            Self::Gpt35,
+            Self::Claude,
+            Self::Claude35Sonnet,
+            Self::Generic,
+        ]
+    }
+
     /// Get string representation
     pub const fn as_str(&self) -> &'static str {
         match self {

@@ -76,7 +76,7 @@ impl FileProcessor {
     }
 
     /// Detect file encoding
-    fn detect_encoding(file_path: &str) -> BatlessResult<String> {
+    pub fn detect_encoding(file_path: &str) -> BatlessResult<String> {
         let mut file = File::open(file_path).map_err(|e| BatlessError::FileReadError {
             path: file_path.to_string(),
             source: e,
