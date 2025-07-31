@@ -16,7 +16,7 @@ pub mod token_counter;
 pub mod tokenizer;
 
 // Re-export commonly used types
-pub use config::{BatlessConfig, SummaryLevel};
+pub use config::{BatlessConfig, CustomProfile, SummaryLevel};
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};

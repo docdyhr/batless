@@ -551,7 +551,10 @@ mod tests {
 
         // Test parsing
         assert_eq!(AiModel::parse("gpt-4-turbo").unwrap(), AiModel::Gpt4Turbo);
-        assert_eq!(AiModel::parse("claude-3.5-sonnet").unwrap(), AiModel::Claude35Sonnet);
+        assert_eq!(
+            AiModel::parse("claude-3.5-sonnet").unwrap(),
+            AiModel::Claude35Sonnet
+        );
     }
 
     #[test]
@@ -573,13 +576,13 @@ mod tests {
         // Compare with original models - should use similar estimation patterns
         let gpt4 = TokenCounter::new(AiModel::Gpt4);
         let gpt4_count = gpt4.count_tokens(test_text);
-        
+
         let claude = TokenCounter::new(AiModel::Claude);
         let claude_count = claude.count_tokens(test_text);
 
         // GPT-4 Turbo should estimate similarly to GPT-4
         assert_eq!(gpt4_turbo_count.tokens, gpt4_count.tokens);
-        
+
         // Claude-3.5 Sonnet should estimate similarly to Claude
         assert_eq!(claude35_count.tokens, claude_count.tokens);
     }
@@ -591,7 +594,7 @@ mod tests {
         // Test GPT-4 Turbo context fitting
         let gpt4_turbo = TokenCounter::new(AiModel::Gpt4Turbo);
         assert!(gpt4_turbo.fits_with_prompt(&test_text, 500));
-        
+
         let max_length = gpt4_turbo.max_content_length(1000);
         assert!(max_length > 0);
         assert!(max_length < 128_000 * 10); // Sanity check
@@ -599,7 +602,7 @@ mod tests {
         // Test Claude-3.5 Sonnet context fitting
         let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
         assert!(claude35.fits_with_prompt(&test_text, 500));
-        
+
         let max_length_claude = claude35.max_content_length(1000);
         assert!(max_length_claude > 0);
         assert!(max_length_claude < 200_000 * 10); // Sanity check

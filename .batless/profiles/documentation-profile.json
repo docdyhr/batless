@@ -1,0 +1,17 @@
+{
+    "name": "documentation-profile",
+    "description": "Profile optimized for documentation generation and analysis",
+    "version": "1.0",
+    "max_lines": 1000,
+    "use_color": true,
+    "include_tokens": false,
+    "summary_level": "Detailed",
+    "output_mode": "summary",
+    "ai_model": "claude35-sonnet",
+    "tags": [
+        "documentation",
+        "analysis",
+        "summary"
+    ],
+    "theme": "base16-mocha.dark"
+}

@@ -1,0 +1,17 @@
+{
+    "name": "my-coding-profile",
+    "description": "A custom profile optimized for code review and analysis",
+    "version": "1.0",
+    "max_lines": 2500,
+    "use_color": false,
+    "include_tokens": true,
+    "summary_level": "None",
+    "output_mode": "json",
+    "ai_model": "gpt4-turbo",
+    "tags": [
+        "coding",
+        "review",
+        "analysis"
+    ],
+    "created_at": "2025-08-01T11:18:00Z"
+}

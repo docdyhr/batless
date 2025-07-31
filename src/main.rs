@@ -1,6 +1,6 @@
 use batless::{
-    AiModel, BatlessConfig, BatlessResult, JsonSchemaValidator, OutputMode, SummaryLevel,
-    TokenCounter,
+    AiModel, BatlessConfig, BatlessResult, CustomProfile, JsonSchemaValidator, OutputMode,
+    SummaryLevel, TokenCounter,
 };
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, shells::*};
@@ -92,6 +92,10 @@ struct Args {
     /// Use predefined AI tool profile (overrides other settings)
     #[arg(long, value_enum)]
     profile: Option<AiProfile>,
+
+    /// Load custom AI profile from file
+    #[arg(long)]
+    custom_profile: Option<String>,
 
     /// Configuration file path (defaults to auto-discovery)
     #[arg(long)]
@@ -353,7 +357,23 @@ fn run() -> BatlessResult<()> {
     }
 
     // Apply AI profile if specified (overrides other settings)
-    let output_mode = if let Some(profile) = args.profile {
+    let output_mode = if let Some(custom_profile_path) = args.custom_profile {
+        // Load custom profile from file
+        let custom_profile = CustomProfile::load_from_file(&custom_profile_path)?;
+        config = custom_profile.apply_to_config(config);
+
+        // Use custom profile's preferred output mode, or fall back to CLI arg
+        custom_profile
+            .get_output_mode()
+            .and_then(|mode| match mode.as_str() {
+                "plain" => Some(OutputMode::Plain),
+                "highlight" => Some(OutputMode::Highlight),
+                "json" => Some(OutputMode::Json),
+                "summary" => Some(OutputMode::Summary),
+                _ => None,
+            })
+            .unwrap_or_else(|| OutputMode::from(args.mode))
+    } else if let Some(profile) = args.profile {
         config = profile.apply_to_config(config);
         profile.get_output_mode()
     } else {
