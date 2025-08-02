@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GitHub CLI integration: `PAGER="batless --plain" gh pr view 46`
   - Automatic color disabling in plain mode for better PAGER compatibility
 
+- **🌊 Enhanced JSON Output**: Complete streaming and resumable processing
+  - `--streaming-json`: Enable streaming mode for large file processing  
+  - `--streaming-chunk-size <SIZE>`: Configure chunk size (default: 1000 lines)
+  - `--enable-resume --checkpoint <FILE>`: Resume processing from saved checkpoint
+  - Stdin support for streaming operations (pipelines and PAGER usage)
+  - JSON schema versioning with backwards compatibility
+  - Comprehensive streaming validation and error handling
+
 ## [0.2.1] - 2025-07-31
 
 ### 🧙 Enhanced User Experience & Streaming Features

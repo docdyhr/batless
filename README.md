@@ -39,7 +39,7 @@ Built for automation, AI assistants, and modern CLI workflows
 **Key Advantages:**
 
 - 🚀 **Never Blocks**: Guaranteed non-blocking operation for CI/CD and automation
-- 🤖 **AI-Optimized**: JSON output, summaries, and tokens for LLM processing  
+- 🤖 **AI-Optimized**: JSON output, summaries, and tokens for LLM processing
 - ⚡ **Blazing Fast**: <50ms startup, streaming architecture, ~2MB binary
 - 🔧 **Automation-First**: Clean defaults, predictable behavior, perfect for scripts
 - 📊 **Smart Output**: Multiple modes including summary extraction and token analysis
@@ -119,7 +119,7 @@ batless --mode=json --include-tokens --summary src/main.rs
 #### Non-Blocking Guarantees
 
 - 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
-- ⚡ **NEVER waits for input** - always streams output immediately  
+- ⚡ **NEVER waits for input** - always streams output immediately
 - 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
 - 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
 
@@ -274,7 +274,7 @@ batless --mode=json --max-bytes=5000 large-file.js
 - name: Show failing test context
   run: |
     batless --mode=summary --max-lines=100 tests/failing_test.rs
-    
+
 - name: Extract code metrics
   run: |
     batless --mode=json src/main.rs | jq '.total_lines'
@@ -389,6 +389,7 @@ batless --plain --unbuffered --number file.txt
 ```
 
 **Key PAGER features:**
+
 - ✅ `--plain` flag for plain text output (no colors/decorations)
 - ✅ stdin support for pipeline input
 - ✅ Compatible with existing PAGER workflows
@@ -810,7 +811,7 @@ Common configuration patterns and their use cases are documented in the [project
 ### Current Test Status ✅
 
 - **Main Test Suite**: 100% passed
-- **Integration Tests**: 100% passed  
+- **Integration Tests**: 100% passed
 - **Property-Based Tests**: 100% passed
 - **Security Audit**: Clean
 - **CI/CD Pipeline**: Fully functional
@@ -891,7 +892,7 @@ ls ~/.cache/batless/ || ls ~/Library/Caches/batless/
 # Benchmark performance
 time batless --mode=summary large-file.rs
 
-# Memory usage monitoring  
+# Memory usage monitoring
 /usr/bin/time -v batless large-file.rs
 ```
 
@@ -939,7 +940,7 @@ batless --help
 **Community Support**
 
 - 🐛 [Report Issues](https://github.com/docdyhr/batless/issues)
-- 💬 [Discussions](https://github.com/docdyhr/batless/discussions)  
+- 💬 [Discussions](https://github.com/docdyhr/batless/discussions)
 - 📚 [Documentation](https://github.com/docdyhr/batless/wiki)
 - 📧 [Contact](mailto:support@docdyhr.com)
 

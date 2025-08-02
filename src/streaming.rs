@@ -124,6 +124,20 @@ impl StreamingProcessor {
         config: &BatlessConfig,
         checkpoint: Option<StreamingCheckpoint>,
     ) -> BatlessResult<impl Iterator<Item = BatlessResult<StreamingChunk>>> {
+        // Check if this is stdin input
+        if file_path == "-" {
+            // Note: Streaming from stdin doesn't support checkpoints since stdin is not seekable
+            if checkpoint.is_some() {
+                return Err(BatlessError::config_error_with_help(
+                    "Resume/checkpoint functionality is not supported with stdin input".to_string(),
+                    Some("Stdin is not seekable. Use file input for checkpoint support.".to_string()),
+                ));
+            }
+            
+            let processor = StreamingProcessorIterator::new_from_stdin(config)?;
+            return Ok(processor);
+        }
+
         // Validate checkpoint if provided
         if let Some(ref cp) = checkpoint {
             if !cp.is_compatible(config) {
@@ -232,14 +246,25 @@ impl StreamingProcessor {
 }
 
 /// Iterator for streaming file processing
-struct StreamingProcessorIterator {
-    reader: BufReader<File>,
-    config: BatlessConfig,
-    file_metadata: FileMetadata,
-    current_line: usize,
-    bytes_processed: usize,
-    chunk_number: usize,
-    finished: bool,
+enum StreamingProcessorIterator {
+    File {
+        reader: BufReader<File>,
+        config: BatlessConfig,
+        file_metadata: FileMetadata,
+        current_line: usize,
+        bytes_processed: usize,
+        chunk_number: usize,
+        finished: bool,
+    },
+    Stdin {
+        reader: BufReader<std::io::Stdin>,
+        config: BatlessConfig,
+        stdin_metadata: FileMetadata,
+        current_line: usize,
+        bytes_processed: usize,
+        chunk_number: usize,
+        finished: bool,
+    },
 }
 
 /// File metadata for streaming
@@ -283,13 +308,38 @@ impl StreamingProcessorIterator {
             (0, 0, 0)
         };
 
-        Ok(Self {
+        Ok(StreamingProcessorIterator::File {
             reader,
             config: config.clone(),
             file_metadata,
             current_line,
             bytes_processed,
             chunk_number,
+            finished: false,
+        })
+    }
+
+    fn new_from_stdin(config: &BatlessConfig) -> BatlessResult<Self> {
+        use std::io::stdin;
+
+        let reader = BufReader::new(stdin());
+        
+        // Create metadata for stdin
+        let stdin_metadata = FileMetadata {
+            path: "<stdin>".to_string(),
+            language: None, // Cannot detect language without file extension
+            encoding: "UTF-8".to_string(),
+            total_bytes: 0, // Unknown for stdin
+            total_lines: 0, // Unknown for stdin
+        };
+
+        Ok(StreamingProcessorIterator::Stdin {
+            reader,
+            config: config.clone(),
+            stdin_metadata,
+            current_line: 0,
+            bytes_processed: 0,
+            chunk_number: 0,
             finished: false,
         })
     }
@@ -339,86 +389,192 @@ impl Iterator for StreamingProcessorIterator {
     type Item = BatlessResult<StreamingChunk>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.finished {
-            return None;
-        }
+        match self {
+            StreamingProcessorIterator::File {
+                reader,
+                config,
+                file_metadata,
+                current_line,
+                bytes_processed,
+                chunk_number,
+                finished,
+            } => {
+                if *finished {
+                    return None;
+                }
 
-        // Read chunk_size lines
-        let mut chunk_lines = Vec::new();
-        let mut chunk_bytes = 0;
-        let start_line = self.current_line;
+                // Read chunk_size lines
+                let mut chunk_lines = Vec::new();
+                let mut chunk_bytes = 0;
+                let start_line = *current_line;
 
-        for _ in 0..self.config.streaming_chunk_size {
-            let mut line = String::new();
-            match self.reader.read_line(&mut line) {
-                Ok(0) => break, // EOF
-                Ok(bytes_read) => {
-                    chunk_bytes += bytes_read;
-                    self.bytes_processed += bytes_read;
+                for _ in 0..config.streaming_chunk_size {
+                    let mut line = String::new();
+                    match reader.read_line(&mut line) {
+                        Ok(0) => break, // EOF
+                        Ok(bytes_read) => {
+                            chunk_bytes += bytes_read;
+                            *bytes_processed += bytes_read;
 
-                    // Remove trailing newline for consistency
-                    if line.ends_with('\n') {
-                        line.pop();
-                        if line.ends_with('\r') {
-                            line.pop();
+                            // Remove trailing newline for consistency
+                            if line.ends_with('\n') {
+                                line.pop();
+                                if line.ends_with('\r') {
+                                    line.pop();
+                                }
+                            }
+
+                            chunk_lines.push(line);
+                            *current_line += 1;
+                        }
+                        Err(e) => {
+                            return Some(Err(BatlessError::FileReadError {
+                                path: file_metadata.path.clone(),
+                                source: e,
+                            }));
                         }
                     }
+                }
 
-                    chunk_lines.push(line);
-                    self.current_line += 1;
+                if chunk_lines.is_empty() {
+                    *finished = true;
+                    return None;
                 }
-                Err(e) => {
-                    return Some(Err(BatlessError::FileReadError {
-                        path: self.file_metadata.path.clone(),
-                        source: e,
-                    }));
+
+                let end_line = *current_line - 1;
+                let is_final = *current_line >= file_metadata.total_lines
+                    || *bytes_processed >= file_metadata.total_bytes as usize;
+
+                if is_final {
+                    *finished = true;
                 }
+
+                let metadata = ChunkMetadata {
+                    file_path: file_metadata.path.clone(),
+                    language: file_metadata.language.clone(),
+                    encoding: file_metadata.encoding.clone(),
+                    total_file_bytes: file_metadata.total_bytes,
+                    total_file_lines: file_metadata.total_lines,
+                    chunk_lines: chunk_lines.len(),
+                    chunk_bytes,
+                    start_line,
+                    end_line,
+                };
+
+                let checkpoint = StreamingCheckpoint::new(
+                    file_metadata.path.clone(),
+                    *current_line,
+                    *bytes_processed,
+                    *chunk_number,
+                    config,
+                );
+
+                let chunk = StreamingChunk {
+                    schema_version: config.schema_version.clone(),
+                    metadata,
+                    lines: chunk_lines,
+                    checkpoint,
+                    is_final,
+                };
+
+                *chunk_number += 1;
+                Some(Ok(chunk))
+            }
+            StreamingProcessorIterator::Stdin {
+                reader,
+                config,
+                stdin_metadata,
+                current_line,
+                bytes_processed,
+                chunk_number,
+                finished,
+            } => {
+                if *finished {
+                    return None;
+                }
+
+                // Read chunk_size lines from stdin
+                let mut chunk_lines = Vec::new();
+                let mut chunk_bytes = 0;
+                let start_line = *current_line;
+
+                for _ in 0..config.streaming_chunk_size {
+                    let mut line = String::new();
+                    match reader.read_line(&mut line) {
+                        Ok(0) => break, // EOF
+                        Ok(bytes_read) => {
+                            chunk_bytes += bytes_read;
+                            *bytes_processed += bytes_read;
+
+                            // Remove trailing newline for consistency
+                            if line.ends_with('\n') {
+                                line.pop();
+                                if line.ends_with('\r') {
+                                    line.pop();
+                                }
+                            }
+
+                            chunk_lines.push(line);
+                            *current_line += 1;
+                        }
+                        Err(e) => {
+                            return Some(Err(BatlessError::FileReadError {
+                                path: stdin_metadata.path.clone(),
+                                source: e,
+                            }));
+                        }
+                    }
+                }
+
+                if chunk_lines.is_empty() {
+                    *finished = true;
+                    return None;
+                }
+
+                let end_line = *current_line - 1;
+                
+                // Check if we've hit EOF by trying to peek at the buffer
+                let is_final = match reader.fill_buf() {
+                    Ok(buf) => buf.is_empty(), // EOF if buffer is empty
+                    Err(_) => true, // Assume EOF on error
+                };
+                
+                if is_final {
+                    *finished = true;
+                }
+
+                let metadata = ChunkMetadata {
+                    file_path: stdin_metadata.path.clone(),
+                    language: stdin_metadata.language.clone(),
+                    encoding: stdin_metadata.encoding.clone(),
+                    total_file_bytes: *bytes_processed as u64, // Use current bytes as estimate
+                    total_file_lines: *current_line, // Use current line count as estimate
+                    chunk_lines: chunk_lines.len(),
+                    chunk_bytes,
+                    start_line,
+                    end_line,
+                };
+
+                let checkpoint = StreamingCheckpoint::new(
+                    stdin_metadata.path.clone(),
+                    *current_line,
+                    *bytes_processed,
+                    *chunk_number,
+                    config,
+                );
+
+                let chunk = StreamingChunk {
+                    schema_version: config.schema_version.clone(),
+                    metadata,
+                    lines: chunk_lines,
+                    checkpoint,
+                    is_final,
+                };
+
+                *chunk_number += 1;
+                Some(Ok(chunk))
             }
         }
-
-        if chunk_lines.is_empty() {
-            self.finished = true;
-            return None;
-        }
-
-        let end_line = self.current_line - 1;
-        let is_final = self.current_line >= self.file_metadata.total_lines
-            || self.bytes_processed >= self.file_metadata.total_bytes as usize;
-
-        if is_final {
-            self.finished = true;
-        }
-
-        let metadata = ChunkMetadata {
-            file_path: self.file_metadata.path.clone(),
-            language: self.file_metadata.language.clone(),
-            encoding: self.file_metadata.encoding.clone(),
-            total_file_bytes: self.file_metadata.total_bytes,
-            total_file_lines: self.file_metadata.total_lines,
-            chunk_lines: chunk_lines.len(),
-            chunk_bytes,
-            start_line,
-            end_line,
-        };
-
-        let checkpoint = StreamingCheckpoint::new(
-            self.file_metadata.path.clone(),
-            self.current_line,
-            self.bytes_processed,
-            self.chunk_number,
-            &self.config,
-        );
-
-        let chunk = StreamingChunk {
-            schema_version: self.config.schema_version.clone(),
-            metadata,
-            lines: chunk_lines,
-            checkpoint,
-            is_final,
-        };
-
-        self.chunk_number += 1;
-        Some(Ok(chunk))
     }
 }
 

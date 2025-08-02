@@ -467,12 +467,22 @@ fn test_shell_completion_generation_powershell() {
 }
 
 #[test]
-fn test_file_required_error() {
-    let output = run_batless(&["--mode=json"]);
-    assert!(!output.status.success());
-
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    assert!(stderr.contains("File path required"));
+fn test_stdin_processing() {
+    // Test that stdin input is properly processed by using echo and pipe
+    // This is more reliable than trying to capture cargo run output
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("echo 'test line 1\\ntest line 2' | cargo run -- --mode=json")
+        .output()
+        .expect("Failed to execute command");
+    
+    assert!(output.status.success());
+    
+    // The output goes to stdout when using shell pipe
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("test line 1"));
+    assert!(stdout.contains("test line 2"));
+    assert!(stdout.contains("file\": \"-"));
 }
 
 #[test]
