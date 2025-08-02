@@ -25,6 +25,56 @@ cargo fmt                           # Format code
 cargo audit                         # Security vulnerability audit
 ```
 
+### Running the Tool
+```bash
+cargo run -- file.rs                # Run in debug mode
+cargo run --release -- file.rs      # Run in release mode
+./target/debug/batless file.rs      # Run debug binary directly
+./demo.sh                           # Run demo script
+```
+
+## 🚀 Release Process
+
+### Automated Release (Recommended)
+```bash
+# Install required tools
+cargo install cargo-release
+
+# Set crates.io token (one-time setup)
+export CARGO_REGISTRY_TOKEN="your-token-here"
+
+# Full automated release
+./scripts/release.sh 0.2.1
+
+# Or use cargo-release directly  
+cargo release 0.2.1 --execute
+```
+
+### Manual/Emergency Release
+If the automated process fails:
+
+```bash
+# 1. Publish to crates.io
+cargo release publish --execute
+
+# 2. Create GitHub release
+git tag v0.2.1 -m "Release message"
+git push origin v0.2.1
+gh release create v0.2.1 --title "Release Title" --notes "Release notes"
+
+# 3. Verify publication
+curl -s "https://crates.io/api/v1/crates/batless" | jq -r '.crate.max_version'
+curl -s "https://api.github.com/repos/docdyhr/batless/releases/latest" | jq -r '.tag_name'
+```
+
+### Release Checklist
+- [ ] All tests passing (201 tests: 162 unit + 33 integration + 6 property)
+- [ ] Version updated in Cargo.toml
+- [ ] CHANGELOG.md updated with release notes
+- [ ] Published to crates.io
+- [ ] GitHub release created with proper tag
+- [ ] Homebrew formula updated (automatic via workflow)
+
 ### CI/CD Workflows
 ```bash
 # Manual workflow triggers available:
@@ -34,16 +84,8 @@ gh workflow run workflow-dispatch.yml -f workflow_type=performance-benchmark
 gh workflow run workflow-dispatch.yml -f workflow_type=quality-check
 gh workflow run workflow-dispatch.yml -f workflow_type=quick-validation
 
-# Release process:
-gh workflow run manual-release.yml -f version=0.1.2 -f create_tag=true -f dry_run=false
-```
-
-### Running the Tool
-```bash
-cargo run -- file.rs                # Run in debug mode
-cargo run --release -- file.rs      # Run in release mode
-./target/debug/batless file.rs      # Run debug binary directly
-./demo.sh                           # Run demo script
+# Release workflow (triggered by tags):
+gh workflow run release.yml --ref v0.2.1
 ```
 
 ## Architecture

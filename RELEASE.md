@@ -50,28 +50,51 @@ git commit -m "Configure release automation"
 ### Method 1: Automated Release (Recommended)
 
 ```bash
-# Use our release script (creates PR for review)
-./scripts/release.sh 0.2.0
+# Use our release script (recommended)
+./scripts/release.sh 0.2.1
 
 # Or use cargo-release for direct release
-cargo release --execute 0.2.0
+cargo release 0.2.1 --execute
 ```
 
-### Method 2: Manual Release
+### Method 2: Manual Release (Emergency/Backup)
 
 ```bash
-# 1. Update version and changelog
-./scripts/prep-release.sh 0.2.0
+# 1. Ensure you have crates.io token
+export CARGO_REGISTRY_TOKEN="your-token-here"
 
-# 2. Review changes and commit
+# 2. Update version and changelog
+./scripts/prep-release.sh 0.2.1
+
+# 3. Review changes and commit
 git add .
-git commit -m "Release v0.2.0"
+git commit -m "Release v0.2.1"
 
-# 3. Create and push tag
-git tag v0.2.0
-git push origin v0.2.0
+# 4. Create and push tag
+git tag -a v0.2.1 -m "Release v0.2.1"
+git push origin v0.2.1
 
-# 4. GitHub Actions automatically handles the rest
+# 5. Publish to crates.io manually if needed
+cargo release publish --execute
+
+# 6. Create GitHub release manually if needed
+gh release create v0.2.1 --title "batless v0.2.1" --notes "Release notes here"
+```
+
+### Method 3: Recovery from Failed Release
+
+If a release partially fails (tag exists but not published):
+
+```bash
+# Check what's missing
+curl -s "https://crates.io/api/v1/crates/batless" | jq -r '.crate.max_version'
+curl -s "https://api.github.com/repos/docdyhr/batless/releases/latest" | jq -r '.tag_name'
+
+# Publish to crates.io if missing
+cargo release publish --execute
+
+# Create GitHub release if missing
+gh release create v0.2.1 --title "Release title" --notes "Release notes"
 ```
 
 ### What Happens on Release
