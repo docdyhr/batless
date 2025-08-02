@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **🔧 PAGER Compatibility**: Use batless as a drop-in replacement for cat/less
+  - `--plain`: Plain text output mode equivalent to `--mode plain`
+  - `--unbuffered`, `--number`: Compatibility flags (ignored for compatibility)
+  - Stdin support: Read from pipes and redirects (`echo "content" | batless --plain`)
+  - GitHub CLI integration: `PAGER="batless --plain" gh pr view 46`
+  - Automatic color disabling in plain mode for better PAGER compatibility
+
 ## [0.2.1] - 2025-07-31
 
 ### 🧙 Enhanced User Experience & Streaming Features

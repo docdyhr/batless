@@ -7,7 +7,7 @@
 **Latest Release**: v0.2.0 (July 31, 2025)
 **Next Target**: v0.2.1 completion
 
-**🎯 Current Status**: v0.2.1 **IN ACTIVE DEVELOPMENT** - 4 of 6 P0/P1 features completed! ✅ Enhanced error handling, performance optimizations, advanced AI model support (GPT-4 Turbo, Claude-3.5 Sonnet), and custom AI profiles all delivered. All 157 tests passing. Currently implementing enhanced JSON output features.
+**🎯 Current Status**: v0.2.1 **IN ACTIVE DEVELOPMENT** - 5 of 6 P0/P1 features completed! ✅ Enhanced error handling, performance optimizations, advanced AI model support (GPT-4 Turbo, Claude-3.5 Sonnet), custom AI profiles, and PAGER compatibility all delivered. All 162 tests passing. Currently implementing enhanced JSON output features.
 
 ---
 
@@ -15,7 +15,7 @@
 
 ### **v0.2.1 - Enhanced Features & Polish - 🚧 IN PROGRESS**
 
-**Progress**: 4 of 6 P0/P1 features completed (67% complete)
+**Progress**: 5 of 6 P0/P1 features completed (83% complete)
 
 #### **✅ Recently Completed Features (August 2025)**
 
@@ -38,6 +38,12 @@
    - JSON and TOML profile format support
    - `--custom-profile` CLI flag
    - Profile discovery in `.batless/profiles/`
+
+5. **PAGER Compatibility** ✅ **COMPLETED August 2, 2025**
+   - Added `--plain` flag for cat replacement compatibility
+   - Added stdin support for pipeline usage
+   - Added compatibility flags: `--unbuffered`, `--number` (ignored)
+   - Fixed GitHub CLI `gh pr view` usage: `PAGER=batless gh pr view 46`
 
 #### **🎯 Next Priorities**
 

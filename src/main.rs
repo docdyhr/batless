@@ -132,6 +132,18 @@ struct Args {
     /// Enable debug mode with detailed processing information
     #[arg(long)]
     debug: bool,
+
+    /// PAGER compatibility: equivalent to --mode plain (for cat replacement)
+    #[arg(long)]
+    plain: bool,
+
+    /// PAGER compatibility: ignored for compatibility with other pagers
+    #[arg(short = 'u', long)]
+    unbuffered: bool,
+
+    /// PAGER compatibility: ignored for compatibility with other pagers
+    #[arg(short = 'n', long)]
+    number: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -338,13 +350,18 @@ fn run() -> BatlessResult<()> {
         return batless::ConfigurationWizard::edit_profile(&profile_path);
     }
 
-    // Require file for other operations
-    let file_path = args.file.as_ref().ok_or_else(|| {
-        batless::BatlessError::config_error_with_help(
+    // Require file for other operations, unless reading from stdin
+    let file_path = if let Some(file) = args.file.as_ref() {
+        file.clone()
+    } else if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+        // Reading from stdin (pipe/redirect) - use special stdin indicator
+        "-".to_string()
+    } else {
+        return Err(batless::BatlessError::config_error_with_help(
             "File path required (unless using --list-languages, --list-themes, --configure, --list-profiles, or --edit-profile)".to_string(),
-            Some("Specify a file to view, or use --help for more options".to_string()),
-        )
-    })?;
+            Some("Specify a file to view, pipe input via stdin, or use --help for more options".to_string()),
+        ));
+    };
 
     // Determine if we should use color
     let use_color = match args.color {
@@ -413,7 +430,7 @@ fn run() -> BatlessResult<()> {
     }
 
     // Apply AI profile if specified (overrides other settings)
-    let output_mode = if let Some(custom_profile_path) = args.custom_profile {
+    let mut output_mode = if let Some(custom_profile_path) = args.custom_profile {
         // Load custom profile from file
         let custom_profile = CustomProfile::load_from_file(&custom_profile_path)?;
         config = custom_profile.apply_to_config(config);
@@ -435,6 +452,13 @@ fn run() -> BatlessResult<()> {
     } else {
         OutputMode::from(args.mode)
     };
+
+    // Handle PAGER compatibility flags
+    if args.plain {
+        output_mode = OutputMode::Plain;
+        // When --plain is used, also disable color for better PAGER compatibility
+        config = config.with_use_color(false);
+    }
 
     // Validate configuration
     config.validate()?;
@@ -468,7 +492,7 @@ fn run() -> BatlessResult<()> {
         };
 
         // Process with streaming
-        let chunks = StreamingProcessor::process_streaming(file_path, &config, checkpoint)?;
+        let chunks = StreamingProcessor::process_streaming(&file_path, &config, checkpoint)?;
 
         for chunk_result in chunks {
             let chunk = chunk_result?;
@@ -510,7 +534,7 @@ fn run() -> BatlessResult<()> {
         eprintln!("🔍 DEBUG: Output mode: {}", output_mode.as_str());
     }
 
-    let file_info = batless::process_file(file_path, &config)?;
+    let file_info = batless::process_file(&file_path, &config)?;
 
     let processing_time = start_time.elapsed();
     if config.debug {
@@ -598,7 +622,7 @@ fn run() -> BatlessResult<()> {
     }
 
     let formatted_output =
-        batless::format_output(&final_file_info, file_path, &config, output_mode)?;
+        batless::format_output(&final_file_info, &file_path, &config, output_mode)?;
 
     // Validate JSON output if requested
     if args.validate_json && output_mode == OutputMode::Json {

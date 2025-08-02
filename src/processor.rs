@@ -23,6 +23,11 @@ impl FileProcessor {
         // Validate configuration first
         config.validate()?;
 
+        // Handle stdin input
+        if file_path == "-" {
+            return Self::process_stdin(config);
+        }
+
         // Check if file exists
         if !Path::new(file_path).exists() {
             return Err(BatlessError::file_not_found_with_suggestions(
@@ -69,6 +74,88 @@ impl FileProcessor {
         if config.include_tokens {
             let content = file_info.lines.join("\n");
             let tokens = TokenExtractor::extract_tokens(&content, file_path);
+            file_info = file_info.with_tokens(Some(tokens));
+        }
+
+        Ok(file_info)
+    }
+
+    /// Process input from stdin
+    pub fn process_stdin(config: &BatlessConfig) -> BatlessResult<FileInfo> {
+        use std::io::{stdin, Read};
+
+        // Read all content from stdin
+        let mut content = String::new();
+        stdin()
+            .read_to_string(&mut content)
+            .map_err(|e| BatlessError::FileReadError {
+                path: "<stdin>".to_string(),
+                source: e,
+            })?;
+
+        // Split into lines
+        let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let total_lines = lines.len();
+        let total_bytes = content.len();
+
+        // Apply line limits if configured
+        let (final_lines, truncated_by_lines) = if total_lines > config.max_lines {
+            (lines[..config.max_lines].to_vec(), true)
+        } else {
+            (lines, false)
+        };
+
+        // Apply byte limits if configured
+        let (final_lines, total_bytes, truncated_by_bytes) =
+            if let Some(max_bytes) = config.max_bytes {
+                let mut byte_count = 0;
+                let mut truncated_lines = Vec::new();
+                let mut truncated = false;
+
+                for line in final_lines {
+                    let line_bytes = line.len() + 1; // +1 for newline
+                    if byte_count + line_bytes > max_bytes {
+                        truncated = true;
+                        break;
+                    }
+                    byte_count += line_bytes;
+                    truncated_lines.push(line);
+                }
+                (truncated_lines, byte_count, truncated)
+            } else {
+                (final_lines, total_bytes, false)
+            };
+
+        // Detect language from content (limited for stdin without filename)
+        let language = config.language.clone(); // Use configured language or none
+
+        // Create FileInfo
+        let mut file_info = FileInfo::with_metadata(
+            total_lines,
+            total_bytes,
+            language,
+            "UTF-8".to_string(), // Assume UTF-8 for stdin
+        )
+        .with_lines(final_lines.clone())
+        .with_truncation(
+            truncated_by_lines || truncated_by_bytes,
+            truncated_by_lines,
+            truncated_by_bytes,
+        );
+
+        // Process summary if requested
+        if config.summary_mode {
+            let summary_lines =
+                SummaryExtractor::extract_summary(&final_lines, file_info.language.as_ref());
+            // In summary mode, replace the output lines with summary
+            file_info.lines = summary_lines.clone();
+            file_info = file_info.with_summary_lines(Some(summary_lines));
+        }
+
+        // Extract tokens if requested
+        if config.include_tokens {
+            let content = file_info.lines.join("\n");
+            let tokens = TokenExtractor::extract_tokens(&content, "<stdin>");
             file_info = file_info.with_tokens(Some(tokens));
         }
 

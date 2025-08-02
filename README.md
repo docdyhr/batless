@@ -370,6 +370,30 @@ batless --mode=plain src/main.rs
 batless --mode=json src/main.rs
 ```
 
+### PAGER Compatibility
+
+**🔧 Use as PAGER replacement** - Perfect for tools like GitHub CLI:
+
+```bash
+# GitHub CLI integration
+PAGER="batless --plain" gh pr view 46
+
+# General PAGER replacement
+export PAGER="batless --plain"
+
+# Pipeline input support
+echo "Sample content" | batless --plain
+
+# Compatible flags (ignored for compatibility)
+batless --plain --unbuffered --number file.txt
+```
+
+**Key PAGER features:**
+- ✅ `--plain` flag for plain text output (no colors/decorations)
+- ✅ stdin support for pipeline input
+- ✅ Compatible with existing PAGER workflows
+- ✅ Gracefully ignores common PAGER flags (`--unbuffered`, `--number`)
+
 ### Limiting Output
 
 ```bash
