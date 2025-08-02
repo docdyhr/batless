@@ -475,9 +475,9 @@ fn test_stdin_processing() {
         .arg("echo 'test line 1\\ntest line 2' | cargo run -- --mode=json")
         .output()
         .expect("Failed to execute command");
-    
+
     assert!(output.status.success());
-    
+
     // The output goes to stdout when using shell pipe
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("test line 1"));

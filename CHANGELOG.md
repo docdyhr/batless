@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Future features will be listed here
+
+## [0.2.1] - 2025-08-02
+
+### 🧙 Enhanced Features & Complete v0.2.1 Milestone
+
+This release completes the v0.2.1 milestone with PAGER compatibility and comprehensive streaming features for handling large files efficiently.
+
+#### 🆕 New Features
+
 - **🔧 PAGER Compatibility**: Use batless as a drop-in replacement for cat/less
   - `--plain`: Plain text output mode equivalent to `--mode plain`
   - `--unbuffered`, `--number`: Compatibility flags (ignored for compatibility)
@@ -17,20 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automatic color disabling in plain mode for better PAGER compatibility
 
 - **🌊 Enhanced JSON Output**: Complete streaming and resumable processing
-  - `--streaming-json`: Enable streaming mode for large file processing  
+  - `--streaming-json`: Enable streaming mode for large file processing
   - `--streaming-chunk-size <SIZE>`: Configure chunk size (default: 1000 lines)
   - `--enable-resume --checkpoint <FILE>`: Resume processing from saved checkpoint
   - Stdin support for streaming operations (pipelines and PAGER usage)
   - JSON schema versioning with backwards compatibility
   - Comprehensive streaming validation and error handling
-
-## [0.2.1] - 2025-07-31
-
-### 🧙 Enhanced User Experience & Streaming Features
-
-This release completes the v0.2.1 milestone with significant improvements to developer experience and powerful new streaming capabilities for handling large files.
-
-#### Added
 
 - **🌊 Streaming JSON Output**: Process very large files efficiently with streaming
   - `--streaming-json`: Enable streaming mode for large file processing

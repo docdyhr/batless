@@ -130,10 +130,12 @@ impl StreamingProcessor {
             if checkpoint.is_some() {
                 return Err(BatlessError::config_error_with_help(
                     "Resume/checkpoint functionality is not supported with stdin input".to_string(),
-                    Some("Stdin is not seekable. Use file input for checkpoint support.".to_string()),
+                    Some(
+                        "Stdin is not seekable. Use file input for checkpoint support.".to_string(),
+                    ),
                 ));
             }
-            
+
             let processor = StreamingProcessorIterator::new_from_stdin(config)?;
             return Ok(processor);
         }
@@ -323,7 +325,7 @@ impl StreamingProcessorIterator {
         use std::io::stdin;
 
         let reader = BufReader::new(stdin());
-        
+
         // Create metadata for stdin
         let stdin_metadata = FileMetadata {
             path: "<stdin>".to_string(),
@@ -532,13 +534,13 @@ impl Iterator for StreamingProcessorIterator {
                 }
 
                 let end_line = *current_line - 1;
-                
+
                 // Check if we've hit EOF by trying to peek at the buffer
                 let is_final = match reader.fill_buf() {
                     Ok(buf) => buf.is_empty(), // EOF if buffer is empty
-                    Err(_) => true, // Assume EOF on error
+                    Err(_) => true,            // Assume EOF on error
                 };
-                
+
                 if is_final {
                     *finished = true;
                 }
@@ -548,7 +550,7 @@ impl Iterator for StreamingProcessorIterator {
                     language: stdin_metadata.language.clone(),
                     encoding: stdin_metadata.encoding.clone(),
                     total_file_bytes: *bytes_processed as u64, // Use current bytes as estimate
-                    total_file_lines: *current_line, // Use current line count as estimate
+                    total_file_lines: *current_line,           // Use current line count as estimate
                     chunk_lines: chunk_lines.len(),
                     chunk_bytes,
                     start_line,
