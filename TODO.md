@@ -139,7 +139,7 @@ All v0.2.1 features have been successfully delivered and are available in the re
    - Add plugin discovery (search paths, registry lookup)
    - Implement plugin lifecycle (init, configure, process, cleanup)
 
-2. **Plugin Security & Sandboxing** 📋 **PLANNED**  
+2. **Plugin Security & Sandboxing** 📋 **PLANNED**
    - Research sandboxing options (WASM, processes, capabilities)
    - Implement capability system with fine-grained permissions
    - Add resource limits (memory, CPU, time constraints)
