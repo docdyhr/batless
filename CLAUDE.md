@@ -4,7 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-batless is a Rust-based CLI tool designed as a non-blocking, AI-friendly code viewer. It's inspired by `bat` but optimized for AI code assistants, CI/CD pipelines, and non-interactive workflows. The tool never hangs or blocks, making it ideal for automation.
+batless is a Rust-based CLI tool designed as a non-blocking, AI-friendly code viewer and cat replacement. It's inspired by `bat` but optimized for AI code assistants, CI/CD pipelines, and non-interactive workflows. The tool never hangs or blocks, making it ideal for automation.
+
+**Latest Release**: v0.2.2 (August 3, 2025)
+- ✅ Complete cat replacement functionality with `-n/--number` and `-b/--number-nonblank` flags
+- ✅ Exact compatibility with system cat line numbering format (6-character right-aligned + tab)
+- ✅ Perfect newline handling to match cat/less output exactly
+- ✅ All 201 tests passing (162 unit + 33 integration + 6 property)
+
+### Key Cat Replacement Features
+- `batless file.txt -n`: Line numbering for all lines (exact `cat -n` compatibility)
+- `batless file.txt -b`: Number only non-blank lines (exact `cat -b` compatibility)
+- `batless file.txt --plain`: Plain text output for perfect cat replacement
+- Perfect for AI workflows: `PAGER="batless --plain" gh pr view`
 
 ## Development Commands
 
@@ -48,10 +60,10 @@ cargo install cargo-release
 export CARGO_REGISTRY_TOKEN="your-token-here"
 
 # Full automated release
-./scripts/release.sh 0.2.1
+./scripts/release.sh 0.2.2
 
 # Or use cargo-release directly
-cargo release 0.2.1 --execute
+cargo release 0.2.2 --execute
 ```
 
 ### Manual/Emergency Release
@@ -63,9 +75,9 @@ If the automated process fails:
 cargo release publish --execute
 
 # 2. Create GitHub release
-git tag v0.2.1 -m "Release message"
-git push origin v0.2.1
-gh release create v0.2.1 --title "Release Title" --notes "Release notes"
+git tag v0.2.2 -m "Release message"
+git push origin v0.2.2
+gh release create v0.2.2 --title "Release Title" --notes "Release notes"
 
 # 3. Verify publication
 curl -s "https://crates.io/api/v1/crates/batless" | jq -r '.crate.max_version'
@@ -77,9 +89,30 @@ curl -s "https://api.github.com/repos/docdyhr/batless/releases/latest" | jq -r '
 - [ ] All tests passing (201 tests: 162 unit + 33 integration + 6 property)
 - [ ] Version updated in Cargo.toml
 - [ ] CHANGELOG.md updated with release notes
+- [ ] Run pre-release checks: `./scripts/pre-release-check.sh`
+- [ ] Check version synchronization: `./scripts/version-status.sh`
 - [ ] Published to crates.io
 - [ ] GitHub release created with proper tag
 - [ ] Homebrew formula updated (automatic via workflow)
+- [ ] Monitor release workflow: `./scripts/release-monitor.sh <workflow_id>`
+
+### Enhanced Release Monitoring (v0.2.2+)
+
+```bash
+# Pre-release quality gate
+./scripts/pre-release-check.sh
+
+# Version status tracking
+./scripts/version-status.sh
+
+# Monitor release workflow progress
+./scripts/release-monitor.sh <workflow_run_id>
+
+# Manual release fallback (if automated workflow fails)
+cargo publish                                    # Publish to crates.io
+gh release create v0.2.2 --title "v0.2.2" \    # Create GitHub release
+  --notes "Release notes"
+```
 
 ### CI/CD Workflows
 
@@ -92,7 +125,7 @@ gh workflow run workflow-dispatch.yml -f workflow_type=quality-check
 gh workflow run workflow-dispatch.yml -f workflow_type=quick-validation
 
 # Release workflow (triggered by tags):
-gh workflow run release.yml --ref v0.2.1
+gh workflow run release.yml --ref v0.2.2
 ```
 
 ## Architecture
@@ -112,10 +145,17 @@ gh workflow run release.yml --ref v0.2.1
 
 ### Output Modes
 
-- **plain**: Raw text without highlighting
+- **plain**: Raw text without highlighting (perfect for cat replacement)
 - **highlight**: Syntax-highlighted output (default)
 - **json**: Structured JSON with metadata, optionally includes tokens and summary
 - **summary**: Extracts important code structures (functions, classes, imports)
+
+### Cat Replacement Mode (v0.2.2+)
+
+- **Line numbering**: Use `-n/--number` for all lines or `-b/--number-nonblank` for non-blank lines
+- **Exact compatibility**: 6-character right-aligned line numbers with tab separator
+- **Perfect newlines**: Matches system cat output exactly for shell compatibility
+- **AI integration**: `PAGER="batless --plain" gh api` for seamless tool integration
 
 ### Important Implementation Details
 
