@@ -29,7 +29,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Extract version
         id: version
         run: |
@@ -38,7 +38,7 @@ jobs:
           else
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Validate version format
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -46,10 +46,10 @@ jobs:
             echo "Invalid version format: $VERSION"
             exit 1
           fi
-      
+
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-        
+
       - name: Run pre-release checks
         run: |
           chmod +x scripts/pre-release-check.sh
@@ -66,10 +66,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-        
+
       - name: Run tests with retry
         uses: nick-fields/retry@v3
         with:
@@ -95,15 +95,15 @@ jobs:
             target: aarch64-apple-darwin
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: ${{ matrix.target }}
-          
+
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
-        
+
       - name: Test binary functionality
         if: matrix.os != 'windows-latest' || matrix.target != 'aarch64-apple-darwin'
         run: |
@@ -112,7 +112,7 @@ jobs:
           else
             ./target/${{ matrix.target }}/release/batless --version
           fi
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -128,13 +128,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-        
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-        
+
       - name: Publish to crates.io with retry
         uses: nick-fields/retry@v3
         env:
@@ -143,7 +143,7 @@ jobs:
           timeout_minutes: 10
           max_attempts: 3
           command: cargo publish
-          
+
       - name: Wait for crates.io availability
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
@@ -155,7 +155,7 @@ jobs:
             echo "Waiting for crates.io... attempt $i/60"
             sleep 10
           done
-      
+
       - name: Create GitHub release with retry
         uses: nick-fields/retry@v3
         env:
@@ -176,27 +176,27 @@ jobs:
     if: always()
     steps:
       - uses: actions/checkout@v4
-        
+
       - name: Check release status
         run: |
           VERSION="${{ needs.validate.outputs.version }}"
-          
+
           echo "🔍 Verifying release status for v$VERSION"
-          
+
           # Check crates.io
           if cargo search batless --limit 1 | grep -q "\"$VERSION\""; then
             echo "✅ Crates.io: SUCCESS"
           else
             echo "❌ Crates.io: FAILED"
           fi
-          
+
           # Check GitHub release
           if curl -s https://api.github.com/repos/docdyhr/batless/releases/latest | jq -r '.tag_name' | grep -q "v$VERSION"; then
             echo "✅ GitHub: SUCCESS"
           else
             echo "❌ GitHub: FAILED"
           fi
-      
+
       - name: Create monitoring issue on failure
         if: failure()
         env:
@@ -204,10 +204,10 @@ jobs:
         run: |
           gh issue create \
             --title "🚨 Release v${{ needs.validate.outputs.version }} Failed" \
-            --body "The automated release workflow failed. Manual intervention required. 
-            
+            --body "The automated release workflow failed. Manual intervention required.
+
             Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             Version: v${{ needs.validate.outputs.version }}
-            
+
             Please check and complete the release manually if needed." \
             --label "release,bug"

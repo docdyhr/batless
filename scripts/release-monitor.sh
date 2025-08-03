@@ -33,20 +33,20 @@ echo ""
 check_workflow() {
     local response=$(curl -s -H "Authorization: token $(gh auth token)" \
         "https://api.github.com/repos/docdyhr/batless/actions/runs/$WORKFLOW_ID")
-    
+
     local status=$(echo "$response" | jq -r '.status')
     local conclusion=$(echo "$response" | jq -r '.conclusion')
     local created_at=$(echo "$response" | jq -r '.created_at')
     local updated_at=$(echo "$response" | jq -r '.updated_at')
     local name=$(echo "$response" | jq -r '.name')
-    
+
     echo "Workflow: $name"
     echo "Status: $status"
     echo "Conclusion: $conclusion"
     echo "Created: $created_at"
     echo "Updated: $updated_at"
     echo ""
-    
+
     # Calculate runtime
     if [ "$status" = "completed" ]; then
         local start_time=$(date -d "$created_at" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%SZ" "$created_at" "+%s")
@@ -54,7 +54,7 @@ check_workflow() {
         local duration=$((end_time - start_time))
         echo "Runtime: ${duration} seconds"
     fi
-    
+
     echo "$status:$conclusion"
 }
 
@@ -67,9 +67,9 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
     result=$(check_workflow)
     status=$(echo "$result" | tail -1 | cut -d: -f1)
     conclusion=$(echo "$result" | tail -1 | cut -d: -f2)
-    
+
     echo "$(date): $status"
-    
+
     if [ "$status" = "completed" ]; then
         if [ "$conclusion" = "success" ]; then
             log_success "Workflow completed successfully!"
@@ -89,7 +89,7 @@ while [ $ELAPSED -lt $TIMEOUT ]; do
         log_warning "Workflow stuck in queue for ${ELAPSED}s (30+ minutes)"
         echo "Consider manual intervention or retry"
     fi
-    
+
     sleep $INTERVAL
     ELAPSED=$((ELAPSED + INTERVAL))
 done

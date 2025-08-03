@@ -1,4 +1,3 @@
-
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -98,7 +97,6 @@ This release completes the v0.2.1 milestone with PAGER compatibility and compreh
 - Added chrono dependency for timestamp management
 - Maintained full backward compatibility with existing features
 
-## [0.2.2] - 2025-08-03
 
 ### Added
 <!-- New features -->
@@ -167,7 +165,6 @@ This release represents a major milestone in batless development, introducing co
 - Consider migrating from `--summary` to `--summary-level standard` for future compatibility
 - New JSON schema validation helps ensure AI tool compatibility
 
-## [0.2.2] - 2025-08-03
 
 ### Added
 <!-- New features -->
@@ -264,7 +261,6 @@ This release represents a major milestone in batless development, introducing co
 - Documentation enhanced with comprehensive inline comments
 - Build warnings eliminated and code quality improved
 
-## [0.2.2] - 2025-08-03
 
 ### Added
 <!-- New features -->
@@ -301,7 +297,6 @@ This release represents a major milestone in batless development, introducing co
 - Cargo.lock tracking for binary crate reproducible builds
 - Missing GH_TOKEN in GitHub Actions workflows
 
-## [0.2.2] - 2025-08-03
 
 ### Added
 <!-- New features -->
@@ -353,7 +348,6 @@ This release represents a major milestone in batless development, introducing co
 - Added performance regression detection in CI/CD
 - Performance baseline documentation in `docs/PERFORMANCE_BASELINE.md`
 
-## [0.2.2] - 2025-08-03
 
 ### Added
 <!-- New features -->
@@ -396,7 +390,6 @@ This release represents a major milestone in batless development, introducing co
 - Added cross-platform binary distribution
 - Enhanced security scanning and dependency management
 
-## [0.2.2] - 2025-08-03
 
 ### Added
 <!-- New features -->

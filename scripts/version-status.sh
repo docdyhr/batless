@@ -45,7 +45,7 @@ if [ "v$CARGO_VERSION" = "$LATEST_TAG" ] && [ "$LATEST_TAG" = "$GITHUB_LATEST" ]
 else
     echo -e "${YELLOW}⚠️  Version mismatch detected${NC}"
     echo "   Status: MANUAL INTERVENTION NEEDED"
-    
+
     echo ""
     echo "🔍 Detailed Analysis:"
     if [ "v$CARGO_VERSION" != "$LATEST_TAG" ]; then
@@ -57,7 +57,7 @@ else
     if [ "$CARGO_VERSION" != "$CRATES_VERSION" ]; then
         echo -e "   ${RED}• Crates.io mismatch${NC}: Local v$CARGO_VERSION ≠ Crates v$CRATES_VERSION"
     fi
-    
+
     echo ""
     echo "🛠️  Suggested Actions:"
     echo "   1. Check if release is in progress"
