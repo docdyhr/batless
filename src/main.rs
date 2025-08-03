@@ -144,6 +144,10 @@ struct Args {
     /// PAGER compatibility: ignored for compatibility with other pagers
     #[arg(short = 'n', long)]
     number: bool,
+
+    /// PAGER compatibility: ignored for compatibility with less (no title bar)
+    #[arg(long)]
+    no_title: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
