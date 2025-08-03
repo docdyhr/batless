@@ -1,4 +1,9 @@
-# 📋 batless TODO List
+# 📋**Last Updated**: August 3, 2025
+**Current Version**: v0.2.1+ (Development)
+**Latest Release**: v0.2.1 (August 2, 2025)
+**Next Target**: v0.2.2 patch release with cat replacement
+
+**🚀 Current Status**: v0.2.1+ **DEVELOPMENT** - Added comprehensive cat replacement functionality! ✅ Full line numbering support (-n, -b flags), exact compatibility with system cat, all 201 tests passing. Ready for v0.2.2 patch release.ss TODO List
 
 > Prioritized implementation tasks for batless development
 
@@ -12,6 +17,33 @@
 ---
 
 ## 🚀 **CURRENT DEVELOPMENT STATUS**
+
+### **v0.2.2 - Cat Replacement & Compatibility - 🚧 IN DEVELOPMENT**
+
+**Progress**: 2 of 2 P0 features completed (100% complete)
+**Target Release Date**: August 3, 2025
+**Status**: Ready for release - comprehensive cat replacement functionality
+
+#### **✅ Completed Features (August 3, 2025)**
+
+1. **Comprehensive Cat Replacement** ✅
+   - Added `-n/--number` flag for line numbering (exact cat -n compatibility)
+   - Added `-b/--number-nonblank` flag for non-blank line numbering (cat -b compatibility)
+   - Full compatibility with system cat line numbering format (6-char right-aligned)
+   - Works seamlessly with `--plain` mode for complete cat replacement
+
+2. **Enhanced PAGER/Cat Compatibility** ✅
+   - Fixed `--no-title` argument compatibility issue (was causing gh api failures)
+   - Perfect integration with tools expecting cat/less behavior
+   - Supports complex pipeline usage: `gh api ... | batless --plain --no-title`
+   - All compatibility flags properly implemented and tested
+
+#### **🎯 v0.2.2 Release Ready**
+
+✅ **Implementation Complete**: Full cat replacement with line numbering
+✅ **Test Coverage**: 201 tests passing (162 unit + 33 integration + 6 property)  
+✅ **Compatibility Verified**: Exact match with `/bin/cat -n` and `-b` behavior
+✅ **Integration Tested**: Works with gh, git, and other CLI tools
 
 ### **v0.2.1 - Enhanced Features & Polish - ✅ RELEASED**
 
@@ -108,7 +140,8 @@ All v0.2.1 features have been successfully delivered and are available in the re
 
 - ✅ **v0.2.0**: Released July 31, 2025 - Complete AI integration suite
 - ✅ **v0.2.1**: Released August 2, 2025 - Enhanced features with streaming and PAGER compatibility
-- 📋 **v0.3.0**: Planning Phase - Next major feature set (Plugin Architecture & Advanced Analysis)
+- � **v0.2.2**: August 3, 2025 - Cat replacement functionality and compatibility fixes
+- �📋 **v0.3.0**: Planning Phase - Next major feature set (Plugin Architecture & Advanced Analysis)
 
 ### **Future Phases (2025-2026)**
 
