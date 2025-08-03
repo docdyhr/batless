@@ -657,11 +657,11 @@ fn run() -> BatlessResult<()> {
         }
     }
 
-    // Print output with newline only for JSON mode to avoid shell prompt appearing
+    // Print output with newline for all modes to match cat/less behavior
     if output_mode == OutputMode::Json {
         println!("{formatted_output}");
     } else {
-        print!("{formatted_output}");
+        println!("{formatted_output}");
     }
 
     // Add truncation messages for non-JSON modes

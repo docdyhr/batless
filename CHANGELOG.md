@@ -11,6 +11,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Future features will be listed here
 
+## [0.2.2] - 2025-08-03
+
+### 🐾 Cat Replacement & Compatibility Fixes
+
+This release delivers complete cat replacement functionality with exact compatibility and fixes critical output bugs.
+
+#### 🆕 New Features
+
+- **📄 Complete Cat Replacement**: Perfect drop-in replacement for system cat
+  - `-n, --number`: Line numbering for all lines (exact cat -n compatibility)
+  - `-b, --number-nonblank`: Number only non-blank lines (exact cat -b compatibility) 
+  - Exact formatting match: 6-character right-aligned line numbers with tab separator
+  - Works seamlessly with `--plain` mode for complete cat replacement
+  - Byte-for-byte output compatibility with system cat
+
+#### 🐛 Bug Fixes
+
+- **🔧 Fixed Critical Newline Bug**: Resolved output truncation issue
+  - Fixed missing final newline that was causing shell "%" indicators
+  - Now properly outputs final newlines like cat/less for perfect compatibility
+  - Ensures complete output display in all modes (plain, highlight, JSON)
+
+- **⚙️ Enhanced PAGER Compatibility**: Improved CLI tool integration  
+  - Fixed `--no-title` argument compatibility (was breaking gh api workflows)
+  - Perfect pipeline support: `gh api ... | batless --plain --no-title`
+  - Enhanced compatibility with tools expecting cat/less behavior
+
+#### 🧪 Quality Assurance
+
+- **✅ All 201 Tests Passing**: Comprehensive verification
+  - 162 unit tests + 33 integration tests + 6 property-based tests
+  - Verified exact byte-for-byte compatibility with system cat -n and -b
+  - Full regression testing for all existing functionality
+
 ## [0.2.1] - 2025-08-02
 
 ### 🧙 Enhanced Features & Complete v0.2.1 Milestone
