@@ -1,7 +1,7 @@
 # 📋**Last Updated**: August 3, 2025
 
 **Current Version**: v0.2.2 (Ready for Release)
-**Latest Release**: v0.2.1 (August 2, 2025) 
+**Latest Release**: v0.2.1 (August 2, 2025)
 **Next Target**: v0.2.2 release completion
 
 **🚀 Current Status**: v0.2.2 **READY FOR RELEASE** - Complete cat replacement functionality implemented and tested! ✅ Full line numbering support (-n, -b flags), exact compatibility with system cat including proper newline handling, all 201 tests passing. CI/CD pipeline green. **Needs: GitHub release + crates.io publish**
