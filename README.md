@@ -240,30 +240,32 @@ The formula automatically compiles from source using Rust, ensuring optimal perf
 
 ### 🤖 AI Assistant Integration
 
-**Claude Code Assistant:**
+> **📖 [Complete AI & Editor Integration Guide](docs/AI_EDITOR_INTEGRATION.md)** - Comprehensive setup for Zed, VS Code, and GitHub CLI
+
+**Quick Examples:**
 
 ```bash
-# Get code structure for AI analysis
-batless --mode=summary --max-lines=50 complex-file.py
+# Use built-in AI profiles for optimal results
+batless --profile=claude file.rs        # Claude-optimized summary mode
+batless --profile=copilot file.rs       # GitHub Copilot JSON + tokens
+batless --profile=chatgpt file.rs       # ChatGPT optimized output
 
-# Full AI context with summary and tokens
-batless --mode=json --summary --include-tokens --max-lines=100 src/main.rs
-
-# List supported languages for analysis
-batless --list-languages | grep -i python
+# Smart GitHub CLI integration
+export GH_PAGER="batless --plain --max-lines=500 --summary-level=standard"
+gh pr view 42  # Perfect for AI analysis
 ```
 
-**ChatGPT & GitHub Copilot:**
+**Advanced AI Workflows:**
 
 ```bash
-# Generate clean context without decorations
-batless --color=never --max-lines=200 src/lib.rs
+# Context-aware fitting for AI models
+batless --fit-context --ai-model=claude35-sonnet large-file.py
 
-# Extract function signatures and imports only
-batless --mode=summary src/main.rs
+# Token counting for context planning
+batless --count-tokens --ai-model=gpt4 file.rs
 
-# Get JSON metadata for automated processing
-batless --mode=json --max-bytes=5000 large-file.js
+# Multi-file AI context building
+find src/ -name "*.rs" | head -5 | xargs batless --profile=claude
 ```
 
 ### 🔄 CI/CD Pipeline Integration
@@ -1118,6 +1120,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Advanced Usage
 
+- **[🤖 AI & Editor Integration Guide](docs/AI_EDITOR_INTEGRATION.md)** - Complete setup for Zed, VS Code, and GitHub CLI
 - **[Configuration Guide](CLAUDE.md)** - All configuration options and profiles
 - **[AI Integration Examples](#-ai-assistant-integration)** - Claude, ChatGPT, Copilot
 - **[CI/CD Integration](#-cicd-pipeline-integration)** - GitHub Actions, Jenkins, GitLab

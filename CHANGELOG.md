@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete cat replacement functionality with `-n/--number` and `-b/--number-nonblank` flags
 - Exact compatibility with system cat line numbering format (6-character right-aligned + tab)
 - Perfect newline handling to match cat/less output exactly
+- Comprehensive AI & Editor Integration Guide covering 13+ CLI AI tools and 5+ web-based AI platforms
 
 ### Fixed
 
@@ -97,7 +98,6 @@ This release completes the v0.2.1 milestone with PAGER compatibility and compreh
 - Added chrono dependency for timestamp management
 - Maintained full backward compatibility with existing features
 
-
 ### Added
 <!-- New features -->
 
@@ -164,7 +164,6 @@ This release represents a major milestone in batless development, introducing co
 - Existing users can immediately benefit from new features without any changes
 - Consider migrating from `--summary` to `--summary-level standard` for future compatibility
 - New JSON schema validation helps ensure AI tool compatibility
-
 
 ### Added
 <!-- New features -->
@@ -261,7 +260,6 @@ This release represents a major milestone in batless development, introducing co
 - Documentation enhanced with comprehensive inline comments
 - Build warnings eliminated and code quality improved
 
-
 ### Added
 <!-- New features -->
 
@@ -296,7 +294,6 @@ This release represents a major milestone in batless development, introducing co
 - Release workflow failures due to branch protection rules
 - Cargo.lock tracking for binary crate reproducible builds
 - Missing GH_TOKEN in GitHub Actions workflows
-
 
 ### Added
 <!-- New features -->
@@ -348,7 +345,6 @@ This release represents a major milestone in batless development, introducing co
 - Added performance regression detection in CI/CD
 - Performance baseline documentation in `docs/PERFORMANCE_BASELINE.md`
 
-
 ### Added
 <!-- New features -->
 
@@ -389,7 +385,6 @@ This release represents a major milestone in batless development, introducing co
 - Set up automated crates.io publishing
 - Added cross-platform binary distribution
 - Enhanced security scanning and dependency management
-
 
 ### Added
 <!-- New features -->

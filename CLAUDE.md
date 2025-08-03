@@ -7,12 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 batless is a Rust-based CLI tool designed as a non-blocking, AI-friendly code viewer and cat replacement. It's inspired by `bat` but optimized for AI code assistants, CI/CD pipelines, and non-interactive workflows. The tool never hangs or blocks, making it ideal for automation.
 
 **Latest Release**: v0.2.2 (August 3, 2025)
+
 - ✅ Complete cat replacement functionality with `-n/--number` and `-b/--number-nonblank` flags
 - ✅ Exact compatibility with system cat line numbering format (6-character right-aligned + tab)
 - ✅ Perfect newline handling to match cat/less output exactly
 - ✅ All 201 tests passing (162 unit + 33 integration + 6 property)
 
 ### Key Cat Replacement Features
+
 - `batless file.txt -n`: Line numbering for all lines (exact `cat -n` compatibility)
 - `batless file.txt -b`: Number only non-blank lines (exact `cat -b` compatibility)
 - `batless file.txt --plain`: Plain text output for perfect cat replacement
