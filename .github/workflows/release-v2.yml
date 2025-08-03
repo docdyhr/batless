@@ -1,0 +1,213 @@
+# Enhanced Release Workflow
+name: "Release v2"
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Pre-release validation
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format: $VERSION"
+            exit 1
+          fi
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        
+      - name: Run pre-release checks
+        run: |
+          chmod +x scripts/pre-release-check.sh
+          ./scripts/pre-release-check.sh
+
+  # Enhanced testing with retries
+  test:
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        
+      - name: Run tests with retry
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: cargo test --all --verbose
+
+  # Build with monitoring
+  build:
+    needs: [validate, test]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+          
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+        
+      - name: Test binary functionality
+        if: matrix.os != 'windows-latest' || matrix.target != 'aarch64-apple-darwin'
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            ./target/${{ matrix.target }}/release/batless.exe --version
+          else
+            ./target/${{ matrix.target }}/release/batless --version
+          fi
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: batless-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/batless*
+            !target/${{ matrix.target }}/release/*.d
+
+  # Release with fallback
+  release:
+    needs: [validate, test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        
+      - name: Publish to crates.io with retry
+        uses: nick-fields/retry@v3
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: cargo publish
+          
+      - name: Wait for crates.io availability
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          for i in {1..60}; do
+            if cargo search batless --limit 1 | grep -q "\"$VERSION\""; then
+              echo "Version $VERSION is available on crates.io"
+              break
+            fi
+            echo "Waiting for crates.io... attempt $i/60"
+            sleep 10
+          done
+      
+      - name: Create GitHub release with retry
+        uses: nick-fields/retry@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            gh release create v${{ needs.validate.outputs.version }} \
+              --title "v${{ needs.validate.outputs.version }}: Release" \
+              --notes "Automated release v${{ needs.validate.outputs.version }}" \
+              batless-*/batless*
+
+  # Post-release monitoring
+  monitor:
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: Check release status
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          
+          echo "🔍 Verifying release status for v$VERSION"
+          
+          # Check crates.io
+          if cargo search batless --limit 1 | grep -q "\"$VERSION\""; then
+            echo "✅ Crates.io: SUCCESS"
+          else
+            echo "❌ Crates.io: FAILED"
+          fi
+          
+          # Check GitHub release
+          if curl -s https://api.github.com/repos/docdyhr/batless/releases/latest | jq -r '.tag_name' | grep -q "v$VERSION"; then
+            echo "✅ GitHub: SUCCESS"
+          else
+            echo "❌ GitHub: FAILED"
+          fi
+      
+      - name: Create monitoring issue on failure
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue create \
+            --title "🚨 Release v${{ needs.validate.outputs.version }} Failed" \
+            --body "The automated release workflow failed. Manual intervention required. 
+            
+            Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Version: v${{ needs.validate.outputs.version }}
+            
+            Please check and complete the release manually if needed." \
+            --label "release,bug"
