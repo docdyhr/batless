@@ -21,7 +21,7 @@ This release delivers complete cat replacement functionality with exact compatib
 
 - **📄 Complete Cat Replacement**: Perfect drop-in replacement for system cat
   - `-n, --number`: Line numbering for all lines (exact cat -n compatibility)
-  - `-b, --number-nonblank`: Number only non-blank lines (exact cat -b compatibility) 
+  - `-b, --number-nonblank`: Number only non-blank lines (exact cat -b compatibility)
   - Exact formatting match: 6-character right-aligned line numbers with tab separator
   - Works seamlessly with `--plain` mode for complete cat replacement
   - Byte-for-byte output compatibility with system cat
@@ -33,7 +33,7 @@ This release delivers complete cat replacement functionality with exact compatib
   - Now properly outputs final newlines like cat/less for perfect compatibility
   - Ensures complete output display in all modes (plain, highlight, JSON)
 
-- **⚙️ Enhanced PAGER Compatibility**: Improved CLI tool integration  
+- **⚙️ Enhanced PAGER Compatibility**: Improved CLI tool integration
   - Fixed `--no-title` argument compatibility (was breaking gh api workflows)
   - Perfect pipeline support: `gh api ... | batless --plain --no-title`
   - Enhanced compatibility with tools expecting cat/less behavior

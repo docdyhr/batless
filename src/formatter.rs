@@ -40,12 +40,12 @@ impl OutputFormatter {
                     if line.trim().is_empty() {
                         result.push(line.clone());
                     } else {
-                        result.push(format!("{:6}\t{}", line_number, line));
+                        result.push(format!("{line_number:6}\t{line}"));
                         line_number += 1;
                     }
                 } else {
                     // Number all lines (cat -n behavior)
-                    result.push(format!("{:6}\t{}", line_number, line));
+                    result.push(format!("{line_number:6}\t{line}"));
                     line_number += 1;
                 }
             }

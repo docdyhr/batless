@@ -658,20 +658,16 @@ fn run() -> BatlessResult<()> {
     }
 
     // Print output with newline for all modes to match cat/less behavior
-    if output_mode == OutputMode::Json {
-        println!("{formatted_output}");
-    } else {
-        println!("{formatted_output}");
-    }
+    println!("{formatted_output}");
 
     // Add truncation messages for non-JSON modes
     if output_mode != OutputMode::Json {
         if final_file_info.truncated_by_lines {
-            println!("\n// Output truncated after {} lines", config.max_lines);
+            println!("// Output truncated after {} lines", config.max_lines);
         }
         if final_file_info.truncated_by_bytes {
             if let Some(max_bytes) = config.max_bytes {
-                println!("\n// Output truncated after {max_bytes} bytes");
+                println!("// Output truncated after {max_bytes} bytes");
             }
         }
     }
