@@ -21,7 +21,7 @@ impl OutputFormatter {
         output_mode: OutputMode,
     ) -> BatlessResult<String> {
         match output_mode {
-            OutputMode::Plain => Self::format_plain(file_info),
+            OutputMode::Plain => Self::format_plain(file_info, config),
             OutputMode::Highlight => Self::format_highlighted(file_info, file_path, config),
             OutputMode::Json => Self::format_json(file_info, file_path, config),
             OutputMode::Summary => Self::format_summary(file_info, config),
@@ -29,8 +29,30 @@ impl OutputFormatter {
     }
 
     /// Format as plain text without highlighting
-    fn format_plain(file_info: &FileInfo) -> BatlessResult<String> {
-        Ok(file_info.lines.join("\n"))
+    fn format_plain(file_info: &FileInfo, config: &BatlessConfig) -> BatlessResult<String> {
+        if config.show_line_numbers || config.show_line_numbers_nonblank {
+            let mut result = Vec::new();
+            let mut line_number = 1;
+
+            for line in &file_info.lines {
+                if config.show_line_numbers_nonblank {
+                    // Only number non-blank lines (cat -b behavior)
+                    if line.trim().is_empty() {
+                        result.push(line.clone());
+                    } else {
+                        result.push(format!("{:6}\t{}", line_number, line));
+                        line_number += 1;
+                    }
+                } else {
+                    // Number all lines (cat -n behavior)
+                    result.push(format!("{:6}\t{}", line_number, line));
+                    line_number += 1;
+                }
+            }
+            Ok(result.join("\n"))
+        } else {
+            Ok(file_info.lines.join("\n"))
+        }
     }
 
     /// Format with syntax highlighting
@@ -387,7 +409,8 @@ mod tests {
     #[test]
     fn test_format_plain() -> BatlessResult<()> {
         let file_info = create_test_file_info();
-        let result = OutputFormatter::format_plain(&file_info)?;
+        let config = crate::config::BatlessConfig::new();
+        let result = OutputFormatter::format_plain(&file_info, &config)?;
 
         assert_eq!(result, "fn main() {\n    println!(\"Hello\");\n}");
         Ok(())

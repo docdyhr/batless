@@ -368,6 +368,12 @@ pub struct BatlessConfig {
     /// Enable debug mode with detailed processing information
     #[serde(default)]
     pub debug: bool,
+    /// Show line numbers (cat -n compatibility)
+    #[serde(default)]
+    pub show_line_numbers: bool,
+    /// Show line numbers for non-blank lines only (cat -b compatibility)
+    #[serde(default)]
+    pub show_line_numbers_nonblank: bool,
 }
 
 fn default_max_lines() -> usize {
@@ -407,6 +413,8 @@ impl Default for BatlessConfig {
             enable_resume: false,
             schema_version: default_schema_version(),
             debug: false,
+            show_line_numbers: false,
+            show_line_numbers_nonblank: false,
         }
     }
 }
@@ -506,6 +514,18 @@ impl BatlessConfig {
     /// Enable debug mode
     pub fn with_debug(mut self, debug: bool) -> Self {
         self.debug = debug;
+        self
+    }
+
+    /// Enable line numbering (cat -n compatibility)
+    pub fn with_show_line_numbers(mut self, show_line_numbers: bool) -> Self {
+        self.show_line_numbers = show_line_numbers;
+        self
+    }
+
+    /// Enable line numbering for non-blank lines only (cat -b compatibility)
+    pub fn with_show_line_numbers_nonblank(mut self, show_line_numbers_nonblank: bool) -> Self {
+        self.show_line_numbers_nonblank = show_line_numbers_nonblank;
         self
     }
 

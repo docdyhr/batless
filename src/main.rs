@@ -141,9 +141,13 @@ struct Args {
     #[arg(short = 'u', long)]
     unbuffered: bool,
 
-    /// PAGER compatibility: ignored for compatibility with other pagers
+    /// CAT compatibility: show line numbers (like cat -n)
     #[arg(short = 'n', long)]
     number: bool,
+
+    /// CAT compatibility: number non-blank output lines (like cat -b)
+    #[arg(short = 'b', long)]
+    number_nonblank: bool,
 
     /// PAGER compatibility: ignored for compatibility with less (no title bar)
     #[arg(long)]
@@ -462,6 +466,14 @@ fn run() -> BatlessResult<()> {
         output_mode = OutputMode::Plain;
         // When --plain is used, also disable color for better PAGER compatibility
         config = config.with_use_color(false);
+    }
+
+    // Handle CAT compatibility flags
+    if args.number {
+        config = config.with_show_line_numbers(true);
+    }
+    if args.number_nonblank {
+        config = config.with_show_line_numbers_nonblank(true);
     }
 
     // Validate configuration
