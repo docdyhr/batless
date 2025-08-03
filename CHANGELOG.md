@@ -1,18 +1,53 @@
-# Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+# Changelog
 
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [Unreleased]
 ### Added
 
 - Future features will be listed here
 
+
+
 ## [0.2.2] - 2025-08-03
 
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.2.2] - 2025-08-03
 ### 🐾 Cat Replacement & Compatibility Fixes
 
 This release delivers complete cat replacement functionality with exact compatibility and fixes critical output bugs.
@@ -45,8 +80,26 @@ This release delivers complete cat replacement functionality with exact compatib
   - Verified exact byte-for-byte compatibility with system cat -n and -b
   - Full regression testing for all existing functionality
 
-## [0.2.1] - 2025-08-02
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.2.1] - 2025-08-02
 ### 🧙 Enhanced Features & Complete v0.2.1 Milestone
 
 This release completes the v0.2.1 milestone with PAGER compatibility and comprehensive streaming features for handling large files efficiently.
@@ -115,8 +168,26 @@ This release completes the v0.2.1 milestone with PAGER compatibility and compreh
 - Added chrono dependency for timestamp management
 - Maintained full backward compatibility with existing features
 
-## [0.2.0] - 2025-07-31
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.2.0] - 2025-07-31
 ### 🚀 Major Release: Enhanced AI Integration
 
 This release represents a major milestone in batless development, introducing comprehensive AI integration features that make batless the premier tool for AI-assisted code analysis.
@@ -167,8 +238,26 @@ This release represents a major milestone in batless development, introducing co
 - Consider migrating from `--summary` to `--summary-level standard` for future compatibility
 - New JSON schema validation helps ensure AI tool compatibility
 
-## [0.1.5] - 2025-01-28
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.5] - 2025-01-28
 ### Added
 
 - **Shell completions** for bash, zsh, fish, and PowerShell (`--generate-completions` flag)
@@ -247,8 +336,26 @@ This release represents a major milestone in batless development, introducing co
 - Documentation enhanced with comprehensive inline comments
 - Build warnings eliminated and code quality improved
 
-## [0.1.4] - 2025-07-26
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.4] - 2025-07-26
 ### Added
 
 - PR-based release workflow that respects branch protection rules
@@ -267,8 +374,26 @@ This release represents a major milestone in batless development, introducing co
 - Cargo.lock tracking for binary crate reproducible builds
 - Missing GH_TOKEN in GitHub Actions workflows
 
-## [0.1.3] - 2025-07-25
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.3] - 2025-07-25
 ### Added
 
 - Manual workflow dispatch system for granular CI/CD control
@@ -302,8 +427,26 @@ This release represents a major milestone in batless development, introducing co
 - Added performance regression detection in CI/CD
 - Performance baseline documentation in `docs/PERFORMANCE_BASELINE.md`
 
-## [0.1.1] - 2025-07-23
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.1] - 2025-07-23
 ### Added
 
 - Comprehensive release infrastructure with GitHub Actions
@@ -328,8 +471,26 @@ This release represents a major milestone in batless development, introducing co
 - Added cross-platform binary distribution
 - Enhanced security scanning and dependency management
 
-## [0.1.0] - 2025-07-22
 
+
+## [0.2.2] - 2025-08-03
+
+### Added
+<!-- New features -->
+
+### Changed
+<!-- Changes in existing functionality -->
+- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
+- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
+- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+
+### Fixed
+<!-- Bug fixes -->
+
+### Removed
+<!-- Features removed in this version -->
+
+## [0.1.0] - 2025-07-22
 ### Added
 
 - 🎯 **Core batless functionality** - non-blocking code viewer for AI and automation
