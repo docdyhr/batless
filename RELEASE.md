@@ -8,6 +8,7 @@
 ## 🎯 Distribution Overview
 
 **batless** supports multiple distribution channels:
+
 - 📦 **crates.io** - Primary Rust package registry
 - 🏷️ **GitHub Releases** - Cross-platform binaries with automated builds
 - 🍺 **Homebrew** - macOS package manager integration
@@ -112,6 +113,7 @@ gh release create v0.2.1 --title "Release title" --notes "Release notes"
 ## 🎯 Supported Platforms
 
 ### Primary Targets (Tier 1)
+
 | Platform | Architecture | Package Format | Status |
 |----------|-------------|----------------|---------|
 | Linux | x86_64 | .deb, .rpm, .tar.gz | ✅ Full support |
@@ -119,6 +121,7 @@ gh release create v0.2.1 --title "Release title" --notes "Release notes"
 | Windows | x86_64 | .msi, .zip | ✅ Full support |
 
 ### Additional Targets (Tier 2)
+
 | Platform | Architecture | Package Format | Status |
 |----------|-------------|----------------|---------|
 | Linux | ARM64 | .tar.gz | ✅ Binary only |
@@ -126,6 +129,7 @@ gh release create v0.2.1 --title "Release title" --notes "Release notes"
 | FreeBSD | x86_64 | .tar.gz | ⚠️ Best effort |
 
 ### Container Support
+
 | Registry | Image | Size | Status |
 |----------|-------|------|---------|
 | Docker Hub | `batless/batless:latest` | ~8MB | ✅ Available |
@@ -136,6 +140,7 @@ gh release create v0.2.1 --title "Release title" --notes "Release notes"
 ## 📋 Installation Methods for Users
 
 ### 🦀 Rust Users (Primary)
+
 ```bash
 # Install from crates.io
 cargo install batless
@@ -148,6 +153,7 @@ cargo install --git https://github.com/username/batless
 ```
 
 ### 🍺 macOS (Homebrew)
+
 ```bash
 # Add our tap (one-time setup)
 brew tap docdyhr/batless
@@ -160,6 +166,7 @@ brew install docdyhr/batless
 ```
 
 ### 🐧 Linux Package Managers
+
 ```bash
 # Ubuntu/Debian (.deb)
 wget https://github.com/username/batless/releases/latest/download/batless_0.1.0_amd64.deb
@@ -176,6 +183,7 @@ paru -S batless
 ```
 
 ### 🪟 Windows Package Managers
+
 ```powershell
 # Chocolatey
 choco install batless
@@ -189,6 +197,7 @@ winget install batless
 ```
 
 ### 🐳 Docker
+
 ```bash
 # Run batless in container
 docker run --rm -v $(pwd):/workspace batless/batless /workspace/src/main.rs
@@ -205,6 +214,7 @@ RUN batless --mode=summary src/main.rs
 ## 🔐 Security & Integrity
 
 ### Binary Signing
+
 ```bash
 # Sign release binaries (maintainers)
 cargo dist sign --all
@@ -218,6 +228,7 @@ cosign verify-blob \
 ```
 
 ### Checksums & SBOM
+
 ```bash
 # Verify download integrity
 sha256sum -c batless-0.1.0-checksums.txt
@@ -227,8 +238,9 @@ cat batless-0.1.0.spdx.json | jq '.packages[] | select(.name=="batless")'
 ```
 
 ### Supply Chain Security
+
 - 🔒 **Reproducible builds** - deterministic compilation
-- 📝 **SBOM generation** - complete dependency tracking  
+- 📝 **SBOM generation** - complete dependency tracking
 - 🔑 **Keyless signing** - GitHub OIDC with Sigstore
 - 🛡️ **Audit pipeline** - cargo-audit on every build
 - 🏷️ **Provenance** - SLSA Level 3 attestations
@@ -238,6 +250,7 @@ cat batless-0.1.0.spdx.json | jq '.packages[] | select(.name=="batless")'
 ## 🧪 Testing Releases
 
 ### Local Testing
+
 ```bash
 # Test debug build
 cargo run -- src/main.rs
@@ -252,6 +265,7 @@ cargo dist build --all-targets
 ```
 
 ### Pre-Release Testing
+
 ```bash
 # Test release process without publishing
 cargo dist plan
@@ -263,6 +277,7 @@ cargo dist check
 ```
 
 ### Integration Testing
+
 ```bash
 # Test CLI behavior across platforms
 cargo test --test integration_tests
@@ -291,17 +306,20 @@ docker run -it ubuntu:latest bash -c "
 ## 🎯 Release Strategy
 
 ### Version Numbering
+
 - **Major** (1.0.0): Breaking API changes, major features
 - **Minor** (0.1.0): New features, backwards compatible
 - **Patch** (0.0.1): Bug fixes, documentation
 
 ### Release Cadence
+
 - 🚀 **Major releases**: Every 6-12 months
 - ✨ **Minor releases**: Monthly or when features are ready
 - 🐛 **Patch releases**: As needed for critical bugs
 - 🔧 **Pre-releases**: Alpha/beta for testing major changes
 
 ### LTS Strategy
+
 - **Current**: Latest stable with active development
 - **Maintenance**: Previous major with security fixes
 - **EOL**: Clear deprecation timeline
@@ -311,6 +329,7 @@ docker run -it ubuntu:latest bash -c "
 ## 🔧 Maintenance Tasks
 
 ### Regular Maintenance
+
 ```bash
 # Update dependencies (monthly)
 cargo update
@@ -327,6 +346,7 @@ hyperfine 'batless large-file.py' 'bat large-file.py'
 ```
 
 ### Security Response
+
 ```bash
 # Emergency security release
 cargo audit
@@ -337,21 +357,25 @@ cargo release patch --execute  # Immediate patch
 ## 📚 References & Tools
 
 ### Core Tools
+
 - 🚀 GitHub Actions - Cross-platform distribution and releases
 - 🚀 [cargo-release](https://github.com/crate-ci/cargo-release) - Release automation
 - 🔍 [cargo-audit](https://github.com/RustSec/rustsec/tree/main/cargo-audit) - Security auditing
 
 ### Package Managers
+
 - 🍺 [Homebrew Tap Guide](https://docs.brew.sh/Taps)
 - 🐧 [Debian Packaging](https://www.debian.org/doc/debian-policy/)
 - 🪟 [Chocolatey Packages](https://docs.chocolatey.org/en-us/create/create-packages)
 
 ### Security & Compliance
+
 - 🔑 [Sigstore](https://docs.sigstore.dev/) - Keyless code signing
 - 📋 [SLSA](https://slsa.dev/) - Supply chain security framework
 - 🛡️ [OSSF Scorecard](https://github.com/ossf/scorecard) - Security best practices
 
 ### CI/CD
+
 - ⚡ [GitHub Actions](https://docs.github.com/en/actions)
 - 🧪 [act](https://github.com/nektos/act) - Local GitHub Actions testing
 - 🎭 [release-please](https://github.com/googleapis/release-please) - Automated releases
