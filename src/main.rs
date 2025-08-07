@@ -1,11 +1,12 @@
 use batless::{
-    AiModel, BatlessConfig, BatlessResult, CustomProfile, JsonSchemaValidator, OutputMode,
-    SummaryLevel, TokenCounter,
+    AiModel, BatlessConfig, BatlessError, BatlessResult, CustomProfile, JsonSchemaValidator,
+    OutputMode, SummaryLevel, TokenCounter,
 };
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{generate, shells::*};
 use is_terminal::IsTerminal;
-use std::io;
+use std::io::{self, Write};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -289,10 +290,36 @@ impl From<CliAiModel> for AiModel {
     }
 }
 
+fn print_error(error: &BatlessError) {
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    let error_string = error.to_string();
+    let mut parts = error_string.splitn(2, '\n');
+    let first_line = parts.next().unwrap_or("");
+    let rest = parts.next().unwrap_or("");
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true));
+    let _ = write!(&mut stderr, "Error");
+    if let Some(end_of_code) = first_line.find(']') {
+        let code_part = &first_line[..=end_of_code];
+        let message_part = &first_line[end_of_code + 1..];
+        let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)));
+        let _ = write!(&mut stderr, " {}", code_part);
+        let _ = stderr.reset();
+        let _ = writeln!(&mut stderr, "{}", message_part);
+    } else {
+        let _ = stderr.reset();
+        let _ = writeln!(&mut stderr, ": {}", first_line);
+    }
+    if !rest.is_empty() {
+        let _ = stderr.reset();
+        let _ = writeln!(&mut stderr, "
+{}", rest);
+    }
+}
+
 fn main() {
     if let Err(e) = run() {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
+        print_error(&e);
+        std::process::exit(e.error_code() as i32);
     }
 }
 
@@ -568,7 +595,8 @@ fn run() -> BatlessResult<()> {
 
     // Handle token counting if requested
     if args.count_tokens {
-        let content = file_info.lines.join("\n");
+        let content = file_info.lines.join("
+");
         let counter = TokenCounter::new(args.ai_model.into());
         let token_count = counter.count_tokens(&content);
 
@@ -602,7 +630,8 @@ fn run() -> BatlessResult<()> {
 
     // Handle context fitting if requested
     let final_file_info = if args.fit_context {
-        let content = file_info.lines.join("\n");
+        let content = file_info.lines.join("
+");
         let counter = TokenCounter::new(args.ai_model.into());
         let (truncated_content, was_truncated) =
             counter.truncate_to_fit(&content, args.prompt_tokens);

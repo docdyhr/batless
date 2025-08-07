@@ -502,6 +502,17 @@ Enhanced output:
 }
 ```
 
+### Streaming Large Files
+
+For very large files, `batless` offers a streaming JSON mode that processes the file in chunks, ensuring low memory usage regardless of file size.
+
+```bash
+# Stream a large file as JSON chunks
+batless --streaming-json --streaming-chunk-size 2000 large_file.log
+```
+
+This command will output a series of JSON objects, each representing a chunk of the file. This is ideal for processing large log files or data sets in automated pipelines without loading the entire file into memory.
+
 ## 🐳 Docker Usage
 
 ### Container-Based Code Analysis
@@ -759,6 +770,27 @@ batless --profile chatgpt src/main.rs
 # General AI assistant (5K lines, summary)
 batless --profile assistant src/main.rs
 ```
+
+### Custom AI Profiles
+
+For more granular control, you can create your own profiles. For example, create a file named `my-claude-profile.json`:
+
+```json
+{
+  "max_lines": 8000,
+  "summary_level": "detailed",
+  "include_tokens": true,
+  "output_mode": "json"
+}
+```
+
+Then, use it with the `--custom-profile` flag:
+
+```bash
+batless --custom-profile my-claude-profile.json src/main.rs
+```
+
+This allows you to define and reuse complex configurations for different AI models or tasks.
 
 ### Validation and Help
 
@@ -1105,9 +1137,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Inspired by [`sharkdp/bat`](https://github.com/sharkdp/bat)
-- Built with [`syntect`](https://github.com/trishume/syntect) for syntax highlighting
-- Designed for AI assistants like Claude and Gemini
+Special thanks to:
+
+- **[sharkdp/bat](https://github.com/sharkdp/bat)** - Inspiration for syntax highlighting excellence
+- **[syntect](https://github.com/trishume/syntect)** - Powerful syntax highlighting engine
+- **Rust Community** - For building amazing tools and ecosystem
+- **AI Assistant Communities** - For driving the need for automation-friendly tools
 
 ## 📚 Documentation
 
