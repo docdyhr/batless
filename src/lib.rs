@@ -4,6 +4,7 @@
 //! that can be used both by the CLI and in tests.
 
 pub mod config;
+pub mod config_manager;
 pub mod error;
 pub mod file_info;
 pub mod formatter;
