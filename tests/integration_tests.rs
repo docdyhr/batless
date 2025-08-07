@@ -486,6 +486,24 @@ fn test_stdin_processing() {
 }
 
 #[test]
+fn test_invalid_language_error() {
+    let output = run_batless(&["src/main.rs", "--language=invalid-language"]);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(stderr.contains("Language 'invalid-language' not found"));
+    assert!(stderr.contains("E203"));
+}
+
+#[test]
+fn test_invalid_theme_error() {
+    let output = run_batless(&["src/main.rs", "--theme=invalid-theme"]);
+    assert!(!output.status.success());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(stderr.contains("Theme 'invalid-theme' not found"));
+    assert!(stderr.contains("E202"));
+}
+
+#[test]
 fn test_summary_mode_different_languages() {
     // Test JavaScript
     let js_content = "import React from 'react';\n\nfunction Component() {\n    console.log('test');\n    return <div>Hello</div>;\n}\n\nexport default Component;\n";
