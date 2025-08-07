@@ -122,7 +122,7 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
     }
 
     if let Some(profile_path) = &args.edit_profile {
-        batless::ConfigurationWizard::edit_profile(profile_path)?;
+        batless::ConfigurationWizard::edit_profile_by_path(profile_path)?;
         return Ok(true);
     }
 

@@ -1,5 +1,4 @@
 //! Interactive configuration wizard for batless
-//!
 //! This module provides an interactive CLI wizard to help users configure
 //! batless for their specific needs, creating custom profiles and setting
 //! up optimal configurations.
@@ -16,24 +15,32 @@ pub struct ConfigurationWizard;
 impl ConfigurationWizard {
     /// Run the interactive configuration wizard
     pub fn run() -> BatlessResult<()> {
-        println!("🧙 Welcome to the batless Configuration Wizard!");
-        println!("This wizard will help you create a custom configuration profile.\n");
+        loop {
+            println!("\n🧙 Welcome to the batless Configuration Wizard!\n");
+            println!("1. Create a new profile");
+            println!("2. List existing profiles");
+            println!("3. Edit a profile");
+            println!("4. Delete a profile");
+            println!("5. Exit");
 
+            let choice = Self::prompt_string("\nEnter your choice", Some("1"))?;
+            match choice.as_str() {
+                "1" => Self::create_profile()?,
+                "2" => Self::list_profiles()?,
+                "3" => Self::edit_profile_interactive()?,
+                "4" => Self::delete_profile_interactive()?,
+                "5" => return Ok(()),
+                _ => println!("❌ Invalid choice, please try again."),
+            }
+        }
+    }
+
+    fn create_profile() -> BatlessResult<()> {
+        println!("\n✨ Creating a new profile...\n");
         let profile = Self::gather_profile_info()?;
         let save_location = Self::choose_save_location(&profile.name)?;
-
-        // Save the profile
         profile.save_to_file(&save_location)?;
-
-        println!("\n✅ Configuration profile saved successfully!");
-        println!("📁 Location: {}", save_location.display());
-        println!("\n💡 Usage tips:");
-        println!(
-            "  batless --custom-profile \"{}\" myfile.rs",
-            save_location.display()
-        );
-        println!("  batless --configure  # Run this wizard again");
-
+        println!("\n✅ Profile '{}' created successfully at {}.", profile.name, save_location.display());
         Ok(())
     }
 
@@ -41,7 +48,7 @@ impl ConfigurationWizard {
     fn gather_profile_info() -> BatlessResult<CustomProfile> {
         // Profile name and description
         let name = Self::prompt_string("Profile name", Some("my-profile"))?;
-        let description = Self::prompt_optional_string("Profile description (optional)")?;
+        let description = Self::prompt_optional_string("Profile description (optional)", None)?;
 
         println!("\n📊 File Processing Settings");
 
@@ -69,7 +76,7 @@ impl ConfigurationWizard {
         let language = if Self::prompt_yes_no("Override language detection?", false)? {
             let available_languages = LanguageDetector::list_languages();
             println!("Available languages: {}", available_languages.join(", "));
-            Self::prompt_optional_string("Language")?
+            Self::prompt_optional_string("Language", None)?
         } else {
             None
         };
@@ -78,14 +85,14 @@ impl ConfigurationWizard {
         let theme = if Self::prompt_yes_no("Customize syntax highlighting theme?", false)? {
             let available_themes = crate::language::ThemeManager::list_themes();
             println!("Available themes: {}", available_themes.join(", "));
-            Self::prompt_optional_string("Theme")?
+            Self::prompt_optional_string("Theme", None)?
         } else {
             None
         };
 
         // Color and ANSI settings
-        let use_color = Self::prompt_optional_yes_no("Use color output?")?;
-        let strip_ansi = Self::prompt_optional_yes_no("Strip ANSI escape codes?")?;
+        let use_color = Self::prompt_optional_yes_no("Use color output?", None)?;
+        let strip_ansi = Self::prompt_optional_yes_no("Strip ANSI escape codes?", None)?;
 
         println!("\n🤖 AI Integration Settings");
 
@@ -99,14 +106,14 @@ impl ConfigurationWizard {
                     model.context_window()
                 );
             }
-            Self::prompt_optional_string("AI model")?
+            Self::prompt_optional_string("AI model", None)?
         } else {
             None
         };
 
         // Token extraction
         let include_tokens =
-            Self::prompt_optional_yes_no("Include token extraction in JSON output?")?;
+            Self::prompt_optional_yes_no("Include token extraction in JSON output?", None)?;
 
         // Summary level
         let summary_level = if Self::prompt_yes_no("Configure code summarization?", false)? {
@@ -130,7 +137,7 @@ impl ConfigurationWizard {
         // Output mode preference
         let output_mode = if Self::prompt_yes_no("Set default output mode?", false)? {
             println!("Output modes: plain, highlight, json, summary");
-            Self::prompt_optional_string("Output mode")?
+            Self::prompt_optional_string("Output mode", None)?
         } else {
             None
         };
@@ -139,27 +146,27 @@ impl ConfigurationWizard {
 
         // Streaming settings
         let streaming_json =
-            Self::prompt_optional_yes_no("Enable streaming JSON for large files?")?;
+            Self::prompt_optional_yes_no("Enable streaming JSON for large files?", None)?;
         let streaming_chunk_size = if streaming_json == Some(true) {
             Some(Self::prompt_number(
                 "Streaming chunk size (lines)",
                 Some(1000),
                 100,
                 10000,
-            )?)
+            )?) 
         } else {
             None
         };
 
         let enable_resume = if streaming_json == Some(true) {
-            Self::prompt_optional_yes_no("Enable resume capability?")?
+            Self::prompt_optional_yes_no("Enable resume capability?", None)?
         } else {
             None
         };
 
         // Tags for organization
         let tags = if Self::prompt_yes_no("Add tags for organization?", false)? {
-            Self::prompt_tags()?
+            Self::prompt_tags()? 
         } else {
             Vec::new()
         };
@@ -197,8 +204,8 @@ impl ConfigurationWizard {
                     "Could not determine home directory".to_string(),
                     Some("Please specify a custom save location".to_string()),
                 )
-            })?
-            .join(".batless")
+            })?.
+            join(".batless")
             .join("profiles");
 
         // Create the directory if it doesn't exist
@@ -209,7 +216,7 @@ impl ConfigurationWizard {
             )
         })?;
 
-        let default_path = default_dir.join(format!("{profile_name}.json"));
+        let default_path = default_dir.join(format!("{}.json", profile_name));
 
         println!("\n💾 Save Location");
         println!("Default: {}", default_path.display());
@@ -252,8 +259,15 @@ impl ConfigurationWizard {
     }
 
     /// Prompt for an optional string value
-    fn prompt_optional_string(prompt: &str) -> BatlessResult<Option<String>> {
-        print!("🔹 {prompt}: ");
+    fn prompt_optional_string(
+        prompt: &str,
+        default: Option<&str>,
+    ) -> BatlessResult<Option<String>> {
+        print!("🔹 {prompt}");
+        if let Some(default_val) = default {
+            print!(" [{}]", default_val);
+        }
+        print!(": ");
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
@@ -266,7 +280,7 @@ impl ConfigurationWizard {
 
         let input = input.trim();
         if input.is_empty() {
-            Ok(None)
+            Ok(default.map(|s| s.to_string()))
         } else {
             Ok(Some(input.to_string()))
         }
@@ -299,8 +313,17 @@ impl ConfigurationWizard {
     }
 
     /// Prompt for an optional yes/no answer
-    fn prompt_optional_yes_no(prompt: &str) -> BatlessResult<Option<bool>> {
-        print!("🔹 {prompt} [y/n/skip]: ");
+    fn prompt_optional_yes_no(
+        prompt: &str,
+        default: Option<bool>,
+    ) -> BatlessResult<Option<bool>> {
+        let default_str = match default {
+            Some(true) => "Y/n/skip",
+            Some(false) => "y/N/skip",
+            None => "y/n/skip",
+        };
+
+        print!("🔹 {prompt} [{default_str}]: ");
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
@@ -313,12 +336,12 @@ impl ConfigurationWizard {
 
         let input = input.trim().to_lowercase();
         match input.as_str() {
-            "" | "skip" | "s" => Ok(None),
+            "" | "skip" | "s" => Ok(default),
             "y" | "yes" | "true" | "1" => Ok(Some(true)),
             "n" | "no" | "false" | "0" => Ok(Some(false)),
             _ => {
                 println!("❌ Please answer y/yes, n/no, or skip");
-                Self::prompt_optional_yes_no(prompt)
+                Self::prompt_optional_yes_no(prompt, default)
             }
         }
     }
@@ -432,54 +455,67 @@ impl ConfigurationWizard {
         Ok(tags)
     }
 
-    /// Show a summary of existing profiles
-    pub fn list_profiles() -> BatlessResult<()> {
+    fn delete_profile_interactive() -> BatlessResult<()> {
+        println!("\n🗑️ Select a profile to delete:");
+        let profiles = Self::get_available_profiles()?;
+        if profiles.is_empty() {
+            println!("No profiles found.");
+            return Ok(())
+        }
+
+        for (i, (path, profile)) in profiles.iter().enumerate() {
+            println!("{}. {} ({})", i + 1, profile.name, path.display());
+        }
+
+        let choice = Self::prompt_number("Enter your choice", None, 1, profiles.len())?;
+        let (path, profile) = &profiles[choice - 1];
+
+        if Self::prompt_yes_no(&format!("Are you sure you want to delete profile '{}'?", profile.name), false)? {
+            std::fs::remove_file(path)?;
+            println!("✅ Profile deleted successfully.");
+        }
+
+        Ok(())
+    }
+
+    fn get_available_profiles() -> BatlessResult<Vec<(std::path::PathBuf, CustomProfile)>> {
         let profiles_dir = dirs::home_dir()
             .ok_or_else(|| {
                 BatlessError::config_error_with_help(
                     "Could not determine home directory".to_string(),
                     Some("Profiles directory not accessible".to_string()),
                 )
-            })?
-            .join(".batless")
+            })?.
+            join(".batless")
             .join("profiles");
 
         if !profiles_dir.exists() {
-            println!("📁 No profiles directory found. Run 'batless --configure' to create your first profile.");
-            return Ok(());
+            return Ok(Vec::new());
         }
 
-        let entries = std::fs::read_dir(&profiles_dir).map_err(|e| {
-            BatlessError::config_error_with_help(
-                format!("Could not read profiles directory: {e}"),
-                Some("Check permissions on the profiles directory".to_string()),
-            )
-        })?;
-
+        let entries = std::fs::read_dir(&profiles_dir)?;
         let mut profiles = Vec::new();
         for entry in entries {
-            let entry = entry.map_err(|e| {
-                BatlessError::config_error_with_help(
-                    format!("Error reading directory entry: {e}"),
-                    Some("Check profiles directory permissions".to_string()),
-                )
-            })?;
-
+            let entry = entry?;
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
-                match CustomProfile::load_from_file(&path) {
-                    Ok(profile) => profiles.push((path, profile)),
-                    Err(_) => continue, // Skip invalid profiles
+                if let Ok(profile) = CustomProfile::load_from_file(&path) {
+                    profiles.push((path, profile));
                 }
             }
         }
+        Ok(profiles)
+    }
 
+    /// Show a summary of existing profiles
+    pub fn list_profiles() -> BatlessResult<()> {
+        let profiles = Self::get_available_profiles()?;
         if profiles.is_empty() {
             println!("📁 No valid profiles found. Run 'batless --configure' to create your first profile.");
-            return Ok(());
+            return Ok(())
         }
 
-        println!("📋 Available Profiles:");
+        println!("\n📋 Available Profiles:");
         println!("{}", "─".repeat(80));
 
         for (path, profile) in profiles {
@@ -520,53 +556,80 @@ impl ConfigurationWizard {
         Ok(())
     }
 
+    fn edit_profile_interactive() -> BatlessResult<()> {
+        println!("\n✏️ Select a profile to edit:");
+        let profiles = Self::get_available_profiles()?;
+        if profiles.is_empty() {
+            println!("No profiles found. Create one first!");
+            return Ok(())
+        }
+
+        for (i, (path, profile)) in profiles.iter().enumerate() {
+            println!("{}. {} ({})", i + 1, profile.name, path.display());
+        }
+
+        let choice = Self::prompt_number("Enter your choice", None, 1, profiles.len())?;
+        let (path, _) = &profiles[choice - 1];
+
+        Self::edit_profile_by_path(path.to_str().unwrap())
+    }
+
     /// Interactive profile editor for existing profiles
-    pub fn edit_profile(profile_path: &str) -> BatlessResult<()> {
+    pub fn edit_profile_by_path(profile_path: &str) -> BatlessResult<()> {
         let path = std::path::Path::new(profile_path);
         if !path.exists() {
             return Err(BatlessError::config_error_with_help(
-                format!("Profile not found: {profile_path}"),
+                format!("Profile not found: {}", profile_path),
                 Some("Use 'batless --list-profiles' to see available profiles".to_string()),
             ));
         }
 
         let mut profile = CustomProfile::load_from_file(path)?;
 
-        println!("✏️  Editing profile: {}", profile.name);
-        println!(
-            "Current description: {}",
-            profile.description.as_deref().unwrap_or("None")
-        );
-        println!();
+        println!("\n✏️  Editing profile: {}", profile.name);
+        println!("Press Enter to keep the current value.\n");
 
-        // Allow editing each field
-        if Self::prompt_yes_no("Update description?", false)? {
-            profile.description = Self::prompt_optional_string("New description")?;
-        }
+        profile.description = Self::prompt_optional_string(&format!("Description [{}]", profile.description.as_deref().unwrap_or("")), profile.description.as_deref())?;
 
-        if Self::prompt_yes_no("Update max lines?", false)? {
-            let max_lines = Self::prompt_optional_number(
-                "Max lines (0 for unlimited)",
-                profile.max_lines,
-                0,
-                1_000_000,
-            )?;
-            profile.max_lines = if max_lines == Some(0) {
-                None
-            } else {
-                max_lines
-            };
-        }
+        let max_lines = Self::prompt_optional_number(
+            &format!("Max lines (0 for unlimited) [{}]", profile.max_lines.map(|v| v.to_string()).unwrap_or_else(|| "0".to_string())),
+            profile.max_lines,
+            0,
+            1_000_000,
+        )?;
+        profile.max_lines = if max_lines == Some(0) { None } else { max_lines };
 
-        // Add more fields as needed...
+        let max_bytes = Self::prompt_optional_number(
+            &format!("Max bytes (MB) [{}]", profile.max_bytes.map(|b| (b / (1024 * 1024)).to_string()).unwrap_or_else(|| "None".to_string())),
+            profile.max_bytes.map(|b| b / (1024 * 1024)),
+            1,
+            100,
+        )?;
+        profile.max_bytes = max_bytes.map(|mb| mb * 1024 * 1024);
 
-        // Update timestamp
+        profile.language = Self::prompt_optional_string(&format!("Language [{}]", profile.language.as_deref().unwrap_or("auto")), profile.language.as_deref())?;
+        profile.theme = Self::prompt_optional_string(&format!("Theme [{}]", profile.theme.as_deref().unwrap_or("default")), profile.theme.as_deref())?;
+        profile.use_color = Self::prompt_optional_yes_no(&format!("Use color? [{}]", profile.use_color.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.use_color)?;
+        profile.strip_ansi = Self::prompt_optional_yes_no(&format!("Strip ANSI? [{}]", profile.strip_ansi.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.strip_ansi)?;
+        profile.ai_model = Self::prompt_optional_string(&format!("AI model [{}]", profile.ai_model.as_deref().unwrap_or("none")), profile.ai_model.as_deref())?;
+        profile.include_tokens = Self::prompt_optional_yes_no(&format!("Include tokens? [{}]", profile.include_tokens.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.include_tokens)?;
+        profile.summary_level = Self::prompt_optional_string(&format!("Summary level [{}]", profile.summary_level.as_ref().map(|s| s.as_str()).unwrap_or("none")), profile.summary_level.as_ref().map(|s| s.as_str()))?.map(|s| SummaryLevel::parse(&s).unwrap());
+        profile.output_mode = Self::prompt_optional_string(&format!("Output mode [{}]", profile.output_mode.as_deref().unwrap_or("default")), profile.output_mode.as_deref())?;
+        profile.streaming_json = Self::prompt_optional_yes_no(&format!("Streaming JSON? [{}]", profile.streaming_json.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.streaming_json)?;
+        profile.streaming_chunk_size = Self::prompt_optional_number(
+            &format!("Streaming chunk size [{}]", profile.streaming_chunk_size.map(|v| v.to_string()).unwrap_or_else(|| "1000".to_string())),
+            profile.streaming_chunk_size,
+            100,
+            10000,
+        )?;
+        profile.enable_resume = Self::prompt_optional_yes_no(&format!("Enable resume? [{}]", profile.enable_resume.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.enable_resume)?;
+        profile.tags = Self::prompt_tags()?;
+
         profile.updated_at = Some(chrono::Utc::now().to_rfc3339());
 
-        // Save the updated profile
         profile.save_to_file(path)?;
 
-        println!("✅ Profile updated successfully!");
+        println!("\n✅ Profile updated successfully!");
         Ok(())
     }
 }
