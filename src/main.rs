@@ -1,11 +1,6 @@
 use batless::{
-    config_manager::ConfigManager,
-    AiModel,
-    BatlessError,
-    BatlessResult,
-    JsonSchemaValidator,
-    OutputMode,
-    TokenCounter,
+    config_manager::ConfigManager, AiModel, BatlessError, BatlessResult, JsonSchemaValidator,
+    OutputMode, TokenCounter,
 };
 use clap::CommandFactory;
 use clap_complete::generate;
@@ -79,7 +74,12 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
             Shell::Bash => generate(clap_complete::shells::Bash, &mut cmd, name, &mut buffer),
             Shell::Zsh => generate(clap_complete::shells::Zsh, &mut cmd, name, &mut buffer),
             Shell::Fish => generate(clap_complete::shells::Fish, &mut cmd, name, &mut buffer),
-            Shell::Power => generate(clap_complete::shells::PowerShell, &mut cmd, name, &mut buffer),
+            Shell::Power => generate(
+                clap_complete::shells::PowerShell,
+                &mut cmd,
+                name,
+                &mut buffer,
+            ),
         }
         io::stdout().write_all(&buffer)?;
         return Ok(true);
@@ -90,7 +90,10 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
         let schema = validator.get_schema(format).ok_or_else(|| {
             BatlessError::config_error_with_help(
                 format!("Unknown schema format '{}'", format),
-                Some("Available schemas: file_info, json_output, token_count, processing_stats".to_string()),
+                Some(
+                    "Available schemas: file_info, json_output, token_count, processing_stats"
+                        .to_string(),
+                ),
             )
         })?;
         println!("{}", serde_json::to_string_pretty(schema)?);
@@ -136,13 +139,18 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
     let args = manager.args();
 
     let checkpoint = if config.enable_resume {
-        args.checkpoint.as_ref().and_then(|path| {
-            if std::path::Path::new(path).exists() {
-                Some(StreamingProcessor::load_checkpoint(std::path::Path::new(path)))
-            } else {
-                None
-            }
-        }).transpose()? 
+        args.checkpoint
+            .as_ref()
+            .and_then(|path| {
+                if std::path::Path::new(path).exists() {
+                    Some(StreamingProcessor::load_checkpoint(std::path::Path::new(
+                        path,
+                    )))
+                } else {
+                    None
+                }
+            })
+            .transpose()?
     } else {
         None
     };
@@ -156,7 +164,10 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
 
         if config.enable_resume && !chunk.is_final {
             if let Some(checkpoint_path) = &args.checkpoint {
-                StreamingProcessor::save_checkpoint(&chunk.checkpoint, std::path::Path::new(checkpoint_path))?;
+                StreamingProcessor::save_checkpoint(
+                    &chunk.checkpoint,
+                    std::path::Path::new(checkpoint_path),
+                )?;
             }
         }
 
@@ -180,7 +191,10 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     let file_info = batless::process_file(file_path, config)?;
 
     if config.debug {
-        eprintln!("🔍 DEBUG: Processing completed in {:?}", start_time.elapsed());
+        eprintln!(
+            "🔍 DEBUG: Processing completed in {:?}",
+            start_time.elapsed()
+        );
     }
 
     if args.count_tokens {
@@ -189,7 +203,8 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
 
     let final_file_info = if args.fit_context {
         let counter = TokenCounter::new(args.ai_model.into());
-        let (truncated_content, was_truncated) = counter.truncate_to_fit(&file_info.lines.join("\n"), args.prompt_tokens);
+        let (truncated_content, was_truncated) =
+            counter.truncate_to_fit(&file_info.lines.join("\n"), args.prompt_tokens);
         if was_truncated {
             println!("📐 Context Fitting Applied");
             file_info.with_lines(truncated_content.lines().map(String::from).collect())
@@ -205,7 +220,8 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         return Ok(());
     }
 
-    let formatted_output = batless::format_output(&final_file_info, file_path, config, output_mode)?;
+    let formatted_output =
+        batless::format_output(&final_file_info, file_path, config, output_mode)?;
 
     if args.validate_json && output_mode == OutputMode::Json {
         validate_json_output(&formatted_output)?;
@@ -236,7 +252,14 @@ fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) -> Batles
     println!("  Model: {}", token_count.model.as_str());
     println!("  Tokens: {}", token_count.tokens);
     println!("  Context window: {}", token_count.model.context_window());
-    println!("  Fits in context: {}", if token_count.fits_in_context { "✓" } else { "✗" });
+    println!(
+        "  Fits in context: {}",
+        if token_count.fits_in_context {
+            "✓"
+        } else {
+            "✗"
+        }
+    );
     println!();
     Ok(())
 }
@@ -245,8 +268,10 @@ fn validate_json_output(json_output: &str) -> BatlessResult<()> {
     let validator = JsonSchemaValidator::new();
     let json_value: serde_json::Value = serde_json::from_str(json_output)?;
     if let Err(e) = validator.validate("json_output", &json_value) {
-        eprintln!("⚠️  JSON validation warning: {}. Output may not be fully AI-compatible.", e);
+        eprintln!(
+            "⚠️  JSON validation warning: {}. Output may not be fully AI-compatible.",
+            e
+        );
     }
     Ok(())
 }
-

@@ -354,7 +354,10 @@ impl ConfigManager {
         } else {
             Err(BatlessError::config_error_with_help(
                 "File path required".to_string(),
-                Some("Specify a file to view, pipe input via stdin, or use --help for more options.".to_string()),
+                Some(
+                    "Specify a file to view, pipe input via stdin, or use --help for more options."
+                        .to_string(),
+                ),
             ))
         }
     }
@@ -399,7 +402,10 @@ impl ConfigManager {
             self.config = self.config.clone().with_max_bytes(self.args.max_bytes);
         }
         if self.args.language.is_some() {
-            self.config = self.config.clone().with_language(self.args.language.clone());
+            self.config = self
+                .config
+                .clone()
+                .with_language(self.args.language.clone());
         }
         if self.args.theme != "base16-ocean.dark" {
             self.config = self.config.clone().with_theme(self.args.theme.clone());
@@ -415,16 +421,28 @@ impl ConfigManager {
         self.config = self.config.clone().with_use_color(use_color);
 
         if self.args.include_tokens {
-            self.config = self.config.clone().with_include_tokens(self.args.include_tokens);
+            self.config = self
+                .config
+                .clone()
+                .with_include_tokens(self.args.include_tokens);
         }
         if self.args.streaming_json {
-            self.config = self.config.clone().with_streaming_json(self.args.streaming_json);
+            self.config = self
+                .config
+                .clone()
+                .with_streaming_json(self.args.streaming_json);
         }
         if self.args.streaming_chunk_size != 1000 {
-            self.config = self.config.clone().with_streaming_chunk_size(self.args.streaming_chunk_size);
+            self.config = self
+                .config
+                .clone()
+                .with_streaming_chunk_size(self.args.streaming_chunk_size);
         }
         if self.args.enable_resume {
-            self.config = self.config.clone().with_enable_resume(self.args.enable_resume);
+            self.config = self
+                .config
+                .clone()
+                .with_enable_resume(self.args.enable_resume);
         }
         if self.args.debug {
             self.config = self.config.clone().with_debug(self.args.debug);

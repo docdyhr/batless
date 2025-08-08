@@ -40,7 +40,11 @@ impl ConfigurationWizard {
         let profile = Self::gather_profile_info()?;
         let save_location = Self::choose_save_location(&profile.name)?;
         profile.save_to_file(&save_location)?;
-        println!("\n✅ Profile '{}' created successfully at {}.", profile.name, save_location.display());
+        println!(
+            "\n✅ Profile '{}' created successfully at {}.",
+            profile.name,
+            save_location.display()
+        );
         Ok(())
     }
 
@@ -153,7 +157,7 @@ impl ConfigurationWizard {
                 Some(1000),
                 100,
                 10000,
-            )?) 
+            )?)
         } else {
             None
         };
@@ -166,7 +170,7 @@ impl ConfigurationWizard {
 
         // Tags for organization
         let tags = if Self::prompt_yes_no("Add tags for organization?", false)? {
-            Self::prompt_tags()? 
+            Self::prompt_tags()?
         } else {
             Vec::new()
         };
@@ -204,8 +208,8 @@ impl ConfigurationWizard {
                     "Could not determine home directory".to_string(),
                     Some("Please specify a custom save location".to_string()),
                 )
-            })?.
-            join(".batless")
+            })?
+            .join(".batless")
             .join("profiles");
 
         // Create the directory if it doesn't exist
@@ -313,10 +317,7 @@ impl ConfigurationWizard {
     }
 
     /// Prompt for an optional yes/no answer
-    fn prompt_optional_yes_no(
-        prompt: &str,
-        default: Option<bool>,
-    ) -> BatlessResult<Option<bool>> {
+    fn prompt_optional_yes_no(prompt: &str, default: Option<bool>) -> BatlessResult<Option<bool>> {
         let default_str = match default {
             Some(true) => "Y/n/skip",
             Some(false) => "y/N/skip",
@@ -460,7 +461,7 @@ impl ConfigurationWizard {
         let profiles = Self::get_available_profiles()?;
         if profiles.is_empty() {
             println!("No profiles found.");
-            return Ok(())
+            return Ok(());
         }
 
         for (i, (path, profile)) in profiles.iter().enumerate() {
@@ -470,7 +471,13 @@ impl ConfigurationWizard {
         let choice = Self::prompt_number("Enter your choice", None, 1, profiles.len())?;
         let (path, profile) = &profiles[choice - 1];
 
-        if Self::prompt_yes_no(&format!("Are you sure you want to delete profile '{}'?", profile.name), false)? {
+        if Self::prompt_yes_no(
+            &format!(
+                "Are you sure you want to delete profile '{}'?",
+                profile.name
+            ),
+            false,
+        )? {
             std::fs::remove_file(path)?;
             println!("✅ Profile deleted successfully.");
         }
@@ -485,8 +492,8 @@ impl ConfigurationWizard {
                     "Could not determine home directory".to_string(),
                     Some("Profiles directory not accessible".to_string()),
                 )
-            })?.
-            join(".batless")
+            })?
+            .join(".batless")
             .join("profiles");
 
         if !profiles_dir.exists() {
@@ -512,7 +519,7 @@ impl ConfigurationWizard {
         let profiles = Self::get_available_profiles()?;
         if profiles.is_empty() {
             println!("📁 No valid profiles found. Run 'batless --configure' to create your first profile.");
-            return Ok(())
+            return Ok(());
         }
 
         println!("\n📋 Available Profiles:");
@@ -561,7 +568,7 @@ impl ConfigurationWizard {
         let profiles = Self::get_available_profiles()?;
         if profiles.is_empty() {
             println!("No profiles found. Create one first!");
-            return Ok(())
+            return Ok(());
         }
 
         for (i, (path, profile)) in profiles.iter().enumerate() {
@@ -589,40 +596,145 @@ impl ConfigurationWizard {
         println!("\n✏️  Editing profile: {}", profile.name);
         println!("Press Enter to keep the current value.\n");
 
-        profile.description = Self::prompt_optional_string(&format!("Description [{}]", profile.description.as_deref().unwrap_or("")), profile.description.as_deref())?;
+        profile.description = Self::prompt_optional_string(
+            &format!(
+                "Description [{}]",
+                profile.description.as_deref().unwrap_or("")
+            ),
+            profile.description.as_deref(),
+        )?;
 
         let max_lines = Self::prompt_optional_number(
-            &format!("Max lines (0 for unlimited) [{}]", profile.max_lines.map(|v| v.to_string()).unwrap_or_else(|| "0".to_string())),
+            &format!(
+                "Max lines (0 for unlimited) [{}]",
+                profile
+                    .max_lines
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "0".to_string())
+            ),
             profile.max_lines,
             0,
             1_000_000,
         )?;
-        profile.max_lines = if max_lines == Some(0) { None } else { max_lines };
+        profile.max_lines = if max_lines == Some(0) {
+            None
+        } else {
+            max_lines
+        };
 
         let max_bytes = Self::prompt_optional_number(
-            &format!("Max bytes (MB) [{}]", profile.max_bytes.map(|b| (b / (1024 * 1024)).to_string()).unwrap_or_else(|| "None".to_string())),
+            &format!(
+                "Max bytes (MB) [{}]",
+                profile
+                    .max_bytes
+                    .map(|b| (b / (1024 * 1024)).to_string())
+                    .unwrap_or_else(|| "None".to_string())
+            ),
             profile.max_bytes.map(|b| b / (1024 * 1024)),
             1,
             100,
         )?;
         profile.max_bytes = max_bytes.map(|mb| mb * 1024 * 1024);
 
-        profile.language = Self::prompt_optional_string(&format!("Language [{}]", profile.language.as_deref().unwrap_or("auto")), profile.language.as_deref())?;
-        profile.theme = Self::prompt_optional_string(&format!("Theme [{}]", profile.theme.as_deref().unwrap_or("default")), profile.theme.as_deref())?;
-        profile.use_color = Self::prompt_optional_yes_no(&format!("Use color? [{}]", profile.use_color.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.use_color)?;
-        profile.strip_ansi = Self::prompt_optional_yes_no(&format!("Strip ANSI? [{}]", profile.strip_ansi.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.strip_ansi)?;
-        profile.ai_model = Self::prompt_optional_string(&format!("AI model [{}]", profile.ai_model.as_deref().unwrap_or("none")), profile.ai_model.as_deref())?;
-        profile.include_tokens = Self::prompt_optional_yes_no(&format!("Include tokens? [{}]", profile.include_tokens.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.include_tokens)?;
-        profile.summary_level = Self::prompt_optional_string(&format!("Summary level [{}]", profile.summary_level.as_ref().map(|s| s.as_str()).unwrap_or("none")), profile.summary_level.as_ref().map(|s| s.as_str()))?.map(|s| SummaryLevel::parse(&s).unwrap());
-        profile.output_mode = Self::prompt_optional_string(&format!("Output mode [{}]", profile.output_mode.as_deref().unwrap_or("default")), profile.output_mode.as_deref())?;
-        profile.streaming_json = Self::prompt_optional_yes_no(&format!("Streaming JSON? [{}]", profile.streaming_json.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.streaming_json)?;
+        profile.language = Self::prompt_optional_string(
+            &format!(
+                "Language [{}]",
+                profile.language.as_deref().unwrap_or("auto")
+            ),
+            profile.language.as_deref(),
+        )?;
+        profile.theme = Self::prompt_optional_string(
+            &format!("Theme [{}]", profile.theme.as_deref().unwrap_or("default")),
+            profile.theme.as_deref(),
+        )?;
+        profile.use_color = Self::prompt_optional_yes_no(
+            &format!(
+                "Use color? [{}]",
+                profile
+                    .use_color
+                    .map(|b| b.to_string())
+                    .unwrap_or_else(|| "auto".to_string())
+            ),
+            profile.use_color,
+        )?;
+        profile.strip_ansi = Self::prompt_optional_yes_no(
+            &format!(
+                "Strip ANSI? [{}]",
+                profile
+                    .strip_ansi
+                    .map(|b| b.to_string())
+                    .unwrap_or_else(|| "auto".to_string())
+            ),
+            profile.strip_ansi,
+        )?;
+        profile.ai_model = Self::prompt_optional_string(
+            &format!(
+                "AI model [{}]",
+                profile.ai_model.as_deref().unwrap_or("none")
+            ),
+            profile.ai_model.as_deref(),
+        )?;
+        profile.include_tokens = Self::prompt_optional_yes_no(
+            &format!(
+                "Include tokens? [{}]",
+                profile
+                    .include_tokens
+                    .map(|b| b.to_string())
+                    .unwrap_or_else(|| "auto".to_string())
+            ),
+            profile.include_tokens,
+        )?;
+        profile.summary_level = Self::prompt_optional_string(
+            &format!(
+                "Summary level [{}]",
+                profile
+                    .summary_level
+                    .as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or("none")
+            ),
+            profile.summary_level.as_ref().map(|s| s.as_str()),
+        )?
+        .map(|s| SummaryLevel::parse(&s).unwrap());
+        profile.output_mode = Self::prompt_optional_string(
+            &format!(
+                "Output mode [{}]",
+                profile.output_mode.as_deref().unwrap_or("default")
+            ),
+            profile.output_mode.as_deref(),
+        )?;
+        profile.streaming_json = Self::prompt_optional_yes_no(
+            &format!(
+                "Streaming JSON? [{}]",
+                profile
+                    .streaming_json
+                    .map(|b| b.to_string())
+                    .unwrap_or_else(|| "auto".to_string())
+            ),
+            profile.streaming_json,
+        )?;
         profile.streaming_chunk_size = Self::prompt_optional_number(
-            &format!("Streaming chunk size [{}]", profile.streaming_chunk_size.map(|v| v.to_string()).unwrap_or_else(|| "1000".to_string())),
+            &format!(
+                "Streaming chunk size [{}]",
+                profile
+                    .streaming_chunk_size
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "1000".to_string())
+            ),
             profile.streaming_chunk_size,
             100,
             10000,
         )?;
-        profile.enable_resume = Self::prompt_optional_yes_no(&format!("Enable resume? [{}]", profile.enable_resume.map(|b| b.to_string()).unwrap_or_else(|| "auto".to_string())), profile.enable_resume)?;
+        profile.enable_resume = Self::prompt_optional_yes_no(
+            &format!(
+                "Enable resume? [{}]",
+                profile
+                    .enable_resume
+                    .map(|b| b.to_string())
+                    .unwrap_or_else(|| "auto".to_string())
+            ),
+            profile.enable_resume,
+        )?;
         profile.tags = Self::prompt_tags()?;
 
         profile.updated_at = Some(chrono::Utc::now().to_rfc3339());
