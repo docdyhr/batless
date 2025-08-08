@@ -4,12 +4,14 @@
 # Stage 1: Build
 FROM rust:1.80-alpine AS builder
 
-# Install build dependencies including musl cross-compiler
-RUN apk add --no-cache musl-dev gcc \
-    && ln -s /usr/bin/gcc /usr/bin/x86_64-linux-musl-gcc
+# Install build dependencies including oniguruma for syntect
+RUN apk add --no-cache musl-dev gcc oniguruma-dev pkgconfig
 
 # Add musl target for cross-compilation
 RUN rustup target add x86_64-unknown-linux-musl
+
+# Set environment variables to use system oniguruma
+ENV RUSTONIG_SYSTEM_LIBONIG=1
 
 # Create app directory
 WORKDIR /app
