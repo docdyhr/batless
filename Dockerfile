@@ -13,25 +13,13 @@ RUN rustup target add x86_64-unknown-linux-musl
 # Create app directory
 WORKDIR /app
 
-# Copy dependency files first for better layer caching
+# Copy all source files
 COPY Cargo.toml Cargo.lock ./
-
-# Create dummy directories and files to build dependencies
-RUN mkdir src benches && \
-    echo "fn main() {}" > src/main.rs && \
-    echo "pub mod config; pub mod config_manager; pub mod error; pub mod file_info; pub mod formatter; pub mod highlighter; pub mod json_schema; pub mod language; pub mod processor; pub mod streaming; pub mod summarizer; pub mod token_counter; pub mod tokenizer; pub mod wizard;" > src/lib.rs && \
-    touch src/config.rs src/config_manager.rs src/error.rs src/file_info.rs src/formatter.rs src/highlighter.rs src/json_schema.rs src/language.rs src/processor.rs src/streaming.rs src/summarizer.rs src/token_counter.rs src/tokenizer.rs src/wizard.rs && \
-    echo "fn main() {}" > benches/performance.rs
-RUN cargo build --release --target x86_64-unknown-linux-musl
-RUN rm -rf src benches
-
-# Copy source code
 COPY src ./src
 COPY benches ./benches
 COPY README.md ./
 
-# Build the actual application
-RUN touch src/main.rs  # Force rebuild
+# Build the application directly
 RUN cargo build --release --target x86_64-unknown-linux-musl
 
 # Stage 2: Runtime
