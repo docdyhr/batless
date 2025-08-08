@@ -2,7 +2,7 @@
 # Produces a minimal Docker image (~8MB) for containerized usage
 
 # Stage 1: Build
-FROM rust:1.75-alpine AS builder
+FROM rust:1.89-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache musl-dev
