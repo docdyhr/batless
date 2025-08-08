@@ -7,6 +7,9 @@ FROM rust:1.80-alpine AS builder
 # Install build dependencies
 RUN apk add --no-cache musl-dev
 
+# Add musl target for cross-compilation
+RUN rustup target add x86_64-unknown-linux-musl
+
 # Create app directory
 WORKDIR /app
 
