@@ -7,9 +7,6 @@ FROM rust:1.80-alpine AS builder
 # Install build dependencies including oniguruma for syntect
 RUN apk add --no-cache musl-dev gcc oniguruma-dev pkgconfig
 
-# Add musl target for cross-compilation
-RUN rustup target add x86_64-unknown-linux-musl
-
 # Set environment variables to use system oniguruma
 ENV RUSTONIG_SYSTEM_LIBONIG=1
 
@@ -22,8 +19,8 @@ COPY src ./src
 COPY benches ./benches
 COPY README.md ./
 
-# Build the application directly
-RUN cargo build --release --target x86_64-unknown-linux-musl
+# Build the application using native target (musl is already the default in Alpine)
+RUN cargo build --release
 
 # Stage 2: Runtime
 FROM alpine:3.18 AS runtime
@@ -36,7 +33,7 @@ RUN addgroup -g 1001 -S batless && \
     adduser -S -D -H -u 1001 -G batless batless
 
 # Copy the binary from builder stage
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/batless /usr/local/bin/batless
+COPY --from=builder /app/target/release/batless /usr/local/bin/batless
 
 # Set ownership and permissions
 RUN chown batless:batless /usr/local/bin/batless && \
