@@ -19,6 +19,7 @@ COPY Cargo.toml Cargo.lock ./
 # Create dummy directories and files to build dependencies
 RUN mkdir src benches && \
     echo "fn main() {}" > src/main.rs && \
+    echo "pub fn dummy() {}" > src/lib.rs && \
     echo "fn main() {}" > benches/performance.rs
 RUN cargo build --release --target x86_64-unknown-linux-musl
 RUN rm -rf src benches
