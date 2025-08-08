@@ -4,8 +4,9 @@
 # Stage 1: Build
 FROM rust:1.80-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache musl-dev gcc
+# Install build dependencies including musl cross-compiler
+RUN apk add --no-cache musl-dev gcc \
+    && ln -s /usr/bin/gcc /usr/bin/x86_64-linux-musl-gcc
 
 # Add musl target for cross-compilation
 RUN rustup target add x86_64-unknown-linux-musl
