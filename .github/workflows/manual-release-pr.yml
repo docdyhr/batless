@@ -99,36 +99,14 @@ jobs:
         if: github.event.inputs.dry_run == 'false'
         run: |
           VERSION="${{ steps.prepare.outputs.version }}"
-          DATE=$(date +%Y-%m-%d)
-
-          # Create temporary changelog entry
-          cat > temp_changelog.md << EOF
-          ## [${VERSION}] - ${DATE}
-
-          ### Added
-          - Manual release for version ${VERSION}
-
-          ### Changed
-          - Updated release process and workflows
-
-          ### Fixed
-          - Various improvements and bug fixes
-
-          EOF
-
-          # Insert new entry after [Unreleased] section
-          awk '
-            /^## \[Unreleased\]/ {
-              print;
-              getline; print;  # Print the blank line after [Unreleased]
-              while ((getline line < "temp_changelog.md") > 0) print line;
-              close("temp_changelog.md");
-            }
-            { print }
-          ' CHANGELOG.md > temp_full_changelog.md
-
-          mv temp_full_changelog.md CHANGELOG.md
-          rm -f temp_changelog.md
+          TAG="v${VERSION}"
+          chmod +x scripts/prep-release-changelog.sh
+          # Use git-cliff via helper script to regenerate full CHANGELOG with new tag section
+          scripts/prep-release-changelog.sh "${TAG}" || {
+            echo "::error::Failed to generate changelog for ${TAG}"; exit 1; }
+          # Ensure the generated file contains the new version header
+          grep "^## \[${TAG#v}\]" CHANGELOG.md || {
+            echo "::error::CHANGELOG.md does not contain expected section for ${TAG}"; cat CHANGELOG.md | head -100; exit 1; }
 
       - name: Commit version changes
         if: github.event.inputs.dry_run == 'false'
@@ -140,7 +118,7 @@ jobs:
           git config user.email "release-bot@github.com"
 
           git add Cargo.toml Cargo.lock CHANGELOG.md
-          git commit -m "chore: bump version to ${VERSION}"
+          git commit -m "chore(release): prepare v${VERSION}"
           git push origin "${BRANCH}"
 
       - name: Create Pull Request

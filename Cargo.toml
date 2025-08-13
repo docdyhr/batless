@@ -1,6 +1,6 @@
 [package]
 name = "batless"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 authors = ["Thomas <thomas@docdyhr.com>"]
 description = "A non-blocking, LLM-friendly code viewer inspired by bat"
@@ -19,6 +19,7 @@ exclude = [
     ".github/",
     "demo.sh",
 ]
+build = "build.rs"
 
 [lib]
 name = "batless"

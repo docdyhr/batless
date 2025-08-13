@@ -1,0 +1,28 @@
+[changelog]
+header = "# Changelog\n\nAll notable changes to this project will be documented in this file.\n"
+body = "{{#each releases}}\n## [{{version}}] - {{#if date}}{{date}}{{else}}UNRELEASED{{/if}}\n\n{{#if commits}}\n{{#each groups}}\n### {{title}}\n{{#each commits}}- {{message}} ({{short_hash}})\n{{/each}}\n{{/each}}\n{{/if}}\n{{/each}}"
+trim = true
+footer = ""
+
+[git]
+conventional_commits = true
+filter_unconventional = false
+commit_parsers = [
+    { message = "^feat", group = "Added" },
+    { message = "^fix", group = "Fixed" },
+    { message = "^docs", group = "Documentation" },
+    { message = "^perf", group = "Performance" },
+    { message = "^refactor", group = "Changed" },
+    { message = "^test", group = "Tests" },
+    { message = "^ci", group = "CI" },
+    { message = "^chore", group = "Chore" },
+    { message = "^revert", group = "Reverted" },
+]
+tag_pattern = "v?[0-9]*\\.[0-9]*\\.[0-9]*"
+skip_tags = ""
+ignore_tags = ""
+
+[bump]
+initial_tag = "0.1.0"
+tag_prefix = "v"
+semver = true
