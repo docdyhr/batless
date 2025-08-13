@@ -220,7 +220,7 @@ impl ConfigurationWizard {
             )
         })?;
 
-        let default_path = default_dir.join(format!("{}.json", profile_name));
+        let default_path = default_dir.join(format!("{profile_name}.json"));
 
         println!("\n💾 Save Location");
         println!("Default: {}", default_path.display());
@@ -269,7 +269,7 @@ impl ConfigurationWizard {
     ) -> BatlessResult<Option<String>> {
         print!("🔹 {prompt}");
         if let Some(default_val) = default {
-            print!(" [{}]", default_val);
+            print!(" [{default_val}]");
         }
         print!(": ");
         io::stdout().flush().unwrap();
@@ -586,7 +586,7 @@ impl ConfigurationWizard {
         let path = std::path::Path::new(profile_path);
         if !path.exists() {
             return Err(BatlessError::config_error_with_help(
-                format!("Profile not found: {}", profile_path),
+                format!("Profile not found: {profile_path}"),
                 Some("Use 'batless --list-profiles' to see available profiles".to_string()),
             ));
         }
