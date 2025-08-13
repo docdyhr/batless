@@ -28,6 +28,7 @@ Before creating bug reports, please check the existing issues as you might find 
 ### Suggesting Features
 
 Feature suggestions are welcome! Please use our feature request template and provide:
+
 - A clear description of the feature
 - The problem it solves
 - Example usage
@@ -55,22 +56,26 @@ Feature suggestions are welcome! Please use our feature request template and pro
 ### Getting Started
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-username/batless.git
    cd batless
    ```
 
 2. **Install dependencies**
+
    ```bash
    cargo build
    ```
 
 3. **Run tests**
+
    ```bash
    cargo test
    ```
 
 4. **Run the application**
+
    ```bash
    cargo run -- --help
    ```
@@ -92,6 +97,13 @@ cargo test test_name
 
 # Run integration tests
 cargo test --test integration_tests
+
+# Run coverage (local)
+cargo llvm-cov --all-features --workspace report
+
+# Run quality subset
+cargo clippy --all-targets --all-features -- -D warnings
+cargo machete || true
 
 # Build release version
 cargo build --release
@@ -165,6 +177,7 @@ cargo run -- examples/demo.py --mode=highlight --max-lines=10
 - Use the `#[cfg(test)]` attribute for test modules
 
 Example:
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -210,22 +223,22 @@ mod tests {
 
 ```rust
 /// Process a file according to the given configuration.
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `file_path` - Path to the file to process
 /// * `config` - Configuration for processing
-/// 
+///
 /// # Returns
-/// 
+///
 /// Returns `FileInfo` containing processed data and metadata.
-/// 
+///
 /// # Errors
-/// 
+///
 /// Returns an error if the file cannot be read or processed.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// let config = BatlessConfig::default();
 /// let info = process_file("src/main.rs", &config)?;
@@ -276,6 +289,7 @@ Releases follow semantic versioning:
 ## Recognition
 
 Contributors will be recognized in:
+
 - CHANGELOG.md for significant contributions
 - README.md contributors section
 - Release notes for major features

@@ -5,32 +5,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Changelog
 
+## [0.2.4] - UNRELEASED
+
+### Planned
+
+- Define explicit goals for 0.2.4 (performance polish, docs, minor UX?)
+
+### Added (0.2.4)
+
+- feat: Add --version-json flag for machine-readable version/build metadata (includes git hash & build timestamp)
+
+### Notes
+
+- Collecting early maintenance items; no scoped features committed yet.
+
+### Maintenance
+
+- fix: Resolve Docker and cross-platform validation issues
+- fix: Add gcc to Dockerfile for musl cross-compilation
+
+## [0.2.3] - 2025-08-07
+
+### Added (0.2.3)
+
+- Enhanced interactive configuration wizard with more comprehensive options
+- Improved error handling & user experience (clearer messages, better suggestions)
+- Centralized configuration logic & architectural refactor for maintainability
+- Expanded integration & monitoring documentation (AI & Editor Integration Guide, release monitoring)
+- Additional integration & property tests increasing overall coverage
+
+### Changed (0.2.3)
+
+- Major refactor: reduced duplication, cleaner separation of concerns
+- Documentation & TODO cleanup after 0.2.2 release
+- CI/CD stability improvements
+- docs: Correct v0.2.2 status - features complete but not yet released (1df3e83)
+- docs: Clean up TODO.md header formatting after v0.2.2 release (684d543)
+- ci/docs: Fix pipeline issues & clippy warnings (22bca40)
+
+### Fixed (0.2.3)
+
+- Resolved clippy format string/interpolation warnings
+- Addressed minor documentation inconsistencies
+
 ## [0.2.2] - 2025-08-03
 
-### Added
+### Added (0.2.2)
 
-- Complete cat replacement functionality with `-n/--number` and `-b/--number-nonblank` flags
+- Complete cat replacement functionality with -n/--number & -b/--number-nonblank flags
 - Exact compatibility with system cat line numbering format (6-character right-aligned + tab)
 - Perfect newline handling to match cat/less output exactly
-- Comprehensive AI & Editor Integration Guide covering 13+ CLI AI tools and 5+ web-based AI platforms
+- Enhanced PAGER / cat compatibility flags & behaviors (--plain, compatibility flags)
+- Comprehensive AI & Editor Integration Guide (13+ CLI AI tools, 5+ web AI platforms)
 
-### Fixed
+### Changed (0.2.2)
 
-- Critical newline bug that was causing shell "%" indicators on incomplete lines
-- Test failures in CI/CD pipeline (test_max_lines_limit)
-- Clippy warnings for format strings and conditional logic
+- Standardized output using consistent println formatting
+- Modernized format strings to resolve uninlined-format-args warnings
+- Simplified conditional logic in main.rs (removed if-same-then-else patterns)
+- Improved CI/CD pipeline reliability and stability
+
+### Fixed (0.2.2)
+
+- Critical newline bug causing shell "%" indicators
+- Test failures in CI (e.g. test_max_lines_limit)
+- Clippy warnings (format strings, conditional logic)
 - Truncation message formatting for better test compatibility
-
-### Changed
-
-- Standardized all output to use `println!("{formatted_output}")` for consistent newlines
-- Modernized format strings to resolve clippy uninlined-format-args warnings
-- Simplified conditional logic in main.rs to eliminate clippy if-same-then-else warnings
-- Enhanced CI/CD pipeline reliability with comprehensive bug fixes
 
 ## [0.2.1] - 2025-08-02
 
-### 🧙 Enhanced Features & Complete v0.2.1 Milestone
+### Summary
+
+Enhanced Features & milestone completion: PAGER compatibility and comprehensive streaming improvements.
 
 This release completes the v0.2.1 milestone with PAGER compatibility and comprehensive streaming features for handling large files efficiently.
 
@@ -98,308 +144,11 @@ This release completes the v0.2.1 milestone with PAGER compatibility and compreh
 - Added chrono dependency for timestamp management
 - Maintained full backward compatibility with existing features
 
-### Added
-<!-- New features -->
+<!-- (Removed duplicate placeholder subsections for 0.2.0) -->
 
-### Changed
-<!-- Changes in existing functionality -->
-- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
-- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
-- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
+<!-- (Trimmed duplicated historical sections below; canonical history retained above) -->
 
-### Fixed
-<!-- Bug fixes -->
-
-### Removed
-<!-- Features removed in this version -->
-
-## [0.2.0] - 2025-07-31
-
-### 🚀 Major Release: Enhanced AI Integration
-
-This release represents a major milestone in batless development, introducing comprehensive AI integration features that make batless the premier tool for AI-assisted code analysis.
-
-#### Added
-
-- **🔢 SummaryLevel Enum System**: Granular control over summary detail levels
-  - `--summary-level <LEVEL>`: Choose from none/minimal/standard/detailed
-  - Replaces boolean summary mode with fine-grained control
-  - Backward compatibility maintained with deprecated `--summary` flag
-- **🤖 AI Model Token Counting**: Precise token estimation for major AI models
-  - `--count-tokens`: Display comprehensive token analysis
-  - `--ai-model <MODEL>`: Support for GPT-4, GPT-3.5, Claude, Generic models
-  - Model-specific context windows and token-per-word ratios
-  - Context usage percentage and overflow warnings
-- **📐 Context Window Optimization**: Smart content fitting for AI models
-  - `--fit-context`: Automatically truncate content to fit context windows
-  - `--prompt-tokens <N>`: Reserve space for prompts (default: 500)
-  - Word boundary preservation to maintain code readability
-  - Clear user feedback on truncation operations
-- **✅ JSON Schema Validation**: Runtime validation for AI compatibility
-  - `--validate-json`: Validate JSON output against predefined schemas
-  - `--get-schema <FORMAT>`: Retrieve schemas for external tool integration
-  - Comprehensive schemas for file_info, json_output, token_count, processing_stats
-  - Detailed validation error messages with helpful suggestions
-
-#### Enhanced
-
-- **AI Profile System**: All profiles now use new SummaryLevel enum
-- **CLI Integration**: 7 new flags seamlessly integrated with existing interface
-- **Testing**: 2 new tests added (now 145 total), all passing
-- **Error Handling**: Enhanced JSON validation with specific error messages
-
-#### Technical
-
-- **New Modules**: `token_counter.rs` (416 lines) and `json_schema.rs` (400+ lines)
-- **Performance**: Minimal overhead added, startup time maintained under 5ms
-- **Code Quality**: Zero build warnings, comprehensive test coverage
-- **Backward Compatibility**: All existing functionality preserved
-
-### Breaking Changes
-
-- None - this release maintains full backward compatibility
-
-### Migration Guide
-
-- Existing users can immediately benefit from new features without any changes
-- Consider migrating from `--summary` to `--summary-level standard` for future compatibility
-- New JSON schema validation helps ensure AI tool compatibility
-
-### Added
-<!-- New features -->
-
-### Changed
-<!-- Changes in existing functionality -->
-- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
-- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
-- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
-
-### Fixed
-<!-- Bug fixes -->
-
-### Removed
-<!-- Features removed in this version -->
-
-## [0.1.5] - 2025-01-28
-
-### Added
-
-- **Shell completions** for bash, zsh, fish, and PowerShell (`--generate-completions` flag)
-- **AI tool presets** via `--profile` flag with optimized configurations:
-  - `claude`: 4K lines, summary mode for Claude's context window
-  - `copilot`: 2K lines, JSON + tokens for GitHub Copilot integration
-  - `chatgpt`: 3K lines, JSON + tokens for OpenAI ChatGPT
-  - `assistant`: 5K lines, summary mode for general AI assistants
-- **Enhanced error messages** with contextual help and suggestions:
-  - Error codes (E101-E501) for programmatic handling
-  - "Did you mean" suggestions using Levenshtein distance algorithm
-  - Smart file suggestions from current directory for typos
-  - Improved permission denied messages with actionable advice
-- Custom error types for better error handling and user experience
-- Modular architecture with separate modules for each concern:
-  - `config` - Configuration management with validation
-  - `error` - Custom error types and result handling
-  - `file_info` - File metadata and processing results
-  - `formatter` - Output formatting for different modes
-  - `highlighter` - Syntax highlighting functionality
-  - `language` - Language detection and theme management
-  - `processor` - Core file processing logic
-  - `summarizer` - Code summary extraction
-  - `tokenizer` - Token extraction for AI processing
-- Performance benchmark suite using Criterion
-- Comprehensive unit tests for all modules (107 tests total)
-- Enhanced language detection with fallback mechanisms
-- Advanced tokenization strategies for different file types
-- Improved summary extraction supporting 15+ programming languages
-- Comprehensive TODO list update reflecting current v0.1.4 status
-- Shell completions for bash, zsh, fish, and PowerShell
-
-### Changed
-
-- Refactored monolithic `lib.rs` (595 lines) into focused modules
-- Updated dependency configuration to eliminate security vulnerabilities
-- Fixed all clippy warnings (25+ style and performance improvements)
-- Improved error message formatting with inline string interpolation
-- Enhanced code consistency across all modules
-
-### Fixed
-
-- Unused import warnings in formatter module
-- Clippy warnings for uninlined format arguments
-- Code style inconsistencies across modules
-- Potential performance issues identified by clippy
-- Improved error messages with specific error types and context
-- Enhanced JSON output format for better backward compatibility
-- Upgraded syntax highlighting to use minimal syntect features
-- Streamlined CLI error handling with proper stderr output
-- Security vulnerability: Eliminated unmaintained `yaml-rust` dependency (RUSTSEC-2024-0320)
-- Memory efficiency improvements in large file processing
-- Enhanced encoding detection for non-UTF-8 files
-- Improved comment filtering in summary mode for more accurate results
-- Fixed truncation handling to properly report line vs byte limits
-
-### Security
-
-- Removed indirect dependency on unmaintained `yaml-rust` crate
-- Updated syntect dependency to use minimal feature set without YAML loading
-- Enhanced input validation and error handling throughout the codebase
-- Added comprehensive test coverage including property-based tests
-
-### Performance
-
-- Maintained streaming architecture while improving modularity
-- Optimized syntax highlighting with selective feature loading
-- Enhanced caching strategies for repeated file processing
-- Reduced memory footprint through better resource management
-
-### Technical Debt Resolution
-
-- Code complexity reduced from single 595-line file to 9 focused modules
-- Test coverage expanded from basic integration tests to 107 unit tests
-- Error handling improved from generic errors to 11 specific error types
-- Documentation enhanced with comprehensive inline comments
-- Build warnings eliminated and code quality improved
-
-### Added
-<!-- New features -->
-
-### Changed
-<!-- Changes in existing functionality -->
-- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
-- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
-- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
-
-### Fixed
-<!-- Bug fixes -->
-
-### Removed
-<!-- Features removed in this version -->
-
-## [0.1.4] - 2025-07-26
-
-### Added
-
-- PR-based release workflow that respects branch protection rules
-- Comprehensive development guide with release process documentation
-- Benchmark files and performance test results
-
-### Changed
-
-- Updated release process to use PRs instead of direct main branch pushes
-- Enhanced CLAUDE.md with development workflow guidelines
-- Improved CI/CD automation with branch protection compliance
-
-### Fixed
-
-- Release workflow failures due to branch protection rules
-- Cargo.lock tracking for binary crate reproducible builds
-- Missing GH_TOKEN in GitHub Actions workflows
-
-### Added
-<!-- New features -->
-
-### Changed
-<!-- Changes in existing functionality -->
-- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
-- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
-- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
-
-### Fixed
-<!-- Bug fixes -->
-
-### Removed
-<!-- Features removed in this version -->
-
-## [0.1.3] - 2025-07-25
-
-### Added
-
-- Manual workflow dispatch system for granular CI/CD control
-- Repository health check automation with issue creation
-- Comprehensive performance benchmarking with regression detection
-- Enhanced dependency management with grouped Dependabot updates
-
-### Changed
-
-- Optimized CI/CD workflows with consolidated caching strategy
-- Enhanced error handling with graceful failures and proper timeouts
-- Updated security tools with locked dependencies and latest versions
-- Improved release process with retry logic and better artifact management
-
-### Fixed
-
-- Replaced deprecated `actions/upload-release-asset@v1` with modern alternatives
-- Fixed caching inefficiencies with restore keys and matrix strategy support
-- Enhanced workflow stability with better external dependency handling
-
-### Security
-
-- Updated OSSF Scorecard to latest version with proper token handling
-- Enhanced security audit workflows with better reporting
-- Replaced unmaintained `atty` dependency with `is-terminal` to fix RUSTSEC-2024-0375 and RUSTSEC-2021-0145
-- Updated author information in Cargo.toml
-
-### Performance
-
-- Implemented comprehensive benchmarking suite with criterion
-- Added performance regression detection in CI/CD
-- Performance baseline documentation in `docs/PERFORMANCE_BASELINE.md`
-
-### Added
-<!-- New features -->
-
-### Changed
-<!-- Changes in existing functionality -->
-- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
-- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
-- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
-
-### Fixed
-<!-- Bug fixes -->
-
-### Removed
-<!-- Features removed in this version -->
-
-## [0.1.1] - 2025-07-23
-
-### Added
-
-- Comprehensive release infrastructure with GitHub Actions
-- Cross-platform binary builds (Linux, macOS, Windows)
-- Automated Homebrew tap updates
-- Enhanced CI/CD pipeline for releases
-
-### Changed
-
-- Replaced unmaintained `atty` dependency with `is-terminal` for better security
-- Simplified release workflow for faster build times
-- Improved release automation scripts
-
-### Fixed
-
-- Security vulnerability in dependency chain
-- Release workflow compatibility issues
-
-### Infrastructure
-
-- Set up automated crates.io publishing
-- Added cross-platform binary distribution
-- Enhanced security scanning and dependency management
-
-### Added
-<!-- New features -->
-
-### Changed
-<!-- Changes in existing functionality -->
-- 1df3e83 docs: Correct v0.2.2 status - features complete but not yet released
-- 684d543 docs: Clean up TODO.md header formatting after v0.2.2 release
-- 22bca40 Fix CI/CD pipeline issues: test failures and clippy warnings
-
-### Fixed
-<!-- Bug fixes -->
-
-### Removed
-<!-- Features removed in this version -->
+<!-- (Removed secondary duplicate placeholder group) -->
 
 ## [0.1.0] - 2025-07-22
 
@@ -443,7 +192,7 @@ This release represents a major milestone in batless development, introducing co
 - Memory efficient for large codebases
 - Single binary with no external dependencies
 
-### Technical Details
+### Technical Details (0.1.0)
 
 - Built with Rust for performance and safety
 - Uses syntect for syntax highlighting
@@ -462,5 +211,4 @@ This release represents a major milestone in batless development, introducing co
 - ❌ No line numbers (by design for clean output)
 - ❌ No file headers (by design for minimal output)
 
-[0.1.1]: https://github.com/docdyhr/batless/releases/tag/v0.1.1
-[0.1.0]: https://github.com/docdyhr/batless/releases/tag/v0.1.0
+<!-- Link references intentionally removed since trimmed history above covers 0.1.0 only -->

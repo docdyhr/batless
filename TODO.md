@@ -1,10 +1,10 @@
-# 📋**Last Updated**: August 7, 2025
+# 📋**Last Updated**: August 13, 2025
 
-**Current Version**: v0.2.3 (Ready for Release)
-**Latest Release**: v0.2.2 (August 3, 2025)
-**Next Target**: v0.2.3 release completion
+**Current Version**: v0.2.4 (Unreleased)
+**Latest Release**: v0.2.3 (August 7, 2025)
+**Next Target**: v0.2.4 planning
 
-**🚀 Current Status**: v0.2.3 **READY FOR RELEASE** - Enhanced configuration wizard, improved error handling, and centralized architecture! ✅ Major refactoring and improvements with expanded interactive configuration, better error reporting, and comprehensive testing. All 203 tests passing. CI/CD pipeline green. **Needs: GitHub release + crates.io publish**
+**🚀 Current Status**: v0.2.4 **PLANNING** - Post-0.2.3 housekeeping and incremental improvements. Foundation automation enhancements underway (version JSON, markdown lint gate, security gating, changelog automation, README lint remediation, fuzzing scaffolding).
 
 > Prioritized implementation tasks for batless development
 
@@ -14,11 +14,11 @@
 
 ## 🚀 **CURRENT DEVELOPMENT STATUS**
 
-### **v0.2.3 - Enhanced Architecture & User Experience - 🚧 READY FOR RELEASE**
+### **v0.2.3 - Enhanced Architecture & User Experience - ✅ RELEASED**
 
 **Progress**: 5 of 5 P1 features completed (100% complete)
-**Release Date**: August 7, 2025 (pending)
-**Status**: All improvements implemented and tested, CI/CD green, ready for GitHub release + crates.io publish
+**Release Date**: August 7, 2025
+**Status**: Released to crates.io and GitHub
 
 #### **✅ Enhanced Features (August 7, 2025)**
 
@@ -54,7 +54,28 @@
 ✅ **Code Quality**: Major refactoring completed, cleaner architecture
 ✅ **Documentation**: Comprehensive guides and monitoring systems
 ✅ **CI/CD Pipeline**: All workflows passing
-🚧 **Pending**: GitHub release creation + crates.io publish
+🚧 **Pending**: Tag (v0.2.3), GitHub release creation, crates.io publish, confirm Homebrew tap automation
+
+#### 📌 Post-Release Follow-Up (0.2.3)
+
+- [x] Resolve clippy warnings (format string interpolation)
+- [x] Run `cargo fmt --all -- --check`
+- [x] Run security scans: `cargo audit` & `cargo deny check`
+- [x] Add CHANGELOG entry for 0.2.3
+- [x] Finalize CHANGELOG wording & date
+- [x] Create tag & push: `v0.2.3`
+- [x] Verify CI release workflow success
+- [x] Verify Homebrew tap auto-update
+- [x] Announce release / update badges
+- [x] Add markdown lint workflow and integrate into quality gates (Aug 13, 2025)
+- [x] Implement --version-json machine-readable metadata flag
+- [x] Add high/critical vulnerability gating to security workflow
+- [x] Enforce coverage threshold (fail <80%)
+- [x] README markdown lint remediation (MD036/MD024/MD040)
+- [x] Release changelog prep script (scripts/prep-release-changelog.sh)
+- [x] Fuzzing scaffolding script (scripts/setup-fuzzing.sh) & tokenizer fuzz target
+- [ ] Integrate performance regression guard into CI (wire scripts/check_performance.sh)
+- [ ] Add CI job for cargo fuzz (nightly, allow-failure initially)
 
 ### **v0.2.2 - Cat Replacement & Compatibility - ✅ RELEASED**
 
@@ -224,12 +245,12 @@ All v0.2.1 features have been successfully delivered and are available in the re
 
 #### **P1 - Built-in Plugin Examples (December 2025)**
 
-3. **Code Analyzer Plugins** 📋 **PLANNED**
+1. **Code Analyzer Plugins** 📋 **PLANNED**
    - Complexity analysis plugin (cyclomatic complexity)
    - Security vulnerability scanner plugin
    - Code quality metrics plugin (maintainability index)
 
-4. **Output Format Plugins** 📋 **PLANNED**
+2. **Output Format Plugins** 📋 **PLANNED**
    - Markdown formatter plugin
    - HTML output plugin with embedded styles
    - XML/YAML converter plugins
@@ -254,12 +275,12 @@ All v0.2.1 features have been successfully delivered and are available in the re
 
 #### **P1 - Advanced Code Insights (February 2026)**
 
-3. **Semantic Analysis** 📋 **PLANNED**
+1. **Semantic Analysis** 📋 **PLANNED**
    - Function and class extraction with metadata
    - Dependency graph analysis and visualization
    - Code flow analysis and complexity metrics
 
-4. **AI-Enhanced Analysis** 📋 **PLANNED**
+2. **AI-Enhanced Analysis** 📋 **PLANNED**
    - AI-powered code summarization using AST
    - Intelligent code documentation generation
    - Context-aware code recommendations
@@ -284,12 +305,12 @@ All v0.2.1 features have been successfully delivered and are available in the re
 
 #### **P1 - Enterprise Features (April 2026)**
 
-3. **Advanced Integration** 📋 **PLANNED**
+1. **Advanced Integration** 📋 **PLANNED**
    - REST API server mode for service integration
    - Language Server Protocol (LSP) support
    - Integration with major IDEs and editors
 
-4. **Enterprise Security** 📋 **PLANNED**
+2. **Enterprise Security** 📋 **PLANNED**
    - SAML/OAuth integration for enterprise authentication
    - Audit logging and compliance features
    - Enterprise-grade configuration management

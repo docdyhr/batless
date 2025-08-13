@@ -3,6 +3,7 @@
 ## Quick Start
 
 1. **Clone and setup**
+
    ```bash
    git clone https://github.com/docdyhr/batless
    cd batless
@@ -10,6 +11,7 @@
    ```
 
 2. **Run tests**
+
    ```bash
    cargo test
    cargo clippy -- -D warnings
@@ -44,11 +46,13 @@ gh workflow run manual-release-pr.yml -f version=0.1.4 -f create_tag=true -f dry
 ### Manual Release (if needed)
 
 1. Create a release branch
+
    ```bash
    git checkout -b release/0.1.4
    ```
 
 2. Update version
+
    ```bash
    # Update version in Cargo.toml
    sed -i 's/^version = ".*"/version = "0.1.4"/' Cargo.toml
@@ -60,6 +64,7 @@ gh workflow run manual-release-pr.yml -f version=0.1.4 -f create_tag=true -f dry
 4. Create PR and merge
 
 5. After merge, create tag
+
    ```bash
    git checkout main
    git pull
@@ -71,10 +76,9 @@ gh workflow run manual-release-pr.yml -f version=0.1.4 -f create_tag=true -f dry
 
 ### Available Workflows
 
-1. **CI Pipeline** (`.github/workflows/ci.yml`)
-   - Runs on every push and PR
-   - Tests on Linux, macOS, and Windows
-   - Runs security audit and code coverage
+1. **Quality & Coverage** (`.github/workflows/quality.yml`)
+   - Aggregated gates: markdown lint, coverage (cargo-llvm-cov), code quality (fmt, clippy, unused deps/features, dead code heuristic), documentation quality, complexity analysis, performance regression (non-blocking initially)
+   - Posts summary comment on PRs
 
 2. **Release** (`.github/workflows/release.yml`)
    - Triggered by version tags (v*)
@@ -82,11 +86,21 @@ gh workflow run manual-release-pr.yml -f version=0.1.4 -f create_tag=true -f dry
    - Publishes to crates.io
 
 3. **Manual Release PR** (`.github/workflows/manual-release-pr.yml`)
-   - Creates release PRs that respect branch protection
-   - Use this for all releases
+   - Creates release PRs, bumps version, regenerates CHANGELOG via `scripts/prep-release-changelog.sh`
+   - Use this for all releases (preferred path)
 
-4. **Security Audit** (`.github/workflows/security-audit.yml`)
-   - Daily security vulnerability checks
+4. **Security Review** (`.github/workflows/security.yml`)
+   - Audit (cargo audit / deny), dependency review, CodeQL, Semgrep, SBOM, license scan, Scorecard
+
+5. **Fuzz Testing** (`.github/workflows/fuzz.yml`)
+   - Nightly + PR short fuzz run on tokenizer target (non-blocking)
+   - Adds PR comment with summary & artifact list
+
+6. **Changelog Generation** (`.github/workflows/changelog.yml`)
+   - Manual generation of unreleased changelog artifact
+
+7. **Performance Baseline Update** (`.github/workflows/performance-baseline.yml`)
+   - Refreshes & commits `benchmark_baseline.txt` after intentional perf improvements
 
 ### Manual Workflow Triggers
 
@@ -110,6 +124,7 @@ gh workflow run workflow-dispatch.yml -f workflow_type=quick-validation
 ## Branch Protection
 
 The `main` branch is protected and requires:
+
 - 5 status checks to pass:
   - Test (ubuntu-latest, stable)
   - Test (windows-latest, stable)
@@ -155,6 +170,9 @@ cargo test -- --nocapture
 ```bash
 # Run benchmarks
 cargo bench
+
+# Update performance baseline (after validating improvement)
+gh workflow run performance-baseline.yml
 
 # Profile with flamegraph (requires cargo-flamegraph)
 cargo flamegraph -- benchmark_files/large.rs

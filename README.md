@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**The Ultimate Non-Blocking Code Viewer**
+## The Ultimate Non-Blocking Code Viewer
 
 Built for automation, AI assistants, and modern CLI workflows
 
@@ -18,7 +18,10 @@ Built for automation, AI assistants, and modern CLI workflows
 [![CI/CD Pipeline](https://github.com/docdyhr/batless/workflows/CI%2FCD/badge.svg)](https://github.com/docdyhr/batless/actions)
 [![Security Review](https://github.com/docdyhr/batless/workflows/Security%20Review/badge.svg)](https://github.com/docdyhr/batless/actions)
 [![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg?logo=codecov&logoColor=white)](https://codecov.io/gh/docdyhr/batless)
-[![Test Coverage](https://img.shields.io/badge/test%20coverage-90%25%2B-brightgreen?logo=jest&logoColor=white)](https://github.com/docdyhr/batless)
+[![Markdown Lint](https://github.com/docdyhr/batless/actions/workflows/markdown-lint.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/markdown-lint.yml)
+[![Changelog Gen](https://github.com/docdyhr/batless/actions/workflows/changelog.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/changelog.yml)
+[![Fuzzing](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml)
+[![Quality Gates](https://github.com/docdyhr/batless/actions/workflows/quality.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/quality.yml)
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust&logoColor=white)](https://github.com/docdyhr/batless)
 [![Security Tests](https://img.shields.io/badge/security%20tests-passing-brightgreen?logo=shield&logoColor=white)](https://github.com/docdyhr/batless)
@@ -65,7 +68,7 @@ Get up and running in **under 2 minutes**:
 
 ### 3-Step Setup
 
-**1️⃣ Install batless (Choose One)**
+#### 1️⃣ Install batless (Choose One)
 
 ```bash
 # Option A: Pre-built binaries (fastest)
@@ -78,7 +81,7 @@ cargo install batless
 brew tap docdyhr/batless && brew install batless
 ```
 
-**2️⃣ Test Your Installation**
+#### 2️⃣ Test Your Installation
 
 ```bash
 # View a file with syntax highlighting
@@ -88,7 +91,7 @@ batless src/main.rs
 batless --mode=json --max-lines=10 src/lib.rs
 ```
 
-**3️⃣ Integrate with Your Workflow**
+#### 3️⃣ Integrate with Your Workflow
 
 ```bash
 # CI/CD pipeline usage
@@ -96,6 +99,9 @@ batless --mode=summary --max-lines=50 failing-test.rs
 
 # AI assistant context
 batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
 ```
 
 📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
@@ -902,7 +908,7 @@ cargo clippy -- -D warnings
 
 ### Quick Diagnostics
 
-**Installation Issues**
+#### Installation Issues
 
 ```bash
 # Verify Rust toolchain
@@ -917,7 +923,7 @@ batless --version
 echo "test" | batless --mode=plain
 ```
 
-**Performance Issues**
+#### Performance Issues
 
 ```bash
 # Check syntax cache
@@ -930,7 +936,7 @@ time batless --mode=summary large-file.rs
 /usr/bin/time -v batless large-file.rs
 ```
 
-**Output Format Issues**
+#### Output Format Issues
 
 ```bash
 # Test color support
@@ -955,7 +961,7 @@ batless --list-themes
 
 ### Getting Help
 
-**Self-Diagnostics**
+#### Self-Diagnostics
 
 ```bash
 # Version and build info
@@ -971,7 +977,7 @@ batless --list-themes
 batless --help
 ```
 
-**Community Support**
+#### Community Support
 
 - 🐛 [Report Issues](https://github.com/docdyhr/batless/issues)
 - 💬 [Discussions](https://github.com/docdyhr/batless/discussions)
@@ -1041,7 +1047,7 @@ See [SECURITY_TESTING.md](SECURITY_TESTING.md) for detailed security measures.
 
 Enhanced benchmarks on a 10MB Python file:
 
-```
+```text
 batless (optimized): 95ms (streaming + cached)
 batless (summary): 45ms (structure only)
 bat: 180ms (full load)
@@ -1197,21 +1203,10 @@ Special thanks to:
 
 ---
 
-## 🙏 Acknowledgments
-
-Special thanks to:
-
-- **[sharkdp/bat](https://github.com/sharkdp/bat)** - Inspiration for syntax highlighting excellence
-- **[syntect](https://github.com/trishume/syntect)** - Powerful syntax highlighting engine
-- **Rust Community** - For building amazing tools and ecosystem
-- **AI Assistant Communities** - For driving the need for automation-friendly tools
-
----
-
 <div align="center">
 
 **⭐ Found this helpful? [Give us a star on GitHub!](https://github.com/docdyhr/batless) ⭐**
 
-**Made with ❤️ for AI assistants and modern CLI workflows**
+### Made with ❤️ for AI assistants and modern CLI workflows
 
 </div>
