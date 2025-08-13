@@ -11,6 +11,22 @@ permissions:
   pull-requests: write
 
 jobs:
+  markdown-lint:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2@0.14.0
+      - name: Run markdownlint
+        run: |
+          markdownlint-cli2 "**/*.md" "!target/**" || (echo "::error ::Markdown lint failures" && exit 1)
+
   code-coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
@@ -78,13 +94,11 @@ jobs:
 
       - name: Coverage quality gate
         run: |
-          # Use awk instead of bc for better portability
           if awk "BEGIN { exit ($COVERAGE_PERCENT < 80) }"; then
             echo "✅ Coverage meets threshold (current: $COVERAGE_PERCENT%)"
           else
             echo "❌ Coverage is below 80% (current: $COVERAGE_PERCENT%)"
-            echo "::warning::Coverage below threshold - consider adding tests"
-            # Don't fail CI, just warn
+            exit 1
           fi
 
       - name: Comment PR with coverage
@@ -293,26 +307,92 @@ jobs:
           name: complexity-analysis
           path: complexity-report.md
 
+  performance-regression:
+    name: Performance Regression
+    runs-on: ubuntu-latest
+    continue-on-error: true  # Still informational while stabilizing
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-perf-${{ hashFiles('**/Cargo.lock') }}
+      - name: Run performance regression script
+        id: perf
+        run: |
+          chmod +x scripts/check_performance.sh
+          # Capture exit code semantics (0 pass, 50 warn, 1 fail)
+          set +e
+          ./scripts/check_performance.sh
+          CODE=$?
+          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+          # Normalize status for summary
+          if [ $CODE -eq 0 ]; then STATE=pass; elif [ $CODE -eq 50 ]; then STATE=warn; else STATE=fail; fi
+          echo "state=$STATE" >> $GITHUB_OUTPUT
+          exit 0  # Never fail this job while continue-on-error in effect
+      - name: Upload performance artifacts
+        uses: actions/upload-artifact@v4
+        with:
+            name: performance-benchmarks
+            path: |
+              benchmark_current.txt
+              benchmark_baseline.txt
+              benchmark_baseline.json
+              performance_summary.json
+              performance_summary.md
+      - name: Comment PR with performance summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const file = 'performance_summary.md';
+            let body;
+            if (fs.existsSync(file)) {
+              body = fs.readFileSync(file, 'utf8');
+            } else {
+              body = 'Performance summary file not found.';
+            }
+            const state = '${{ steps.perf.outputs.state }}';
+            const headerIcon = state === 'fail' ? '❌' : (state === 'warn' ? '⚠️' : '✅');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ${headerIcon} Performance Check (${state})\n\n` + body
+            });
+
   quality-gates:
     name: Quality Gates
     runs-on: ubuntu-latest
-    needs: [code-coverage, code-quality, documentation-quality, complexity-analysis]
+    needs: [markdown-lint, code-coverage, code-quality, documentation-quality, complexity-analysis, performance-regression]
     if: always()
     steps:
       - name: Quality gate summary
         run: |
           echo "# Quality Gate Results" > quality-summary.md
           echo "" >> quality-summary.md
+          echo "- Markdown Lint: ${{ needs.markdown-lint.result }}" >> quality-summary.md
           echo "- Code Coverage: ${{ needs.code-coverage.result }}" >> quality-summary.md
           echo "- Code Quality: ${{ needs.code-quality.result }}" >> quality-summary.md
           echo "- Documentation: ${{ needs.documentation-quality.result }}" >> quality-summary.md
           echo "- Complexity Analysis: ${{ needs.complexity-analysis.result }}" >> quality-summary.md
+          echo "- Performance Regression: ${{ needs.performance-regression.result }}" >> quality-summary.md
           echo "" >> quality-summary.md
 
           # Determine overall status
-          if [[ "${{ needs.code-coverage.result }}" == "success" && \
+          if [[ "${{ needs.markdown-lint.result }}" == "success" && \
+                "${{ needs.code-coverage.result }}" == "success" && \
                 "${{ needs.code-quality.result }}" == "success" && \
-                "${{ needs.documentation-quality.result }}" == "success" ]]; then
+                "${{ needs.documentation-quality.result }}" == "success" && \
+                "${{ needs.performance-regression.result }}" != "failure" ]]; then
             echo "🎉 All quality gates passed!" >> quality-summary.md
             echo "QUALITY_STATUS=success" >> $GITHUB_ENV
           else
@@ -321,7 +401,7 @@ jobs:
           fi
 
       - name: Fail if quality gates don't pass
-        if: needs.code-coverage.result != 'success' || needs.code-quality.result != 'success' || needs.documentation-quality.result != 'success'
+        if: needs.markdown-lint.result != 'success' || needs.code-coverage.result != 'success' || needs.code-quality.result != 'success' || needs.documentation-quality.result != 'success'
         run: |
           echo "Quality gates failed. Please fix the issues before merging."
           exit 1
