@@ -24,17 +24,17 @@ fn print_error(error: &BatlessError) {
         let code_part = &first_line[..=end_of_code];
         let message_part = &first_line[end_of_code + 1..];
         let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)));
-        let _ = write!(&mut stderr, " {}", code_part);
+        let _ = write!(&mut stderr, " {code_part}");
         let _ = stderr.reset();
-        let _ = writeln!(&mut stderr, "{}", message_part);
+        let _ = writeln!(&mut stderr, "{message_part}");
     } else {
         let _ = stderr.reset();
-        let _ = writeln!(&mut stderr, ": {}", first_line);
+        let _ = writeln!(&mut stderr, ": {first_line}");
     }
 
     if !rest.is_empty() {
         let _ = stderr.reset();
-        let _ = writeln!(&mut stderr, "\n{}", rest);
+        let _ = writeln!(&mut stderr, "\n{rest}");
     }
 }
 
@@ -66,6 +66,24 @@ fn run() -> BatlessResult<()> {
 }
 
 fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
+    if args.version_json {
+        // Collect build-time metadata populated by build script (if any)
+        // Fallbacks ensure robustness in absence of environment variables.
+        let version = env!("CARGO_PKG_VERSION");
+        let name = env!("CARGO_PKG_NAME");
+        let build_git_hash = option_env!("BATLESS_GIT_HASH").unwrap_or("unknown");
+        let build_timestamp = option_env!("BATLESS_BUILD_TIMESTAMP").unwrap_or("unknown");
+        let pkg_authors = env!("CARGO_PKG_AUTHORS");
+        let json = serde_json::json!({
+            "name": name,
+            "version": version,
+            "git_hash": build_git_hash,
+            "build_timestamp": build_timestamp,
+            "authors": pkg_authors,
+        });
+        println!("{}", serde_json::to_string_pretty(&json)?);
+        return Ok(true);
+    }
     if let Some(shell) = args.generate_completions {
         let mut cmd = Args::command();
         let name = cmd.get_name().to_string();
@@ -89,27 +107,28 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
         let validator = JsonSchemaValidator::new();
         let schema = validator.get_schema(format).ok_or_else(|| {
             BatlessError::config_error_with_help(
-                format!("Unknown schema format '{}'", format),
+                format!("Unknown schema format '{format}'"),
                 Some(
                     "Available schemas: file_info, json_output, token_count, processing_stats"
                         .to_string(),
                 ),
             )
         })?;
-        println!("{}", serde_json::to_string_pretty(schema)?);
+        let pretty = serde_json::to_string_pretty(schema)?; // pretty JSON already created
+        println!("{pretty}");
         return Ok(true);
     }
 
     if args.list_languages {
         for language in batless::LanguageDetector::list_languages() {
-            println!("{}", language);
+            println!("{language}");
         }
         return Ok(true);
     }
 
     if args.list_themes {
         for theme in batless::ThemeManager::list_themes() {
-            println!("{}", theme);
+            println!("{theme}");
         }
         return Ok(true);
     }
@@ -160,7 +179,7 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
     for chunk_result in chunks {
         let chunk = chunk_result?;
         let json_output = serde_json::to_string_pretty(&chunk)?;
-        println!("{}", json_output);
+        println!("{json_output}");
 
         if config.enable_resume && !chunk.is_final {
             if let Some(checkpoint_path) = &args.checkpoint {
@@ -185,7 +204,7 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
 
     let start_time = std::time::Instant::now();
     if config.debug {
-        eprintln!("🔍 DEBUG: Starting file processing for {}", file_path);
+        eprintln!("🔍 DEBUG: Starting file processing for {file_path}");
     }
 
     let file_info = batless::process_file(file_path, config)?;
@@ -227,15 +246,16 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         validate_json_output(&formatted_output)?;
     }
 
-    println!("{}", formatted_output);
+    println!("{formatted_output}");
 
     if output_mode != OutputMode::Json {
         if final_file_info.truncated_by_lines {
-            println!("// Output truncated after {} lines", config.max_lines);
+            let max_lines = config.max_lines; // local to allow inline capture
+            println!("// Output truncated after {max_lines} lines");
         }
         if final_file_info.truncated_by_bytes {
             if let Some(max_bytes) = config.max_bytes {
-                println!("// Output truncated after {} bytes", max_bytes);
+                println!("// Output truncated after {max_bytes} bytes");
             }
         }
     }
@@ -249,17 +269,18 @@ fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) -> Batles
     let token_count = counter.count_tokens(&content);
 
     println!("Token Count Analysis:");
-    println!("  Model: {}", token_count.model.as_str());
-    println!("  Tokens: {}", token_count.tokens);
-    println!("  Context window: {}", token_count.model.context_window());
-    println!(
-        "  Fits in context: {}",
-        if token_count.fits_in_context {
-            "✓"
-        } else {
-            "✗"
-        }
-    );
+    let model_str = token_count.model.as_str();
+    println!("  Model: {model_str}");
+    let tokens = token_count.tokens;
+    println!("  Tokens: {tokens}");
+    let context_window = token_count.model.context_window();
+    println!("  Context window: {context_window}");
+    let fits = if token_count.fits_in_context {
+        "✓"
+    } else {
+        "✗"
+    };
+    println!("  Fits in context: {fits}");
     println!();
     Ok(())
 }
@@ -268,10 +289,7 @@ fn validate_json_output(json_output: &str) -> BatlessResult<()> {
     let validator = JsonSchemaValidator::new();
     let json_value: serde_json::Value = serde_json::from_str(json_output)?;
     if let Err(e) = validator.validate("json_output", &json_value) {
-        eprintln!(
-            "⚠️  JSON validation warning: {}. Output may not be fully AI-compatible.",
-            e
-        );
+        eprintln!("⚠️  JSON validation warning: {e}. Output may not be fully AI-compatible.");
     }
     Ok(())
 }

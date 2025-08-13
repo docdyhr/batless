@@ -154,6 +154,10 @@ pub struct Args {
     /// PAGER compatibility: ignored for compatibility with less (no title bar)
     #[arg(long)]
     pub no_title: bool,
+
+    /// Output version information as machine-readable JSON
+    #[arg(long)]
+    pub version_json: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -242,7 +246,7 @@ impl FromStr for OutputMode {
             "json" => Ok(OutputMode::Json),
             "summary" => Ok(OutputMode::Summary),
             _ => Err(BatlessError::ConfigurationError {
-                message: format!("Invalid output mode: {}", s),
+                message: format!("Invalid output mode: {s}"),
                 help: Some("Valid modes are: plain, highlight, json, summary".to_string()),
             }),
         }

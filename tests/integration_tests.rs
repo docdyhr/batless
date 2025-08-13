@@ -41,6 +41,23 @@ fn test_version_command() {
 }
 
 #[test]
+fn test_version_json_command() {
+    let output = run_batless(&["--version-json"]);
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    assert_eq!(json["name"], "batless");
+    assert_eq!(json["version"], env!("CARGO_PKG_VERSION"));
+    assert!(json["git_hash"].is_string());
+    assert_ne!(json["git_hash"].as_str().unwrap_or("unknown"), "unknown");
+    assert!(json["build_timestamp"].is_string());
+    assert_ne!(
+        json["build_timestamp"].as_str().unwrap_or("unknown"),
+        "unknown"
+    );
+}
+
+#[test]
 fn test_plain_mode() {
     let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n";
     let file = create_test_file(content, ".rs");
