@@ -1,0 +1,33 @@
+name: Changelog Generation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'cliff.toml'
+      - '.github/workflows/changelog.yml'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install git-cliff
+        run: |
+          cargo install git-cliff --locked
+
+      - name: Generate changelog (unreleased)
+        run: |
+          git cliff --config cliff.toml --unreleased --strip header > CHANGELOG_UNRELEASED.md
+          echo "Generated unreleased changelog:" && head -100 CHANGELOG_UNRELEASED.md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-unreleased
+          path: CHANGELOG_UNRELEASED.md

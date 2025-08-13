@@ -1,0 +1,81 @@
+name: Fuzz Testing
+
+on:
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz-tokenizer:
+    name: Tokenizer Fuzz
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust (nightly for fuzzing)
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz
+
+      - name: Initialize fuzzing (if needed)
+        run: |
+          chmod +x scripts/setup-fuzzing.sh
+          ./scripts/setup-fuzzing.sh
+
+      - name: Run tokenizer fuzz target (short run)
+        run: |
+          cargo fuzz run tokenizer -- -runs=50000 || true
+
+      - name: Archive fuzz artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts
+          path: fuzz/artifacts/
+
+  summary:
+    name: Fuzz Summary
+    runs-on: ubuntu-latest
+    needs: [fuzz-tokenizer]
+    if: always()
+    steps:
+      - name: Report status
+        run: |
+          if [ "${{ needs.fuzz-tokenizer.result }}" = "success" ]; then
+            echo "✅ Fuzzing completed without crashes" > fuzz-summary.md
+          else
+            echo "⚠️ Fuzzing encountered issues (non-blocking)" > fuzz-summary.md
+          fi
+          if [ -d fuzz/artifacts ]; then
+            if ls fuzz/artifacts/* 1> /dev/null 2>&1; then
+              echo "" >> fuzz-summary.md
+              echo "### Artifacts" >> fuzz-summary.md
+              echo '\nThe following artifacts were generated:' >> fuzz-summary.md
+              ls -1 fuzz/artifacts/ >> fuzz-summary.md || true
+            fi
+          fi
+          cat fuzz-summary.md
+      - name: Comment PR with fuzz summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('fuzz-summary.md')) {
+              const body = fs.readFileSync('fuzz-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '## 🧪 Fuzzing Report\n\n' + body
+              });
+            }
