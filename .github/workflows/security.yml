@@ -45,6 +45,22 @@ jobs:
           cargo audit --color never --json > audit-results.json || true
           cargo audit --color never
 
+      - name: Gating on high/critical vulnerabilities
+        run: |
+          if command -v jq >/dev/null 2>&1; then
+            HIGH_COUNT=$(jq '[.vulnerabilities.list[]? | select(.advisory.severity == "high" or .advisory.severity == "critical")] | length' audit-results.json 2>/dev/null || echo 0)
+          else
+            sudo apt-get update -y && sudo apt-get install -y jq
+            HIGH_COUNT=$(jq '[.vulnerabilities.list[]? | select(.advisory.severity == "high" or .advisory.severity == "critical")] | length' audit-results.json 2>/dev/null || echo 0)
+          fi
+          echo "High/Critical vulnerability count: $HIGH_COUNT"
+          if [ "$HIGH_COUNT" -gt 0 ]; then
+            echo "❌ High or Critical vulnerabilities detected. Failing job." >&2
+            exit 1
+          else
+            echo "✅ No high/critical vulnerabilities detected"
+          fi
+
       - name: Run cargo deny
         run: cargo deny check
 
@@ -116,7 +132,6 @@ jobs:
             p/security-audit
             p/rust
             p/secrets
-          generateSarif: "1"
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3
