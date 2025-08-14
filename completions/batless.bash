@@ -23,7 +23,7 @@ _batless() {
 
     case "${cmd}" in
         batless)
-            opts="-h -V --language --max-lines --max-bytes --mode --color --theme --strip-ansi --list-languages --list-themes --include-tokens --summary --generate-completions --profile --help --version [FILE]"
+            opts="-u -n -b -h -V --language --max-lines --max-bytes --mode --color --theme --strip-ansi --list-languages --list-themes --include-tokens --summary --summary-level --count-tokens --ai-model --fit-context --prompt-tokens --validate-json --get-schema --generate-completions --profile --custom-profile --config --streaming-json --streaming-chunk-size --enable-resume --checkpoint --configure --list-profiles --edit-profile --debug --plain --unbuffered --number --number-nonblank --no-title --version-json --help --version [FILE]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -53,12 +53,48 @@ _batless() {
                     COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
+                --summary-level)
+                    COMPREPLY=($(compgen -W "none minimal standard detailed" -- "${cur}"))
+                    return 0
+                    ;;
+                --ai-model)
+                    COMPREPLY=($(compgen -W "gpt4 gpt4-turbo gpt35 claude claude35-sonnet generic" -- "${cur}"))
+                    return 0
+                    ;;
+                --prompt-tokens)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --get-schema)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
                 --generate-completions)
                     COMPREPLY=($(compgen -W "bash zsh fish power-shell" -- "${cur}"))
                     return 0
                     ;;
                 --profile)
                     COMPREPLY=($(compgen -W "claude copilot chatgpt assistant" -- "${cur}"))
+                    return 0
+                    ;;
+                --custom-profile)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --config)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --streaming-chunk-size)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --checkpoint)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --edit-profile)
+                    COMPREPLY=($(compgen -f "${cur}"))
                     return 0
                     ;;
                 *)
