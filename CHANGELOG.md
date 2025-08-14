@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Maintenance
 
+- deps: Bump clap from 4.5.42 to 4.5.43 and clap_complete from 4.5.55 to 4.5.56
+- deps: Bump toml from 0.8.23 to 0.9.5 (major version update, fully backward compatible)
+- chore: Update shell completions with latest CLI options
 - fix: Resolve Docker and cross-platform validation issues
 - fix: Add gcc to Dockerfile for musl cross-compilation
 
