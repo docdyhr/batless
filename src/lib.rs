@@ -272,7 +272,12 @@ mod tests {
 
         // Test JSON output
         let json = format_output(&file_info, "test.rs", &config, OutputMode::Json)?;
-        assert!(json.contains("\"file\": \"test.rs\""));
+        // Accept both compact ("file":"test.rs") and pretty ("file": "test.rs") JSON spacing
+        assert!(
+            json.contains("\"file\": \"test.rs\"") || json.contains("\"file\":\"test.rs\""),
+            "JSON output did not contain expected file field: {}",
+            json
+        );
 
         // Test summary output
         let summary = format_output(&file_info, "test.rs", &config, OutputMode::Summary)?;

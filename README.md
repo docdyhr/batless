@@ -6,9 +6,6 @@
 
 Built for automation, AI assistants, and modern CLI workflows
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Installation](#-installation-options) •
-[Documentation](#-documentation) • [Examples](#-examples)
-
 [![Crates.io](https://img.shields.io/crates/v/batless?logo=rust&logoColor=white)](https://crates.io/crates/batless)
 [![Crates.io Downloads](https://img.shields.io/crates/d/batless?logo=rust&logoColor=white)](https://crates.io/crates/batless)
 [![GitHub Downloads](https://img.shields.io/github/downloads/docdyhr/batless/total?logo=github&logoColor=white)](https://github.com/docdyhr/batless/releases)
@@ -25,7 +22,7 @@ Built for automation, AI assistants, and modern CLI workflows
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust&logoColor=white)](https://github.com/docdyhr/batless)
 [![Security Tests](https://img.shields.io/badge/security%20tests-passing-brightgreen?logo=shield&logoColor=white)](https://github.com/docdyhr/batless)
-[![Performance](https://img.shields.io/badge/startup-<50ms-brightgreen?logo=speedtest&logoColor=white)](https://github.com/docdyhr/batless)
+[![Performance](https://img.shields.io/badge/startup-<5ms*-brightgreen?logo=speedtest&logoColor=white)](https://github.com/docdyhr/batless)
 [![Binary Size](https://img.shields.io/badge/binary%20size-~2MB-blue?logo=filetype&logoColor=white)](https://github.com/docdyhr/batless)
 
 </div>
@@ -43,7 +40,7 @@ Built for automation, AI assistants, and modern CLI workflows
 
 - 🚀 **Never Blocks**: Guaranteed non-blocking operation for CI/CD and automation
 - 🤖 **AI-Optimized**: JSON output, summaries, and tokens for LLM processing
-- ⚡ **Blazing Fast**: <50ms startup, streaming architecture, ~2MB binary
+- ⚡ **Blazing Fast**: <5ms typical startup (modern hardware), streaming architecture, ~2MB binary
 - 🔧 **Automation-First**: Clean defaults, predictable behavior, perfect for scripts
 - 📊 **Smart Output**: Multiple modes including summary extraction and token analysis
 
@@ -118,7 +115,7 @@ batless --version-json
 | **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
 | **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
 | **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
-| **Startup Time** | ✅ **<50ms** | ⚠️ ~180ms | ✅ <10ms |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
 
 ### 🚀 Core Capabilities
 
@@ -365,6 +362,38 @@ batless --max-bytes=500000 --mode=json config/large-config.json
 
 ## 📖 Usage
 
+### Version Metadata (`--version-json`)
+
+Machine-readable build metadata for scripting, telemetry, reproducibility & SBOM enrichment:
+
+```bash
+batless --version-json
+```
+
+Example output:
+
+```json
+{
+  "name": "batless",
+  "version": "0.2.4",
+  "git_hash": "abc1234",
+  "build_timestamp": "2025-08-15T12:34:56Z",
+  "authors": "Thomas <thomas@docdyhr.com>"
+}
+```
+
+Field reference:
+
+- name – Crate/binary identifier
+- version – Semantic version
+- git_hash – Commit hash embedded at build ("unknown" if not provided)
+- build_timestamp – UTC ISO 8601 timestamp ("unknown" if not injected)
+- authors – Cargo package authors string
+
+Build script injects `BATLESS_GIT_HASH` and `BATLESS_BUILD_TIMESTAMP` for release artifacts.
+
+> *Performance note: <5ms reflects median cold start across local Apple Silicon & GitHub macOS runners per `PERFORMANCE_REPORT.md`. Conservative claim leaves room for variance; earlier <50ms badge updated for precision.*
+
 ### Basic Usage
 
 ```bash
@@ -454,6 +483,10 @@ batless --strip-ansi file.rs
 ```bash
 # Get structured file info with enhanced metadata
 batless --mode=json --max-lines=10 src/main.rs
+
+# Compact vs pretty JSON
+batless --mode=json src/lib.rs               # compact JSON
+batless --mode=json --json-pretty src/lib.rs # pretty-printed JSON
 ```
 
 Output:
@@ -840,7 +873,7 @@ Common configuration patterns and their use cases are documented in the [project
 | **Token extraction** | ✅ For AI processing | ❌ Not supported |
 | **Byte limiting** | ✅ Memory-safe streaming | ❌ Loads entire file |
 | **Binary size** | ✅ ~2MB minimal | ❌ ~10MB with features |
-| **Startup time** | ✅ <50ms cached | ⚠️ ~180ms full init |
+| **Startup time** | ✅ <5ms typical | ⚠️ ~180ms full init |
 | **Dependencies** | ✅ 9 crates | ❌ 20+ crates |
 | **Git integration** | ❌ No (by design) | ✅ Full support |
 | **Line numbers** | ❌ No (use `cat -n` if needed) | ✅ Configurable |
@@ -1170,7 +1203,8 @@ Special thanks to:
 ### Development
 
 - **[Contributing Guide](CONTRIBUTING.md)** - Development guidelines and setup
-- **[Architecture Overview](DEVELOPMENT_GUIDE.md)** - System design and structure
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - Module map, data flow, and extension points
+- **[Performance Guard](docs/PERFORMANCE_GUARD.md)** - Benchmark baseline & regression detection
 - **[Security Guidelines](SECURITY.md)** - Security best practices
 - **[Release Process](RELEASE.md)** - How releases are managed
 

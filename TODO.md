@@ -1,10 +1,96 @@
-# 📋**Last Updated**: August 13, 2025
+# 📋**Last Updated**: August 15, 2025
 
-**Current Version**: v0.2.4 (Unreleased)
-**Latest Release**: v0.2.3 (August 7, 2025)
-**Next Target**: v0.2.4 planning
+**Current Version**: v0.2.4 (Released – August 15, 2025)
+**Latest Release**: v0.2.4 (August 15, 2025)
+**Next Target**: v0.3.0 planning
 
-**🚀 Current Status**: v0.2.4 **PLANNING** - Post-0.2.3 housekeeping and incremental improvements. Foundation automation enhancements underway (version JSON, markdown lint gate, security gating, changelog automation, README lint remediation, fuzzing scaffolding).
+**🚀 Current Status**: v0.2.4 **RELEASED** – Performance & stability polish shipped (perf guard, fuzz workflow, docs). Baseline stabilization (3 green perf runs) continuing post-release. Preparing for v0.3.0 plugin architecture planning.
+
+---
+
+## 🎯 v0.2.4 – Performance Polish & Stability (Released)
+
+Goal: Ship a tight polish release that hardens performance & safety signals before beginning v0.3.0 plugin architecture work.
+
+### 📌 Release Outcome
+
+Scope locked Aug 15, 2025; released same day after completing all scoped P0/P1 tasks.
+
+### 🧩 Scope Delivered
+
+Delivered deterministic performance guardrails, early fuzzing signal (allow-failure), doc/UX clarifications, and small ergonomic wins without expanding core feature surface.
+
+### ✅ Delivered (v0.2.4)
+
+- `--version-json` machine-readable build metadata
+- Docker / musl build fixes
+- Security & markdown lint gates integrated
+
+### 🛑 Out-of-Scope (Deferred to v0.3.0+)
+
+- Plugin system groundwork
+- Tree-sitter / deep AST analysis
+- New summary modes / complex analyzers
+
+### 🧪 P0 (Shipped in 0.2.4)
+
+1. Performance Regression Guard in CI
+   - Integrate `scripts/check_performance.sh` (currently standalone) into workflow
+   - Define thresholds (e.g. startup p95 < 10ms release build macOS CI runner; fail if > +25% vs saved baseline)
+   - Store rolling baseline artifact (JSON) & allow manual reset via label or workflow dispatch
+2. Nightly Fuzzing (allow-failure initially)
+   - Add GitHub Actions job running `cargo fuzz run tokenizer -- -max_total_time=120` (or corpus time bound)
+   - Upload crashes as artifacts; gate future promotion to required once stable
+3. Document `--version-json`
+   - README + `--help` examples; add schema snippet
+4. Update Performance Claim
+   - README: change "<50ms startup" → conservative "<5ms typical on modern hardware" with methodology link to `PERFORMANCE_REPORT.md`
+
+### 🔼 P1 (Shipped – Ergonomic & Docs)
+
+1. Architecture Overview Doc (outline module responsibilities + data flow)
+2. Enhanced Logging Option (add `--debug-level=trace` alias / doc; reuse existing debug plumbing)
+3. Wizard UX polish: show detected profiles count + last modified timestamp summary
+4. Add `--output-format=json-pretty` convenience (pretty-print JSON mode only; noop in streaming)
+
+### 🔽 P2 (Deferred)
+
+- Structured logging backend evaluation (tracing) – doc spike only
+- Supply chain: draft SLSA attestation plan (no implementation)
+
+### 📊 Success Exit Criteria (Post-Release Tracking Status)
+
+- CI perf job green 3 consecutive runs
+- Fuzz job runs 5 nights with zero new crashes (or documented issues)
+- README + docs updated (version-json, performance claim)
+- No increase in open high-severity issues vs pre-0.2.4 baseline
+
+### 🧪 Metrics Captured / Continuing
+
+- Baseline JSON artifact: mean, p95, max startup times per mode
+- Fuzz corpus size & execs/sec snapshot
+
+### 🚧 Tracking (Final 0.2.4 Status)
+
+- [✅] Perf guard workflow added
+- [✅] Threshold config & baseline storage
+- [✅] Nightly fuzz workflow
+- [✅] Version JSON docs
+- [✅] Performance claim updated
+- [✅] Architecture doc (outline)
+- [✅] Wizard UX polish
+- [✅] Pretty JSON flag
+- [✅] Release notes drafted (`docs/RELEASE_NOTES_TEMPLATE_0.2.4.md`)
+
+### 🧭 Post-Release Follow-Up (v0.2.4)
+
+1. Stabilize performance baseline (achieve 3 consecutive green runs)
+2. Begin v0.3.0 plugin architecture design doc
+3. Evaluate structured logging backend (spike)
+4. Draft SLSA attestation plan (supply chain)
+5. Collect early community feedback on JSON ergonomics
+
+---
 
 > Prioritized implementation tasks for batless development
 
@@ -74,8 +160,8 @@
 - [x] README markdown lint remediation (MD036/MD024/MD040)
 - [x] Release changelog prep script (scripts/prep-release-changelog.sh)
 - [x] Fuzzing scaffolding script (scripts/setup-fuzzing.sh) & tokenizer fuzz target
-- [ ] Integrate performance regression guard into CI (wire scripts/check_performance.sh)
-- [ ] Add CI job for cargo fuzz (nightly, allow-failure initially)
+- [ ] (Moved to v0.2.4 P0) Integrate performance regression guard into CI (wire scripts/check_performance.sh)
+- [ ] (Moved to v0.2.4 P0) Add CI job for cargo fuzz (nightly, allow-failure initially)
 
 ### **v0.2.2 - Cat Replacement & Compatibility - ✅ RELEASED**
 

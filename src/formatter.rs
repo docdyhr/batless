@@ -69,7 +69,7 @@ impl OutputFormatter {
     fn format_json(
         file_info: &FileInfo,
         file_path: &str,
-        _config: &BatlessConfig,
+        config: &BatlessConfig,
     ) -> BatlessResult<String> {
         // Create backward-compatible JSON format
         let mut json_data = json!({
@@ -95,7 +95,11 @@ impl OutputFormatter {
             json_data["summary_lines"] = json!(summary_lines);
         }
 
-        serde_json::to_string_pretty(&json_data).map_err(BatlessError::from)
+        if config.pretty_json {
+            serde_json::to_string_pretty(&json_data).map_err(BatlessError::from)
+        } else {
+            serde_json::to_string(&json_data).map_err(BatlessError::from)
+        }
     }
 
     /// Format summary output

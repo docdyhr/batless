@@ -158,6 +158,10 @@ pub struct Args {
     /// Output version information as machine-readable JSON
     #[arg(long)]
     pub version_json: bool,
+
+    /// Pretty-print JSON output (when --mode=json); does not affect streaming
+    #[arg(long)]
+    pub json_pretty: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -435,6 +439,9 @@ impl ConfigManager {
                 .config
                 .clone()
                 .with_streaming_json(self.args.streaming_json);
+        }
+        if self.args.json_pretty {
+            self.config = self.config.clone().with_pretty_json(true);
         }
         if self.args.streaming_chunk_size != 1000 {
             self.config = self

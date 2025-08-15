@@ -108,6 +108,29 @@ fn test_json_mode() {
 }
 
 #[test]
+fn test_json_pretty_flag_changes_formatting() {
+    let content = "fn main() { println!(\"Hello\"); }\n";
+    let file = create_test_file(content, ".rs");
+
+    let compact = run_batless(&[file.path().to_str().unwrap(), "--mode=json"]);
+    assert!(compact.status.success());
+    let compact_out = String::from_utf8(compact.stdout).unwrap();
+    // Compact should not contain multiple leading spaces on new lines (minified)
+    assert!(!compact_out.contains("\n  \"file\""));
+
+    let pretty = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=json",
+        "--json-pretty",
+    ]);
+    assert!(pretty.status.success());
+    let pretty_out = String::from_utf8(pretty.stdout).unwrap();
+    // Pretty output should contain indentation
+    assert!(pretty_out.contains("\n  \"file\""));
+    assert!(pretty_out.len() > compact_out.len());
+}
+
+#[test]
 fn test_max_lines_limit() {
     let content = "line 1\nline 2\nline 3\nline 4\nline 5\n";
     let file = create_test_file(content, ".txt");
@@ -399,7 +422,11 @@ fn test_ai_profile_copilot() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     // Should be JSON output with tokens
-    assert!(stdout.contains("\"language\": \"Rust\""));
+    assert!(
+        stdout.contains("\"language\": \"Rust\"") || stdout.contains("\"language\":\"Rust\""),
+        "Expected language Rust field in JSON output, got: {}",
+        stdout
+    );
     assert!(stdout.contains("\"tokens\":"));
 }
 
@@ -411,7 +438,11 @@ fn test_ai_profile_chatgpt() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     // Should be JSON output with tokens
-    assert!(stdout.contains("\"language\": \"Python\""));
+    assert!(
+        stdout.contains("\"language\": \"Python\"") || stdout.contains("\"language\":\"Python\""),
+        "Expected language Python field in JSON output, got: {}",
+        stdout
+    );
     assert!(stdout.contains("\"tokens\":"));
 }
 
@@ -499,7 +530,11 @@ fn test_stdin_processing() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("test line 1"));
     assert!(stdout.contains("test line 2"));
-    assert!(stdout.contains("file\": \"-"));
+    assert!(
+        stdout.contains("file\": \"-") || stdout.contains("file\":\"-"),
+        "Expected file path '-' marker in JSON output, got: {}",
+        stdout
+    );
 }
 
 #[test]

@@ -522,7 +522,15 @@ impl ConfigurationWizard {
             return Ok(());
         }
 
-        println!("\n📋 Available Profiles:");
+        let count = profiles.len();
+        let latest_updated = profiles
+            .iter()
+            .filter_map(|(_, p)| p.updated_at.as_ref())
+            .max()
+            .cloned()
+            .unwrap_or_else(|| "unknown".to_string());
+
+        println!("\n📋 Available Profiles (total: {count}, latest update: {latest_updated}):");
         println!("{}", "─".repeat(80));
 
         for (path, profile) in profiles {

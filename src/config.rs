@@ -374,6 +374,9 @@ pub struct BatlessConfig {
     /// Show line numbers for non-blank lines only (cat -b compatibility)
     #[serde(default)]
     pub show_line_numbers_nonblank: bool,
+    /// Pretty print JSON output (non-streaming JSON mode)
+    #[serde(default)]
+    pub pretty_json: bool,
 }
 
 fn default_max_lines() -> usize {
@@ -415,6 +418,7 @@ impl Default for BatlessConfig {
             debug: false,
             show_line_numbers: false,
             show_line_numbers_nonblank: false,
+            pretty_json: false,
         }
     }
 }
@@ -526,6 +530,12 @@ impl BatlessConfig {
     /// Enable line numbering for non-blank lines only (cat -b compatibility)
     pub fn with_show_line_numbers_nonblank(mut self, show_line_numbers_nonblank: bool) -> Self {
         self.show_line_numbers_nonblank = show_line_numbers_nonblank;
+        self
+    }
+
+    /// Enable pretty JSON output
+    pub fn with_pretty_json(mut self, pretty: bool) -> Self {
+        self.pretty_json = pretty;
         self
     }
 

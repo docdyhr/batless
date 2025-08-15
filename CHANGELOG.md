@@ -1,23 +1,24 @@
+# Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# Changelog
-
-## [0.2.4] - UNRELEASED
-
-### Planned
-
-- Define explicit goals for 0.2.4 (performance polish, docs, minor UX?)
+## [0.2.4] - 2025-08-15
 
 ### Added (0.2.4)
 
 - feat: Add --version-json flag for machine-readable version/build metadata (includes git hash & build timestamp)
+- feat: Add --json-pretty flag to toggle pretty vs compact JSON output
+- docs: Add Architecture Overview (docs/ARCHITECTURE.md)
+- ci: Enhanced performance regression workflow with JSON summary & PR comments
+- ux: Wizard profile listing now shows total count and latest update timestamp
+- docs: README performance claim refined (<50ms → <5ms typical) with methodology note
 
 ### Notes
 
-- Collecting early maintenance items; no scoped features committed yet.
+- Performance guard integrated; baseline stabilization ongoing (target: 3 consecutive green main runs post-release)
 
 ### Maintenance
 
