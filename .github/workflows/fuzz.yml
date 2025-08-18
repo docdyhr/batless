@@ -48,6 +48,12 @@ jobs:
     needs: [fuzz-tokenizer]
     if: always()
     steps:
+      - name: Download fuzz artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: fuzz-artifacts
+          path: fuzz/artifacts/
+        continue-on-error: true
       - name: Report status
         run: |
           if [ "${{ needs.fuzz-tokenizer.result }}" = "success" ]; then

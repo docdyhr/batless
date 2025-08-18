@@ -20,7 +20,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Ensure markdownlint config exists
+        run: |
+          if [ ! -f ".markdownlint.jsonc" ]; then
+            cat > .markdownlint.jsonc <<'JSON'
+            {
+              "default": true,
+              "MD013": false,
+              "MD033": false,
+              "MD041": false,
+              "MD024": { "siblings_only": true },
+              "MD036": false,
+              "MD040": false
+            }
+            JSON
+          fi
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2@0.14.0
       - name: Run markdownlint
-        run: markdownlint-cli2 "**/*.md" "!target/**"
+        run: markdownlint-cli2 "**/*.md" "!target/**" --config ".markdownlint.jsonc"

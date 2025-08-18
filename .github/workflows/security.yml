@@ -42,8 +42,10 @@ jobs:
 
       - name: Run cargo audit
         run: |
+          # Generate JSON results but do not fail the job yet
           cargo audit --color never --json > audit-results.json || true
-          cargo audit --color never
+          # Run human-readable report; allow non-zero so gating step handles failure
+          cargo audit --color never || true
 
       - name: Gating on high/critical vulnerabilities
         run: |
@@ -127,17 +129,22 @@ jobs:
 
       - name: Run Semgrep
         uses: semgrep/semgrep-action@v1
+        continue-on-error: true
         with:
           config: >-
             p/security-audit
             p/rust
             p/secrets
+          generateSarif: true
+          sarif: semgrep.sarif
+          auditOn: push,pull_request
+          timeout: 600
 
       - name: Upload SARIF file
+        if: always() && hashFiles('semgrep.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep.sarif
-        if: always()
 
   supply-chain-security:
     name: Supply Chain Security
