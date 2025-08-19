@@ -35,7 +35,23 @@ jobs:
             }
             JSON
           fi
+          if [ ! -f "markdownlint-cli2.jsonc" ]; then
+            cat > markdownlint-cli2.jsonc <<'JSON'
+            {
+              "globs": ["**/*.md", "!target/**"],
+              "config": {
+                "default": true,
+                "MD013": false,
+                "MD033": false,
+                "MD041": false,
+                "MD024": { "siblings_only": true },
+                "MD036": false,
+                "MD040": false
+              }
+            }
+            JSON
+          fi
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2@0.14.0
       - name: Run markdownlint
-        run: markdownlint-cli2 "**/*.md" "!target/**" --config ".markdownlint.jsonc"
+        run: markdownlint-cli2 --config "markdownlint-cli2.jsonc"

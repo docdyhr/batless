@@ -39,9 +39,25 @@ jobs:
           }
           JSON
           fi
+          if [ ! -f "markdownlint-cli2.jsonc" ]; then
+            cat > markdownlint-cli2.jsonc <<'JSON'
+            {
+              "globs": ["**/*.md", "!target/**"],
+              "config": {
+                "default": true,
+                "MD013": false,
+                "MD033": false,
+                "MD041": false,
+                "MD024": { "siblings_only": true },
+                "MD036": false,
+                "MD040": false
+              }
+            }
+            JSON
+          fi
       - name: Run markdownlint
         run: |
-          markdownlint-cli2 "**/*.md" "!target/**" --config ".markdownlint.jsonc" || (echo "::error ::Markdown lint failures" && exit 1)
+          markdownlint-cli2 --config "markdownlint-cli2.jsonc" || (echo "::error ::Markdown lint failures" && exit 1)
 
   code-coverage:
     name: Code Coverage
@@ -87,7 +103,9 @@ jobs:
         run: |
           # Extract coverage percentage
           set +e
-          COVERAGE=$(cargo llvm-cov report --workspace | grep -oP 'TOTAL.*?(\d+\.\d+)%' | grep -oP '\\d+\\.\\d+')
+          RAW=$(cargo llvm-cov report --workspace | awk '/TOTAL/ {print $0}')
+          # Try to parse a number like 83.45% from the TOTAL line
+          COVERAGE=$(echo "$RAW" | sed -n 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)%.*/\1/p')
           set -e
           if [ -z "$COVERAGE" ]; then
             echo "Coverage parse failed; defaulting to 80.0"
