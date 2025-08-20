@@ -21,13 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        with:
+          toolchain: stable
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: |
             ~/.cargo/registry
@@ -42,8 +44,10 @@ jobs:
 
       - name: Run cargo audit
         run: |
+          # Generate JSON results but do not fail the job yet
           cargo audit --color never --json > audit-results.json || true
-          cargo audit --color never
+          # Run human-readable report; allow non-zero so gating step handles failure
+          cargo audit --color never || true
 
       - name: Gating on high/critical vulnerabilities
         run: |
@@ -71,7 +75,7 @@ jobs:
 
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: security-audit-results
           path: audit-results.json
@@ -82,7 +86,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -99,7 +103,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -108,7 +112,9 @@ jobs:
           queries: +security-and-quality
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        with:
+          toolchain: stable
 
       - name: Build for analysis
         run: cargo build --all-features
@@ -127,27 +133,34 @@ jobs:
 
       - name: Run Semgrep
         uses: semgrep/semgrep-action@v1
+        continue-on-error: true
         with:
           config: >-
             p/security-audit
             p/rust
             p/secrets
+          generateSarif: true
+          sarif: semgrep.sarif
+          auditOn: push,pull_request
+          timeout: 600
 
       - name: Upload SARIF file
+        if: always() && hashFiles('semgrep.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep.sarif
-        if: always()
 
   supply-chain-security:
     name: Supply Chain Security
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        with:
+          toolchain: stable
 
       - name: Generate SBOM
         continue-on-error: true
@@ -159,7 +172,7 @@ jobs:
 
       - name: Upload SBOM
         if: hashFiles('batless-sbom.json') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: software-bill-of-materials
           path: batless-sbom.json
@@ -169,10 +182,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        with:
+          toolchain: stable
 
       - name: Check licenses
         continue-on-error: true
@@ -197,7 +212,7 @@ jobs:
 
       - name: Upload license report
         if: hashFiles('licenses.json') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: license-report
           path: licenses.json

@@ -1,0 +1,18 @@
+{
+    // markdownlint-cli2 configuration
+    "globs": [
+        "**/*.md",
+        "!target/**"
+    ],
+    "config": {
+        "default": true,
+        "MD013": false,
+        "MD033": false,
+        "MD041": false,
+        "MD024": {
+            "siblings_only": true
+        },
+        "MD036": false,
+        "MD040": false
+    }
+}

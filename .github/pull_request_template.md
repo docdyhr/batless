@@ -28,9 +28,10 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] Performance testing
 
 **Test Configuration**:
-* Operating System:
-* Rust version:
-* Terminal:
+
+- Operating System:
+- Rust version:
+- Terminal:
 
 ## Test Commands
 

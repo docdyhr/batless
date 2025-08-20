@@ -403,79 +403,70 @@ impl ConfigManager {
 
     /// Applies command-line arguments to the configuration.
     fn apply_cli_args(&mut self) {
+        // Build a new config from the current one with all CLI args applied
+        let mut new_config = std::mem::take(&mut self.config);
+
         if self.args.max_lines != 10000 {
-            self.config = self.config.clone().with_max_lines(self.args.max_lines);
+            new_config = new_config.with_max_lines(self.args.max_lines);
         }
         if self.args.max_bytes.is_some() {
-            self.config = self.config.clone().with_max_bytes(self.args.max_bytes);
+            new_config = new_config.with_max_bytes(self.args.max_bytes);
         }
-        if self.args.language.is_some() {
-            self.config = self
-                .config
-                .clone()
-                .with_language(self.args.language.clone());
+        if let Some(ref language) = self.args.language {
+            new_config = new_config.with_language(Some(language.clone()));
         }
         if self.args.theme != "base16-ocean.dark" {
-            self.config = self.config.clone().with_theme(self.args.theme.clone());
+            new_config = new_config.with_theme(self.args.theme.clone());
         }
         if self.args.strip_ansi {
-            self.config = self.config.clone().with_strip_ansi(self.args.strip_ansi);
+            new_config = new_config.with_strip_ansi(self.args.strip_ansi);
         }
+
         let use_color = match self.args.color {
             ColorMode::Always => true,
             ColorMode::Never => false,
             ColorMode::Auto => std::io::stdout().is_terminal(),
         };
-        self.config = self.config.clone().with_use_color(use_color);
+        new_config = new_config.with_use_color(use_color);
 
         if self.args.include_tokens {
-            self.config = self
-                .config
-                .clone()
-                .with_include_tokens(self.args.include_tokens);
+            new_config = new_config.with_include_tokens(self.args.include_tokens);
         }
         if self.args.streaming_json {
-            self.config = self
-                .config
-                .clone()
-                .with_streaming_json(self.args.streaming_json);
+            new_config = new_config.with_streaming_json(self.args.streaming_json);
         }
         if self.args.json_pretty {
-            self.config = self.config.clone().with_pretty_json(true);
+            new_config = new_config.with_pretty_json(true);
         }
         if self.args.streaming_chunk_size != 1000 {
-            self.config = self
-                .config
-                .clone()
-                .with_streaming_chunk_size(self.args.streaming_chunk_size);
+            new_config = new_config.with_streaming_chunk_size(self.args.streaming_chunk_size);
         }
         if self.args.enable_resume {
-            self.config = self
-                .config
-                .clone()
-                .with_enable_resume(self.args.enable_resume);
+            new_config = new_config.with_enable_resume(self.args.enable_resume);
         }
         if self.args.debug {
-            self.config = self.config.clone().with_debug(self.args.debug);
+            new_config = new_config.with_debug(self.args.debug);
         }
         if let Some(summary_level) = self.args.summary_level {
-            self.config = self.config.clone().with_summary_level(summary_level.into());
+            new_config = new_config.with_summary_level(summary_level.into());
         } else if self.args.summary || self.args.mode == CliOutputMode::Summary {
-            self.config = self.config.clone().with_summary_mode(true);
+            new_config = new_config.with_summary_mode(true);
         }
+
+        self.config = new_config;
     }
 
     /// Applies AI profiles to the configuration.
     fn apply_profiles(&mut self) -> BatlessResult<()> {
         self.output_mode = if let Some(custom_profile_path) = &self.args.custom_profile {
             let custom_profile = CustomProfile::load_from_file(custom_profile_path)?;
-            self.config = custom_profile.apply_to_config(self.config.clone());
+            self.config = custom_profile.apply_to_config(std::mem::take(&mut self.config));
             custom_profile
                 .get_output_mode()
                 .and_then(|mode| mode.parse().ok())
                 .unwrap_or_else(|| self.args.mode.into())
         } else if let Some(profile) = self.args.profile {
-            self.config = profile.apply_to_config(self.config.clone());
+            self.config = profile.apply_to_config(std::mem::take(&mut self.config));
             profile.get_output_mode()
         } else {
             self.args.mode.into()
@@ -487,13 +478,16 @@ impl ConfigManager {
     fn apply_compatibility_flags(&mut self) {
         if self.args.plain {
             self.output_mode = OutputMode::Plain;
-            self.config = self.config.clone().with_use_color(false);
+            self.config =
+                std::mem::replace(&mut self.config, BatlessConfig::default()).with_use_color(false);
         }
         if self.args.number {
-            self.config = self.config.clone().with_show_line_numbers(true);
+            self.config = std::mem::replace(&mut self.config, BatlessConfig::default())
+                .with_show_line_numbers(true);
         }
         if self.args.number_nonblank {
-            self.config = self.config.clone().with_show_line_numbers_nonblank(true);
+            self.config = std::mem::replace(&mut self.config, BatlessConfig::default())
+                .with_show_line_numbers_nonblank(true);
         }
     }
 

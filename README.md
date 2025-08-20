@@ -12,8 +12,8 @@ Built for automation, AI assistants, and modern CLI workflows
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?logo=opensource&logoColor=white)](https://opensource.org/licenses/MIT)
 [![GitHub Release](https://img.shields.io/github/v/release/docdyhr/batless?include_prereleases&logo=github&logoColor=white)](https://github.com/docdyhr/batless/releases)
 
-[![CI/CD Pipeline](https://github.com/docdyhr/batless/workflows/CI%2FCD/badge.svg)](https://github.com/docdyhr/batless/actions)
-[![Security Review](https://github.com/docdyhr/batless/workflows/Security%20Review/badge.svg)](https://github.com/docdyhr/batless/actions)
+[![CI/CD Pipeline](https://github.com/docdyhr/batless/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/ci.yml)
+[![Security Review](https://github.com/docdyhr/batless/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/security.yml)
 [![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg?logo=codecov&logoColor=white)](https://codecov.io/gh/docdyhr/batless)
 [![Markdown Lint](https://github.com/docdyhr/batless/actions/workflows/markdown-lint.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/markdown-lint.yml)
 [![Changelog Gen](https://github.com/docdyhr/batless/actions/workflows/changelog.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/changelog.yml)

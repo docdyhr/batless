@@ -4,15 +4,21 @@
 //! and provides utilities for listing available languages and themes.
 
 use crate::error::{BatlessError, BatlessResult};
-use lazy_static::lazy_static;
 use std::path::Path;
+use std::sync::OnceLock;
 use syntect::highlighting::ThemeSet;
 use syntect::parsing::SyntaxSet;
 
 // Cache syntax and theme sets for better performance - loaded only when needed
-lazy_static! {
-    static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
-    static ref THEME_SET: ThemeSet = ThemeSet::load_defaults();
+static SYNTAX_SET: OnceLock<SyntaxSet> = OnceLock::new();
+static THEME_SET: OnceLock<ThemeSet> = OnceLock::new();
+
+fn get_syntax_set_internal() -> &'static SyntaxSet {
+    SYNTAX_SET.get_or_init(|| SyntaxSet::load_defaults_newlines())
+}
+
+fn get_theme_set_internal() -> &'static ThemeSet {
+    THEME_SET.get_or_init(|| ThemeSet::load_defaults())
 }
 
 /// Language detection and theme management
@@ -23,11 +29,11 @@ impl LanguageDetector {
     pub fn detect_language(file_path: &str) -> Option<String> {
         let path = Path::new(file_path);
 
-        if let Ok(Some(syntax)) = SYNTAX_SET.find_syntax_for_file(path) {
-            Some(syntax.name.clone())
-        } else {
-            None
-        }
+        get_syntax_set_internal()
+            .find_syntax_for_file(path)
+            .ok()
+            .flatten()
+            .map(|syntax| syntax.name.clone())
     }
 
     /// Detect language with fallback to extension-based detection
@@ -48,48 +54,49 @@ impl LanguageDetector {
 
     /// Map file extensions to language names for common cases not covered by syntect
     fn extension_to_language(extension: &str) -> Option<String> {
-        match extension.to_lowercase().as_str() {
-            "rs" => Some("Rust".to_string()),
-            "py" => Some("Python".to_string()),
-            "js" => Some("JavaScript".to_string()),
-            "ts" => Some("TypeScript".to_string()),
-            "go" => Some("Go".to_string()),
-            "java" => Some("Java".to_string()),
-            "cpp" | "cc" | "cxx" => Some("C++".to_string()),
-            "c" => Some("C".to_string()),
-            "h" | "hpp" => Some("C".to_string()),
-            "rb" => Some("Ruby".to_string()),
-            "php" => Some("PHP".to_string()),
-            "swift" => Some("Swift".to_string()),
-            "kt" => Some("Kotlin".to_string()),
-            "scala" => Some("Scala".to_string()),
-            "hs" => Some("Haskell".to_string()),
-            "ml" => Some("OCaml".to_string()),
-            "fs" => Some("F#".to_string()),
-            "clj" => Some("Clojure".to_string()),
-            "ex" | "exs" => Some("Elixir".to_string()),
-            "erl" => Some("Erlang".to_string()),
-            "dart" => Some("Dart".to_string()),
-            "lua" => Some("Lua".to_string()),
-            "pl" => Some("Perl".to_string()),
-            "r" => Some("R".to_string()),
-            "m" => Some("Objective-C".to_string()),
-            "sh" | "bash" | "zsh" => Some("Bash".to_string()),
-            "ps1" => Some("PowerShell".to_string()),
-            "sql" => Some("SQL".to_string()),
-            "json" => Some("JSON".to_string()),
-            "xml" => Some("XML".to_string()),
-            "html" => Some("HTML".to_string()),
-            "css" => Some("CSS".to_string()),
-            "scss" | "sass" => Some("SCSS".to_string()),
-            "md" => Some("Markdown".to_string()),
-            "yml" | "yaml" => Some("YAML".to_string()),
-            "toml" => Some("TOML".to_string()),
-            "ini" => Some("INI".to_string()),
-            "dockerfile" => Some("Dockerfile".to_string()),
-            "makefile" => Some("Makefile".to_string()),
-            _ => None,
-        }
+        let language_name = match extension.to_lowercase().as_str() {
+            "rs" => "Rust",
+            "py" => "Python",
+            "js" => "JavaScript",
+            "ts" => "TypeScript",
+            "go" => "Go",
+            "java" => "Java",
+            "cpp" | "cc" | "cxx" => "C++",
+            "c" => "C",
+            "h" | "hpp" => "C",
+            "rb" => "Ruby",
+            "php" => "PHP",
+            "swift" => "Swift",
+            "kt" => "Kotlin",
+            "scala" => "Scala",
+            "hs" => "Haskell",
+            "ml" => "OCaml",
+            "fs" => "F#",
+            "clj" => "Clojure",
+            "ex" | "exs" => "Elixir",
+            "erl" => "Erlang",
+            "dart" => "Dart",
+            "lua" => "Lua",
+            "pl" => "Perl",
+            "r" => "R",
+            "m" => "Objective-C",
+            "sh" | "bash" | "zsh" => "Bash",
+            "ps1" => "PowerShell",
+            "sql" => "SQL",
+            "json" => "JSON",
+            "xml" => "XML",
+            "html" => "HTML",
+            "css" => "CSS",
+            "scss" | "sass" => "SCSS",
+            "md" => "Markdown",
+            "yml" | "yaml" => "YAML",
+            "toml" => "TOML",
+            "ini" => "INI",
+            "dockerfile" => "Dockerfile",
+            "makefile" => "Makefile",
+            _ => return None,
+        };
+        Some(language_name.to_string())
     }
 
     /// Validate that a language name exists in the syntax set
@@ -107,7 +114,7 @@ impl LanguageDetector {
 
     /// Get list of all available languages
     pub fn list_languages() -> Vec<String> {
-        let mut languages: Vec<String> = SYNTAX_SET
+        let mut languages: Vec<String> = get_syntax_set_internal()
             .syntaxes()
             .iter()
             .map(|syntax| syntax.name.clone())
@@ -128,7 +135,7 @@ impl LanguageDetector {
     pub fn get_syntax_for_language(
         language: &str,
     ) -> Option<&'static syntect::parsing::SyntaxReference> {
-        SYNTAX_SET.find_syntax_by_name(language)
+        get_syntax_set_internal().find_syntax_by_name(language)
     }
 
     /// Get syntax reference for a file path
@@ -136,7 +143,10 @@ impl LanguageDetector {
         file_path: &str,
     ) -> Option<&'static syntect::parsing::SyntaxReference> {
         let path = Path::new(file_path);
-        SYNTAX_SET.find_syntax_for_file(path).ok().flatten()
+        get_syntax_set_internal()
+            .find_syntax_for_file(path)
+            .ok()
+            .flatten()
     }
 }
 
@@ -146,14 +156,14 @@ pub struct ThemeManager;
 impl ThemeManager {
     /// Get list of all available themes
     pub fn list_themes() -> Vec<String> {
-        let mut themes: Vec<String> = THEME_SET.themes.keys().cloned().collect();
+        let mut themes: Vec<String> = get_theme_set_internal().themes.keys().cloned().collect();
         themes.sort();
         themes
     }
 
     /// Validate that a theme exists
     pub fn validate_theme(theme_name: &str) -> BatlessResult<()> {
-        if THEME_SET.themes.contains_key(theme_name) {
+        if get_theme_set_internal().themes.contains_key(theme_name) {
             Ok(())
         } else {
             let available_themes = Self::list_themes();
@@ -178,7 +188,7 @@ impl ThemeManager {
 
     /// Get theme reference
     pub fn get_theme(theme_name: &str) -> Option<&'static syntect::highlighting::Theme> {
-        THEME_SET.themes.get(theme_name)
+        get_theme_set_internal().themes.get(theme_name)
     }
 
     /// Get a list of popular/recommended themes
@@ -196,11 +206,11 @@ impl ThemeManager {
 
 /// Get both syntax and theme sets (for use in other modules)
 pub fn get_syntax_set() -> &'static SyntaxSet {
-    &SYNTAX_SET
+    get_syntax_set_internal()
 }
 
 pub fn get_theme_set() -> &'static ThemeSet {
-    &THEME_SET
+    get_theme_set_internal()
 }
 
 #[cfg(test)]

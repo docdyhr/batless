@@ -134,7 +134,8 @@ If critical issues are discovered:
 ## Template Messages
 
 ### Release Announcement Template
-```
+
+```markdown
 🚀 batless vX.Y.Z released!
 
 ## What's New
@@ -152,7 +153,8 @@ https://github.com/thomas/batless/releases/tag/vX.Y.Z
 ```
 
 ### Bug Report Response Template
-```
+
+```markdown
 Thanks for the report! This appears to be related to the vX.Y.Z release.
 
 We're investigating and will have a patch release (vX.Y.Z+1) out within [timeframe].
@@ -165,6 +167,7 @@ As a workaround, you can:
 ---
 
 ## Notes
+
 - Always test on multiple platforms before release
 - Keep this checklist updated as process evolves
 - Document any deviations from standard process
