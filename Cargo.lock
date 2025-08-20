@@ -105,7 +105,6 @@ dependencies = [
  "dirs",
  "encoding_rs",
  "is-terminal",
- "lazy_static",
  "proptest",
  "serde",
  "serde_json",

@@ -27,7 +27,7 @@ jobs:
             rust: beta
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -36,7 +36,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: |
             ~/.cargo/registry
@@ -72,10 +72,10 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: dtolnay/rust-toolchain@stable
       - name: Cache security tools
-        uses: actions/cache@v4
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: ~/.cargo/bin
           key: ${{ runner.os }}-security-tools-${{ hashFiles('**/Cargo.lock') }}
@@ -88,7 +88,7 @@ jobs:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools-preview
@@ -128,7 +128,7 @@ jobs:
             binary_suffix: ""
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -140,23 +140,33 @@ jobs:
         run: sudo apt-get install -y musl-tools
 
       - name: Build binary
-        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          TARGET_TRIPLE: ${{ matrix.target }}
+        run: cargo build --release --target "$TARGET_TRIPLE"
 
       - name: Strip binary (unix)
         if: matrix.os != 'windows-latest'
-        run: strip target/${{ matrix.target }}/release/batless${{ matrix.binary_suffix }}
+        env:
+          TARGET_TRIPLE: ${{ matrix.target }}
+          BINARY_SUFFIX: ${{ matrix.binary_suffix }}
+        run: strip "target/${TARGET_TRIPLE}/release/batless${BINARY_SUFFIX}"
 
       - name: Create archive
         shell: bash
+        env:
+          BINARY_SUFFIX: ${{ matrix.binary_suffix }}
+          TARGET_TRIPLE: ${{ matrix.target }}
+          REF_NAME: ${{ github.ref_name }}
+          OS_NAME: ${{ matrix.os }}
         run: |
-          binary_name="batless${{ matrix.binary_suffix }}"
-          archive_name="batless-${{ github.ref_name }}-${{ matrix.target }}"
+          binary_name="batless${BINARY_SUFFIX}"
+          archive_name="batless-${REF_NAME}-${TARGET_TRIPLE}"
 
           mkdir "$archive_name"
-          cp "target/${{ matrix.target }}/release/$binary_name" "$archive_name/"
+          cp "target/${TARGET_TRIPLE}/release/$binary_name" "$archive_name/"
           cp README.md LICENSE CHANGELOG.md "$archive_name/"
 
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          if [[ "$OS_NAME" == "windows-latest" ]]; then
             7z a "${archive_name}.zip" "$archive_name"
             echo "ASSET=${archive_name}.zip" >> $GITHUB_ENV
           else
@@ -165,7 +175,7 @@ jobs:
           fi
 
       - name: Upload binary to release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: release-binaries-${{ matrix.target }}
           path: batless-*-${{ matrix.target }}.*
@@ -177,7 +187,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, security_audit]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - uses: dtolnay/rust-toolchain@stable
       - name: Publish to crates.io
         env:
