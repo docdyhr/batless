@@ -405,7 +405,7 @@ impl ConfigManager {
     fn apply_cli_args(&mut self) {
         // Build a new config from the current one with all CLI args applied
         let mut new_config = std::mem::take(&mut self.config);
-        
+
         if self.args.max_lines != 10000 {
             new_config = new_config.with_max_lines(self.args.max_lines);
         }
@@ -421,7 +421,7 @@ impl ConfigManager {
         if self.args.strip_ansi {
             new_config = new_config.with_strip_ansi(self.args.strip_ansi);
         }
-        
+
         let use_color = match self.args.color {
             ColorMode::Always => true,
             ColorMode::Never => false,
@@ -452,7 +452,7 @@ impl ConfigManager {
         } else if self.args.summary || self.args.mode == CliOutputMode::Summary {
             new_config = new_config.with_summary_mode(true);
         }
-        
+
         self.config = new_config;
     }
 
@@ -478,8 +478,8 @@ impl ConfigManager {
     fn apply_compatibility_flags(&mut self) {
         if self.args.plain {
             self.output_mode = OutputMode::Plain;
-            self.config = std::mem::replace(&mut self.config, BatlessConfig::default())
-                .with_use_color(false);
+            self.config =
+                std::mem::replace(&mut self.config, BatlessConfig::default()).with_use_color(false);
         }
         if self.args.number {
             self.config = std::mem::replace(&mut self.config, BatlessConfig::default())

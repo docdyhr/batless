@@ -143,7 +143,10 @@ impl LanguageDetector {
         file_path: &str,
     ) -> Option<&'static syntect::parsing::SyntaxReference> {
         let path = Path::new(file_path);
-        get_syntax_set_internal().find_syntax_for_file(path).ok().flatten()
+        get_syntax_set_internal()
+            .find_syntax_for_file(path)
+            .ok()
+            .flatten()
     }
 }
 

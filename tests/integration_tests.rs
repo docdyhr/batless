@@ -580,7 +580,7 @@ fn test_once_lock_performance() {
     // Test that OnceLock initialization doesn't cause performance regression
     let content = "fn main() { println!(\"test\"); }";
     let file = create_test_file(content, ".rs");
-    
+
     // Run multiple times to ensure OnceLock initialization is cached
     for _ in 0..3 {
         let output = run_batless(&[file.path().to_str().unwrap(), "--mode=plain"]);
@@ -605,13 +605,13 @@ fn test_large_file_processing() {
     // Test processing of larger files to verify no performance regression
     let large_content = "fn test_function() {\n    println!(\"line\");\n}\n".repeat(100);
     let file = create_test_file(&large_content, ".rs");
-    
+
     let output = run_batless(&[
-        file.path().to_str().unwrap(), 
+        file.path().to_str().unwrap(),
         "--mode=json",
-        "--max-lines=50"
+        "--max-lines=50",
     ]);
-    
+
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
@@ -623,12 +623,9 @@ fn test_configuration_validation_edge_cases() {
     // Test zero max lines
     let content = "test";
     let file = create_test_file(content, ".txt");
-    
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--max-lines=0"
-    ]);
-    
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--max-lines=0"]);
+
     // Should fail with configuration error
     assert!(!output.status.success());
     let stderr = String::from_utf8(output.stderr).unwrap();
@@ -638,19 +635,20 @@ fn test_configuration_validation_edge_cases() {
 #[test]
 fn test_memory_efficiency_string_handling() {
     // Test that string operations are memory efficient
-    let content = "use std::collections::HashMap;\n\nfn main() {\n    let map = HashMap::new();\n}\n";
+    let content =
+        "use std::collections::HashMap;\n\nfn main() {\n    let map = HashMap::new();\n}\n";
     let file = create_test_file(content, ".rs");
-    
+
     let output = run_batless(&[
         file.path().to_str().unwrap(),
         "--mode=json",
-        "--include-tokens"
+        "--include-tokens",
     ]);
-    
+
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-    
+
     // Verify tokens are properly included without excessive memory usage
     assert!(json["tokens"].is_array());
     assert!(json["tokens"].as_array().unwrap().len() > 0);
@@ -661,10 +659,10 @@ fn test_schema_validation() {
     // Test JSON schema validation functionality
     let output = run_batless(&["--get-schema", "json_output"]);
     assert!(output.status.success());
-    
+
     let stdout = String::from_utf8(output.stdout).unwrap();
     let schema: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-    
+
     assert!(schema["type"].as_str().unwrap() == "object");
     assert!(schema["properties"].is_object());
     assert!(schema["properties"]["file_info"].is_object());
@@ -675,14 +673,14 @@ fn test_theme_and_language_validation() {
     // Test theme validation with case sensitivity
     let output = run_batless(&["--list-themes"]);
     assert!(output.status.success());
-    
+
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("base16-ocean.dark"));
-    
+
     // Test language validation
     let output = run_batless(&["--list-languages"]);
     assert!(output.status.success());
-    
+
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("Rust"));
     assert!(stdout.contains("Python"));
@@ -692,15 +690,20 @@ fn test_theme_and_language_validation() {
 fn test_compatibility_flags() {
     let content = "line1\nline2\nline3\n";
     let file = create_test_file(content, ".txt");
-    
+
     // Test --plain flag
     let output = run_batless(&[file.path().to_str().unwrap(), "--plain"]);
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert_eq!(stdout.trim(), content.trim());
-    
+
     // Test --number flag (might require specific mode or color settings)
-    let output = run_batless(&[file.path().to_str().unwrap(), "--number", "--mode=highlight", "--color=never"]);
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--number",
+        "--mode=highlight",
+        "--color=never",
+    ]);
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     // Line numbering should be present in some form
@@ -715,11 +718,11 @@ fn test_encoding_detection_robustness() {
         ("UTF-8 content with émojis 🦀", ".txt"),
         ("Binary-like content \x00\x01\x02", ".bin"),
     ];
-    
+
     for (content, ext) in test_cases {
         let file = create_test_file(content, ext);
         let output = run_batless(&[file.path().to_str().unwrap(), "--mode=json"]);
-        
+
         // Should handle gracefully without crashing
         if output.status.success() {
             let stdout = String::from_utf8(output.stdout).unwrap();
