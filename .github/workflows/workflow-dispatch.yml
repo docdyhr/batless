@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
       - name: Run quick tests
         run: |
           cargo test --lib
@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: Run security audit
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
       - name: Run quality checks
         run: |
           cargo clippy --all-targets --all-features -- -D warnings
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
       - name: Build release binary
         run: cargo build --release
       - name: Basic performance test
