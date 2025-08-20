@@ -68,7 +68,7 @@ JSON
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
         with:
           components: llvm-tools-preview
 
@@ -166,7 +166,7 @@ JSON
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
         with:
           components: rustfmt, clippy
 
@@ -249,7 +249,7 @@ JSON
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
 
       # Skip cargo-rdme check as it's not applicable for this project
 
@@ -360,7 +360,7 @@ JSON
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@be73d8f40701655e1646db5b78c130f838f86ffc # stable
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
       - name: Cache dependencies
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
