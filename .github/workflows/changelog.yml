@@ -28,8 +28,26 @@ jobs:
 
       - name: Generate changelog (unreleased)
         run: |
-          git cliff --config cliff.toml --unreleased --strip header > CHANGELOG_UNRELEASED.md
-          echo "Generated unreleased changelog:" && head -100 CHANGELOG_UNRELEASED.md
+          # Ensure we have git history with tags
+          git fetch --unshallow || true
+          git fetch --tags || true
+          
+          # Generate changelog with better error handling
+          if git cliff --config cliff.toml --unreleased --strip header > CHANGELOG_UNRELEASED.md; then
+            echo "✅ Generated unreleased changelog successfully"
+            echo "📄 Preview (first 100 lines):"
+            head -100 CHANGELOG_UNRELEASED.md
+          else
+            echo "❌ Failed to generate changelog"
+            echo "🔍 Debugging information:"
+            echo "Current git status:"
+            git status --porcelain
+            echo "Available tags:"
+            git tag -l | head -10
+            echo "Recent commits:"
+            git log --oneline -10
+            exit 1
+          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
