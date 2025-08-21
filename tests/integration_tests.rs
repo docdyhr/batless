@@ -651,7 +651,7 @@ fn test_memory_efficiency_string_handling() {
 
     // Verify tokens are properly included without excessive memory usage
     assert!(json["tokens"].is_array());
-    assert!(json["tokens"].as_array().unwrap().len() > 0);
+    assert!(!json["tokens"].as_array().unwrap().is_empty());
 }
 
 #[test]
