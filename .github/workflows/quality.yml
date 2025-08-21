@@ -58,7 +58,7 @@ jobs:
           cargo llvm-cov clean --workspace
           cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
           cargo llvm-cov --all-features --workspace --html --output-dir coverage-html
-          cargo llvm-cov report --workspace
+          cargo llvm-cov report
 
       - name: Upload coverage to Codecov (non-blocking)
         uses: codecov/codecov-action@v5
@@ -90,7 +90,7 @@ jobs:
           echo "" >> coverage-summary.md
           echo "## Detailed Report" >> coverage-summary.md
           echo '```' >> coverage-summary.md
-          cargo llvm-cov report --workspace >> coverage-summary.md
+          cargo llvm-cov report >> coverage-summary.md
           echo '```' >> coverage-summary.md
 
       - name: Upload coverage artifacts
