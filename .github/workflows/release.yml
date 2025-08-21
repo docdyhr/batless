@@ -30,6 +30,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
         with:
+          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache dependencies
@@ -88,6 +89,7 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
         with:
+          toolchain: stable
           targets: ${{ matrix.target }}
 
       - name: Install cross-compilation tools
