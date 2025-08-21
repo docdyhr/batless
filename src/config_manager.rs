@@ -478,15 +478,14 @@ impl ConfigManager {
     fn apply_compatibility_flags(&mut self) {
         if self.args.plain {
             self.output_mode = OutputMode::Plain;
-            self.config =
-                std::mem::replace(&mut self.config, BatlessConfig::default()).with_use_color(false);
+            self.config = std::mem::take(&mut self.config).with_use_color(false);
         }
         if self.args.number {
-            self.config = std::mem::replace(&mut self.config, BatlessConfig::default())
+            self.config = std::mem::take(&mut self.config)
                 .with_show_line_numbers(true);
         }
         if self.args.number_nonblank {
-            self.config = std::mem::replace(&mut self.config, BatlessConfig::default())
+            self.config = std::mem::take(&mut self.config)
                 .with_show_line_numbers_nonblank(true);
         }
     }
