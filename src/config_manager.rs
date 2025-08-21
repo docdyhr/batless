@@ -481,12 +481,10 @@ impl ConfigManager {
             self.config = std::mem::take(&mut self.config).with_use_color(false);
         }
         if self.args.number {
-            self.config = std::mem::take(&mut self.config)
-                .with_show_line_numbers(true);
+            self.config = std::mem::take(&mut self.config).with_show_line_numbers(true);
         }
         if self.args.number_nonblank {
-            self.config = std::mem::take(&mut self.config)
-                .with_show_line_numbers_nonblank(true);
+            self.config = std::mem::take(&mut self.config).with_show_line_numbers_nonblank(true);
         }
     }
 
