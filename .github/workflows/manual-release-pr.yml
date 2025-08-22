@@ -32,7 +32,7 @@ jobs:
       version: ${{ steps.prepare.outputs.version }}
       branch: ${{ steps.prepare.outputs.branch }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
