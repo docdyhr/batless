@@ -27,16 +27,16 @@ jobs:
             rust: beta
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
 
       - name: Cache dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -72,12 +72,10 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: Cache security tools
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/bin
           key: ${{ runner.os }}-security-tools-${{ hashFiles('**/Cargo.lock') }}
@@ -90,10 +88,9 @@ jobs:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: llvm-tools-preview
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov
@@ -131,12 +128,11 @@ jobs:
             binary_suffix: ""
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           targets: ${{ matrix.target }}
 
       - name: Install musl tools
@@ -179,7 +175,7 @@ jobs:
           fi
 
       - name: Upload binary to release
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: release-binaries-${{ matrix.target }}
           path: batless-*-${{ matrix.target }}.*
@@ -191,10 +187,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, security_audit]
     steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - name: Publish to crates.io
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

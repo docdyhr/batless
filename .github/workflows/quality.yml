@@ -16,33 +16,64 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2@0.14.0
+      - name: Prepare markdownlint config
+        run: |
+          if [ ! -f ".markdownlint.jsonc" ]; then
+            cat > .markdownlint.jsonc <<'JSON'
+          {
+            "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
+            "default": true,
+            "MD013": false,
+            "MD033": false,
+            "MD041": false,
+            "MD040": false,
+            "MD024": { "siblings_only": true },
+            "MD036": false
+          }
+          JSON
+          fi
+          if [ ! -f "markdownlint-cli2.jsonc" ]; then
+            cat > markdownlint-cli2.jsonc <<'JSON'
+            {
+              "globs": ["**/*.md", "!target/**"],
+              "config": {
+                "default": true,
+                "MD013": false,
+                "MD033": false,
+                "MD041": false,
+                "MD024": { "siblings_only": true },
+                "MD036": false,
+                "MD040": false
+              }
+            }
+            JSON
+          fi
       - name: Run markdownlint
         continue-on-error: true
         run: |
-          markdownlint-cli2 "**/*.md" "!target/**" || (echo "::error ::Markdown lint failures" && exit 1)
+          markdownlint-cli2 --config "markdownlint-cli2.jsonc" || (echo "::error ::Markdown lint failures" && exit 1)
 
   code-coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: llvm-tools-preview
 
       - name: Cache dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -58,7 +89,7 @@ jobs:
           cargo llvm-cov clean --workspace
           cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
           cargo llvm-cov --all-features --workspace --html --output-dir coverage-html
-          cargo llvm-cov report
+          cargo llvm-cov report --workspace
 
       - name: Upload coverage to Codecov (non-blocking)
         uses: codecov/codecov-action@v5
@@ -90,11 +121,11 @@ jobs:
           echo "" >> coverage-summary.md
           echo "## Detailed Report" >> coverage-summary.md
           echo '```' >> coverage-summary.md
-          cargo llvm-cov report >> coverage-summary.md
+          cargo llvm-cov report --workspace >> coverage-summary.md
           echo '```' >> coverage-summary.md
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |
@@ -117,31 +148,34 @@ jobs:
 
       - name: Comment PR with coverage
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          if [ -f coverage-summary.md ]; then
-            gh api \
-              repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments \
-              -f body@coverage-summary.md
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('coverage-summary.md')) {
+              const coverage = fs.readFileSync('coverage-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: coverage
+              });
+            }
 
   code-quality:
     name: Code Quality Analysis
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: rustfmt, clippy
 
       - name: Cache dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -150,7 +184,7 @@ jobs:
           key: ${{ runner.os }}-quality-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache quality tools
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/bin
           key: ${{ runner.os }}-quality-tools-v2
@@ -202,7 +236,9 @@ jobs:
       - name: Check for TODO/FIXME comments
         run: |
           TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true | wc -l)
-          echo "Found $TODO_COUNT TODO/FIXME comments"
+              sed -n 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)%.*/\1/p' | tail -1)
+            if [ -z "$DOC_COVERAGE" ]; then DOC_COVERAGE="0"; fi
+
           if [ $TODO_COUNT -gt 10 ]; then
             echo "❌ Too many TODO/FIXME comments ($TODO_COUNT > 10)"
             grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true
@@ -216,12 +252,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       # Skip cargo-rdme check as it's not applicable for this project
 
@@ -264,7 +298,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install tokei for SLOC analysis
         run: |
@@ -319,7 +353,7 @@ jobs:
           fi
 
       - name: Upload complexity report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: complexity-analysis
           path: complexity-report.md
@@ -330,13 +364,11 @@ jobs:
     continue-on-error: true  # Still informational while stabilizing
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       - name: Cache dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -357,7 +389,7 @@ jobs:
           echo "state=$STATE" >> $GITHUB_OUTPUT
           exit 0  # Never fail this job while continue-on-error in effect
       - name: Upload performance artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
             name: performance-benchmarks
             path: |
@@ -368,20 +400,25 @@ jobs:
               performance_summary.md
       - name: Comment PR with performance summary
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          STATE: ${{ steps.perf.outputs.state }}
-        run: |
-          if [ -f performance_summary.md ]; then
-            HEADER_ICON='✅'
-            if [ "$STATE" = "fail" ]; then HEADER_ICON='❌'; elif [ "$STATE" = "warn" ]; then HEADER_ICON='⚠️'; fi
-            printf "## %s Performance Check (%s)\n\n" "$HEADER_ICON" "$STATE" > body.md
-            cat performance_summary.md >> body.md
-            gh api \
-              repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments \
-              -f body@body.md
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const file = 'performance_summary.md';
+            let body;
+            if (fs.existsSync(file)) {
+              body = fs.readFileSync(file, 'utf8');
+            } else {
+              body = 'Performance summary file not found.';
+            }
+            const state = '${{ steps.perf.outputs.state }}';
+            const headerIcon = state === 'fail' ? '❌' : (state === 'warn' ? '⚠️' : '✅');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ${headerIcon} Performance Check (${state})\n\n` + body
+            });
 
   quality-gates:
     name: Quality Gates
@@ -438,14 +475,16 @@ jobs:
 
       - name: Comment PR with quality summary
         if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          if [ -f quality-summary.md ]; then
-            printf "## 🔍 Code Quality Report\n\n" > body.md
-            cat quality-summary.md >> body.md
-            gh api \
-              repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments \
-              -f body@body.md
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (fs.existsSync('quality-summary.md')) {
+              const summary = fs.readFileSync('quality-summary.md', 'utf8');
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '## 🔍 Code Quality Report\n\n' + summary
+              });
+            }

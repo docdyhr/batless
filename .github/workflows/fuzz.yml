@@ -18,7 +18,7 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust (nightly for fuzzing)
         uses: dtolnay/rust-toolchain@nightly
@@ -37,7 +37,7 @@ jobs:
 
       - name: Archive fuzz artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: fuzz-artifacts
           path: fuzz/artifacts/
@@ -49,7 +49,7 @@ jobs:
     if: always()
     steps:
       - name: Download fuzz artifacts
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        uses: actions/download-artifact@v5
         with:
           name: fuzz-artifacts
           path: fuzz/artifacts/
@@ -74,7 +74,7 @@ jobs:
           cat fuzz-summary.md
       - name: Comment PR with fuzz summary
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');

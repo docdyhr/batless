@@ -32,18 +32,15 @@ jobs:
       version: ${{ steps.prepare.outputs.version }}
       branch: ${{ steps.prepare.outputs.branch }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Prepare release
         id: prepare
-        env:
-          VERSION: ${{ github.event.inputs.version }}
-          CREATE_TAG: ${{ github.event.inputs.create_tag }}
-          DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
+          VERSION="${{ github.event.inputs.version }}"
           TAG="v${VERSION}"
           BRANCH="release/${VERSION}"
 
@@ -55,22 +52,20 @@ jobs:
           echo "- **Version:** ${VERSION}" >> $GITHUB_STEP_SUMMARY
           echo "- **Tag:** ${TAG}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${BRANCH}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Create Tag:** ${CREATE_TAG}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Dry Run:** ${DRY_RUN}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Create Tag:** ${{ github.event.inputs.create_tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Dry Run:** ${{ github.event.inputs.dry_run }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Validate version format
-        env:
-          VERSION: ${{ steps.prepare.outputs.version }}
         run: |
+          VERSION="${{ steps.prepare.outputs.version }}"
           if ! echo "$VERSION" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "::error::Version must be in format X.Y.Z (e.g., 0.1.2)"
             exit 1
           fi
 
       - name: Check if tag exists
-        env:
-          TAG: ${{ steps.prepare.outputs.tag }}
         run: |
+          TAG="${{ steps.prepare.outputs.tag }}"
           if git tag -l | grep -q "^${TAG}$"; then
             echo "::error::Tag ${TAG} already exists"
             exit 1
@@ -78,16 +73,14 @@ jobs:
 
       - name: Create release branch
         if: github.event.inputs.dry_run == 'false'
-        env:
-          BRANCH: ${{ steps.prepare.outputs.branch }}
         run: |
+          BRANCH="${{ steps.prepare.outputs.branch }}"
           git checkout -b "${BRANCH}"
 
       - name: Update version in Cargo.toml
         if: github.event.inputs.dry_run == 'false'
-        env:
-          VERSION: ${{ steps.prepare.outputs.version }}
         run: |
+          VERSION="${{ steps.prepare.outputs.version }}"
           sed -i "s/^version = \".*\"/version = \"${VERSION}\"/" Cargo.toml
 
           # Verify the change
@@ -104,9 +97,8 @@ jobs:
 
       - name: Update CHANGELOG.md
         if: github.event.inputs.dry_run == 'false'
-        env:
-          VERSION: ${{ steps.prepare.outputs.version }}
         run: |
+          VERSION="${{ steps.prepare.outputs.version }}"
           TAG="v${VERSION}"
           chmod +x scripts/prep-release-changelog.sh
           # Use git-cliff via helper script to regenerate full CHANGELOG with new tag section
@@ -118,10 +110,10 @@ jobs:
 
       - name: Commit version changes
         if: github.event.inputs.dry_run == 'false'
-        env:
-          VERSION: ${{ steps.prepare.outputs.version }}
-          BRANCH: ${{ steps.prepare.outputs.branch }}
         run: |
+          VERSION="${{ steps.prepare.outputs.version }}"
+          BRANCH="${{ steps.prepare.outputs.branch }}"
+
           git config user.name "Release Bot"
           git config user.email "release-bot@github.com"
 
@@ -133,10 +125,11 @@ jobs:
         if: github.event.inputs.dry_run == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.prepare.outputs.version }}
-          TAG: ${{ steps.prepare.outputs.tag }}
-          BRANCH: ${{ steps.prepare.outputs.branch }}
         run: |
+          VERSION="${{ steps.prepare.outputs.version }}"
+          TAG="${{ steps.prepare.outputs.tag }}"
+          BRANCH="${{ steps.prepare.outputs.branch }}"
+
           PR_BODY=$(cat << EOF
           ## Release ${VERSION}
 
@@ -179,11 +172,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Dry run summary
-        env:
-          VERSION: ${{ needs.prepare-release.outputs.version }}
-          TAG: ${{ needs.prepare-release.outputs.tag }}
-          BRANCH: ${{ needs.prepare-release.outputs.branch }}
         run: |
+          VERSION="${{ needs.prepare-release.outputs.version }}"
+          TAG="${{ needs.prepare-release.outputs.tag }}"
+          BRANCH="${{ needs.prepare-release.outputs.branch }}"
+
           echo "## 🧪 Dry Run Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${VERSION}" >> $GITHUB_STEP_SUMMARY

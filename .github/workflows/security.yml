@@ -21,15 +21,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
-        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -75,7 +73,7 @@ jobs:
 
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: security-audit-results
           path: audit-results.json
@@ -86,7 +84,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -103,7 +101,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -112,9 +110,7 @@ jobs:
           queries: +security-and-quality
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Build for analysis
         run: cargo build --all-features
@@ -129,7 +125,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Run Semgrep
         uses: semgrep/semgrep-action@v1
@@ -155,12 +151,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Generate SBOM
         continue-on-error: true
@@ -172,7 +166,7 @@ jobs:
 
       - name: Upload SBOM
         if: hashFiles('batless-sbom.json') != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: software-bill-of-materials
           path: batless-sbom.json
@@ -182,12 +176,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Check licenses
         continue-on-error: true
@@ -212,7 +204,7 @@ jobs:
 
       - name: Upload license report
         if: hashFiles('licenses.json') != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@v4
         with:
           name: license-report
           path: licenses.json
