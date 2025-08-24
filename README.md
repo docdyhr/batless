@@ -1,8 +1,31 @@
 # 🦇 batless
 
-Built for automation, AI assistants, and modern CLI workflows — a non-blocking, streaming code viewer.
+<div align="center">
 
-The Ultimate Non-Blocking Code Viewer
+## The Ultimate Non-Blocking Code Viewer
+
+Built for automation, AI assistants, and modern CLI workflows
+
+[![Crates.io](https://img.shields.io/crates/v/batless?logo=rust&logoColor=white)](https://crates.io/crates/batless)
+[![Crates.io Downloads](https://img.shields.io/crates/d/batless?logo=rust&logoColor=white)](https://crates.io/crates/batless)
+[![GitHub Downloads](https://img.shields.io/github/downloads/docdyhr/batless/total?logo=github&logoColor=white)](https://github.com/docdyhr/batless/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?logo=opensource&logoColor=white)](https://opensource.org/licenses/MIT)
+[![GitHub Release](https://img.shields.io/github/v/release/docdyhr/batless?include_prereleases&logo=github&logoColor=white)](https://github.com/docdyhr/batless/releases)
+
+[![CI/CD Pipeline](https://github.com/docdyhr/batless/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/ci.yml)
+[![Security Review](https://github.com/docdyhr/batless/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/security.yml)
+[![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg?logo=codecov&logoColor=white)](https://codecov.io/gh/docdyhr/batless)
+[![Markdown Lint](https://github.com/docdyhr/batless/actions/workflows/markdown-lint.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/markdown-lint.yml)
+[![Changelog Gen](https://github.com/docdyhr/batless/actions/workflows/changelog.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/changelog.yml)
+[![Fuzzing](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml)
+[![Quality Gates](https://github.com/docdyhr/batless/actions/workflows/quality.yml/badge.svg)](https://github.com/docdyhr/batless/actions/workflows/quality.yml)
+
+[![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust&logoColor=white)](https://github.com/docdyhr/batless)
+[![Security Tests](https://img.shields.io/badge/security%20tests-passing-brightgreen?logo=shield&logoColor=white)](https://github.com/docdyhr/batless)
+[![Performance](https://img.shields.io/badge/startup-<5ms*-brightgreen?logo=speedtest&logoColor=white)](https://github.com/docdyhr/batless)
+[![Binary Size](https://img.shields.io/badge/binary%20size-~2MB-blue?logo=filetype&logoColor=white)](https://github.com/docdyhr/batless)
+
+</div>
 
 ## 🎯 Why batless?
 
