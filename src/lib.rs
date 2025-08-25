@@ -16,6 +16,9 @@ pub mod streaming;
 pub mod summarizer;
 pub mod token_counter;
 pub mod tokenizer;
+
+// Re-export for fuzzing and external use
+pub use tokenizer::TokenExtractor;
 pub mod wizard;
 
 // Re-export commonly used types

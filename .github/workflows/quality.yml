@@ -82,7 +82,15 @@ jobs:
           key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
+        run: |
+          # Try installation with retry logic
+          for i in {1..3}; do
+            if cargo install cargo-llvm-cov; then
+              break
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 5
+          done
 
       - name: Generate coverage report
         run: |
