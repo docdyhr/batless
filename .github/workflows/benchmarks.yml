@@ -262,7 +262,7 @@ jobs:
           EOF
 
           # Large file (100KB) - repeat medium content
-          for i in {1..10}; do
+          for i in $(seq 1 10); do
               cat benchmark_files/medium.rs >> benchmark_files/large.rs
           done
 
@@ -376,9 +376,9 @@ jobs:
           # Test memory usage with different file sizes
           for size in 1KB 10KB 100KB 1MB; do
             case $size in
-              1KB) head -c 1024 large_test.txt > test_$size.txt ;;
-              10KB) head -c 10240 large_test.txt > test_$size.txt ;;
-              100KB) head -c 102400 large_test.txt > test_$size.txt ;;
+              1KB) dd if=large_test.txt of=test_$size.txt bs=1024 count=1 2>/dev/null ;;
+              10KB) dd if=large_test.txt of=test_$size.txt bs=1024 count=10 2>/dev/null ;;
+              100KB) dd if=large_test.txt of=test_$size.txt bs=1024 count=100 2>/dev/null ;;
               1MB) cp large_test.txt test_$size.txt ;;
             esac
 

@@ -214,8 +214,8 @@ jobs:
       - name: Test large file handling
         shell: ${{ matrix.shell }}
         run: |
-          # Create a moderately large file
-          for i in {1..1000}; do echo "line $i with some content"; done > large_test.txt
+          # Create a moderately large file (cross-platform compatible)
+          python3 -c "for i in range(1000): print(f'line {i+1} with some content')" > large_test.txt
           
           # Test with various limits
           ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-lines=100 --mode=plain > /dev/null
@@ -224,10 +224,14 @@ jobs:
       - name: Test error handling
         shell: ${{ matrix.shell }}
         run: |
-          # Test non-existent file
-          set +e  # Don't fail on expected errors
-          ./target/release/batless${{ matrix.binary_extension }} nonexistent.txt 2>&1 | grep -i "error" || echo "Error handling test passed"
-          set -e
+          # Test non-existent file (cross-platform compatible)
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            ./target/release/batless${{ matrix.binary_extension }} nonexistent.txt 2>&1 | findstr /i "error" || echo "Error handling test passed"
+          else
+            set +e  # Don't fail on expected errors
+            ./target/release/batless${{ matrix.binary_extension }} nonexistent.txt 2>&1 | grep -i "error" || echo "Error handling test passed"
+            set -e
+          fi
 
   integration-validation:
     name: Integration Validation

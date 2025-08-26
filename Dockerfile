@@ -25,8 +25,8 @@ COPY benches ./benches
 COPY README.md ./
 
 # Build the application using native target (musl is already the default in Alpine)
-# Add verbose output and timeout for better debugging
-RUN timeout 600 cargo build --release --verbose || (echo "Build failed - checking disk space:" && df -h && echo "Memory usage:" && free -h && exit 1)
+# ARM64 builds need longer timeout due to slower compilation
+RUN timeout 1200 cargo build --release --verbose || (echo "Build failed - checking disk space:" && df -h && echo "Memory usage:" && free -h && echo "Architecture: $(uname -m)" && exit 1)
 
 # Stage 2: Runtime
 FROM alpine:3.18 AS runtime
