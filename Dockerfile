@@ -13,14 +13,20 @@ ENV RUSTONIG_SYSTEM_LIBONIG=1
 # Create app directory
 WORKDIR /app
 
-# Copy all source files
+# Copy dependency manifests first for better caching
 COPY Cargo.toml Cargo.lock ./
+
+# Copy build script if exists
+COPY build.rs ./
+
+# Copy source files
 COPY src ./src
 COPY benches ./benches
 COPY README.md ./
 
 # Build the application using native target (musl is already the default in Alpine)
-RUN cargo build --release
+# Add verbose output and timeout for better debugging
+RUN timeout 600 cargo build --release --verbose || (echo "Build failed - checking disk space:" && df -h && echo "Memory usage:" && free -h && exit 1)
 
 # Stage 2: Runtime
 FROM alpine:3.18 AS runtime

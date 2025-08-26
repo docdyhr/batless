@@ -75,15 +75,22 @@ jobs:
       - name: Comment PR with fuzz summary
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
+        continue-on-error: true
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             if (fs.existsSync('fuzz-summary.md')) {
               const body = fs.readFileSync('fuzz-summary.md', 'utf8');
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: '## 🧪 Fuzzing Report\n\n' + body
-              });
+              try {
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: '## 🧪 Fuzzing Report\n\n' + body
+                });
+              } catch (error) {
+                console.log('Failed to comment on PR:', error.message);
+                console.log('Fuzzing summary:', body);
+              }
             }
