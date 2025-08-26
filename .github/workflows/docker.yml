@@ -57,7 +57,8 @@ jobs:
             echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
             echo "push=false" >> $GITHUB_OUTPUT
           else
-            echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
+            # ARM64 builds are handled by separate workflow for better performance
+            echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
             echo "push=true" >> $GITHUB_OUTPUT
           fi
 

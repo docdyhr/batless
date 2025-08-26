@@ -3,11 +3,22 @@ name: Performance Benchmarks
 on:
   push:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'benches/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'benches/**'
   schedule:
     # Run benchmarks weekly to track performance over time
     - cron: "0 4 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
