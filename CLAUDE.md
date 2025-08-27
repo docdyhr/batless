@@ -1,203 +1,222 @@
-# CLAUDE.md
+# batless Protocol for AI Assistants
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Overview
 
-## Project Overview
+batless is a non-blocking code viewer designed for automation and AI workflows. Unlike `bat`, it NEVER uses a pager and NEVER blocks waiting for user input.
 
-batless is a Rust-based CLI tool designed as a non-blocking, AI-friendly code viewer and cat replacement. It's inspired by `bat` but optimized for AI code assistants, CI/CD pipelines, and non-interactive workflows. The tool never hangs or blocks, making it ideal for automation.
+## Core Commands
 
-**Latest Release**: v0.2.2 (August 3, 2025)
-
-- ✅ Complete cat replacement functionality with `-n/--number` and `-b/--number-nonblank` flags
-- ✅ Exact compatibility with system cat line numbering format (6-character right-aligned + tab)
-- ✅ Perfect newline handling to match cat/less output exactly
-- ✅ All 201 tests passing (162 unit + 33 integration + 6 property)
-
-### Key Cat Replacement Features
-
-- `batless file.txt -n`: Line numbering for all lines (exact `cat -n` compatibility)
-- `batless file.txt -b`: Number only non-blank lines (exact `cat -b` compatibility)
-- `batless file.txt --plain`: Plain text output for perfect cat replacement
-- Perfect for AI workflows: `PAGER="batless --plain" gh pr view`
-
-## Development Commands
-
-### Build and Test
+### Basic File Viewing
 
 ```bash
-cargo build                          # Debug build
-cargo build --release               # Release build
-cargo test                          # Run all tests
-cargo test --test integration_tests # Run integration tests only
-cargo test test_name                # Run specific test
+# View file with syntax highlighting
+batless file.py
+
+# Plain text output (no colors)
+batless --mode=plain file.py
+batless --plain file.py  # short form
+
+# JSON output for structured processing
+batless --mode=json file.py
+
+# Summary mode (extracts key code structures)
+batless --mode=summary file.py
 ```
 
-### Code Quality
+### Output Limiting
 
 ```bash
-cargo clippy -- -D warnings         # Linting with warnings as errors
-cargo fmt --all -- --check          # Check formatting
-cargo fmt                           # Format code
-cargo audit                         # Security vulnerability audit
+# Limit output by lines
+batless --max-lines=50 file.py
+
+# Limit output by bytes
+batless --max-bytes=1024 file.py
+
+# Combine limits (both apply)
+batless --max-lines=100 --max-bytes=5000 file.py
 ```
 
-### Running the Tool
+### AI-Optimized Features
 
 ```bash
-cargo run -- file.rs                # Run in debug mode
-cargo run --release -- file.rs      # Run in release mode
-./target/debug/batless file.rs      # Run debug binary directly
-./demo.sh                           # Run demo script
+# Use built-in AI profiles
+batless --profile=claude file.py      # Claude-optimized
+batless --profile=copilot file.py     # GitHub Copilot
+batless --profile=chatgpt file.py     # ChatGPT
+
+# Include token counts in JSON
+batless --mode=json --include-tokens file.py
+
+# Get both summary and full content
+batless --mode=json --summary file.py
 ```
 
-## 🚀 Release Process
-
-### Automated Release (Recommended)
+### Language & Themes
 
 ```bash
-# Install required tools
-cargo install cargo-release
+# Force specific language
+batless --language=python unknown.file
 
-# Set crates.io token (one-time setup)
-export CARGO_REGISTRY_TOKEN="your-token-here"
+# Change color theme
+batless --theme="Solarized (dark)" file.py
 
-# Full automated release
-./scripts/release.sh 0.2.2
-
-# Or use cargo-release directly
-cargo release 0.2.2 --execute
+# List available options
+batless --list-languages
+batless --list-themes
 ```
 
-### Manual/Emergency Release
-
-If the automated process fails:
+### Line Numbers (Cat Compatibility)
 
 ```bash
-# 1. Publish to crates.io
-cargo release publish --execute
+# Show line numbers (like cat -n)
+batless -n file.py
+batless --number file.py
 
-# 2. Create GitHub release
-git tag v0.2.2 -m "Release message"
-git push origin v0.2.2
-gh release create v0.2.2 --title "Release Title" --notes "Release notes"
-
-# 3. Verify publication
-curl -s "https://crates.io/api/v1/crates/batless" | jq -r '.crate.max_version'
-curl -s "https://api.github.com/repos/docdyhr/batless/releases/latest" | jq -r '.tag_name'
+# Number non-blank lines only (like cat -b)
+batless -b file.py
+batless --number-nonblank file.py
 ```
 
-### Release Checklist
-
-- [ ] All tests passing (201 tests: 162 unit + 33 integration + 6 property)
-- [ ] Version updated in Cargo.toml
-- [ ] CHANGELOG.md updated with release notes
-- [ ] Run pre-release checks: `./scripts/pre-release-check.sh`
-- [ ] Check version synchronization: `./scripts/version-status.sh`
-- [ ] Published to crates.io
-- [ ] GitHub release created with proper tag
-- [ ] Homebrew formula updated (automatic via workflow)
-- [ ] Monitor release workflow: `./scripts/release-monitor.sh <workflow_id>`
-
-### Enhanced Release Monitoring (v0.2.2+)
+### Pipeline & PAGER Usage
 
 ```bash
-# Pre-release quality gate
-./scripts/pre-release-check.sh
+# Use as PAGER replacement
+PAGER="batless --plain" gh pr view 42
 
-# Version status tracking
-./scripts/version-status.sh
+# Pipeline input
+echo "code" | batless --language=python
+cat file.py | batless --mode=summary
 
-# Monitor release workflow progress
-./scripts/release-monitor.sh <workflow_run_id>
-
-# Manual release fallback (if automated workflow fails)
-cargo publish                                    # Publish to crates.io
-gh release create v0.2.2 --title "v0.2.2" \    # Create GitHub release
-  --notes "Release notes"
+# Compatible flags (ignored for compatibility)
+batless --plain --unbuffered file.py
 ```
 
-### CI/CD Workflows
+## What batless DOES NOT Do
+
+batless intentionally does NOT provide these features. Use the suggested alternatives:
+
+### Pattern Search
 
 ```bash
-# Manual workflow triggers available:
-gh workflow run workflow-dispatch.yml -f workflow_type=full-test-suite
-gh workflow run workflow-dispatch.yml -f workflow_type=security-audit
-gh workflow run workflow-dispatch.yml -f workflow_type=performance-benchmark
-gh workflow run workflow-dispatch.yml -f workflow_type=quality-check
-gh workflow run workflow-dispatch.yml -f workflow_type=quick-validation
+# WRONG: batless does not search
+# batless --pattern "TODO" src/
 
-# Release workflow (triggered by tags):
-gh workflow run release.yml --ref v0.2.2
+# CORRECT: Use grep
+grep -rn "TODO" src/
 ```
 
-## Architecture
+### Line Range Selection
 
-### Core Components
+```bash
+# WRONG: batless does not support arbitrary ranges
+# batless -r 10:50 file.py
 
-- **main.rs**: CLI entry point using clap for argument parsing
-- **lib.rs**: Core library with streaming file processing, syntax highlighting, and summary extraction
-- **integration_tests.rs**: Comprehensive CLI behavior tests
-
-### Key Design Principles
-
-1. **Streaming Architecture**: Never loads entire files into memory - processes line by line
-2. **Cached Resources**: Uses lazy_static for syntax/theme sets to optimize performance
-3. **Result-Based Error Handling**: All operations return Result types for proper error propagation
-4. **Modular Output Modes**: Cleanly separated plain, highlight, JSON, and summary modes
-
-### Output Modes
-
-- **plain**: Raw text without highlighting (perfect for cat replacement)
-- **highlight**: Syntax-highlighted output (default)
-- **json**: Structured JSON with metadata, optionally includes tokens and summary
-- **summary**: Extracts important code structures (functions, classes, imports)
-
-### Cat Replacement Mode (v0.2.2+)
-
-- **Line numbering**: Use `-n/--number` for all lines or `-b/--number-nonblank` for non-blank lines
-- **Exact compatibility**: 6-character right-aligned line numbers with tab separator
-- **Perfect newlines**: Matches system cat output exactly for shell compatibility
-- **AI integration**: `PAGER="batless --plain" gh api` for seamless tool integration
-
-### Important Implementation Details
-
-- Language detection uses file extensions via syntect's syntax set
-- Smart truncation supports both `--max-lines` and `--max-bytes` limits
-- Summary extraction identifies functions, classes, imports, and type definitions
-- Token extraction uses basic word boundary splitting for AI processing
-- ANSI stripping is automatic in non-terminal environments
-
-## Testing Guidelines
-
-When modifying the codebase:
-
-1. Run the full test suite with `cargo test`
-2. Add integration tests for new CLI features in `tests/integration_tests.rs`
-3. Add unit tests for new library functions in `src/lib.rs`
-4. Ensure all tests pass on CI before considering changes complete
-
-## Development Workflow
-
-### Feature Development
-
-- Use feature branches for changes
-- Implement new features with comprehensive test coverage
-- Ensure clean, modular code following Rust best practices
-
-## Common Tasks
-
-### Adding a New Output Mode
-
-1. Add the variant to `OutputMode` enum in `src/lib.rs`
-2. Update the clap `ValueEnum` implementation
-3. Implement the logic in `process_file()` function
-4. Add integration tests for the new mode
-
-### Updating Dependencies
-
-1. Update version in `Cargo.toml`
-2. Run `cargo update` to update lock file
-3. Run `cargo test` to ensure compatibility
-4. Run `cargo audit` to check for vulnerabilities
-
+# CORRECT: Use sed or head/tail
+sed -n '10,50p' file.py
+head -50 file.py | tail -41
 ```
+
+### File Globbing/Listing
+
+```bash
+# WRONG: batless does not list files
+# batless --list *.py
+
+# CORRECT: Use shell expansion or find
+batless *.py  # Shell expands the glob
+find . -name "*.py" -exec batless {} \;
+```
+
+### Interactive Features
+
+```bash
+# batless NEVER provides:
+# - Interactive paging (no less/more behavior)
+# - User prompts or confirmations
+# - Terminal UI elements
+# - Git integration (diffs, blame, etc.)
+```
+
+## JSON Output Schema
+
+```json
+{
+  "file": "path/to/file.py",
+  "language": "Python",
+  "lines": ["line1", "line2", ...],
+  "summary_lines": ["import os", "def main():", ...],
+  "tokens": ["import", "os", "def", "main", ...],
+  "total_lines": 150,
+  "total_bytes": 3420,
+  "truncated": false,
+  "truncated_by_lines": false,
+  "truncated_by_bytes": false,
+  "encoding": "UTF-8",
+  "syntax_errors": [],
+  "mode": "json"
+}
+```
+
+## Error Handling
+
+When batless is not available, use these fallback commands:
+
+```bash
+# Fallback for syntax highlighting
+cat file.py  # or less -R for colors if available
+
+# Fallback for line numbers
+cat -n file.py
+
+# Fallback for limiting output
+head -50 file.py
+
+# Fallback for JSON structure (basic)
+echo "{\"file\": \"$1\", \"content\": \"$(cat $1 | jq -Rs .)\"}"
+```
+
+## Integration Examples
+
+### CI/CD Pipeline
+
+```yaml
+- name: Show code context
+  run: batless --mode=summary --max-lines=100 src/main.py
+```
+
+### AI Context Building
+
+```bash
+# Get structured data for AI processing
+batless --mode=json --include-tokens --max-lines=500 complex.py | \
+  jq '{file, language, summary_lines, total_lines}'
+```
+
+### Automated Code Review
+
+```bash
+# Extract code structure for analysis
+for file in $(git diff --name-only); do
+  batless --mode=summary --max-lines=50 "$file"
+done
+```
+
+## Version Information
+
+```bash
+# Human-readable version
+batless --version
+
+# Machine-readable version (JSON)
+batless --version-json
+```
+
+## Philosophy
+
+batless is designed to be:
+
+- **Non-blocking**: Never waits for user input
+- **Predictable**: Same output whether in terminal or pipe
+- **Minimal**: No decorations by default (unless explicitly requested)
+- **Streaming**: Memory-efficient for large files
+- **Automation-first**: Built for scripts and AI, not interactive use

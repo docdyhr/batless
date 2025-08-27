@@ -1,4 +1,4 @@
-//! Token extraction functionality for batless
+//! Semantic token extraction from source code for AI analysis
 //!
 //! This module provides token extraction from source code for AI processing
 //! and analysis. It supports multiple tokenization strategies and can be

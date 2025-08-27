@@ -1,0 +1,276 @@
+name: Performance Management
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'benches/**'
+      - 'scripts/check_performance.sh'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'Cargo.toml' 
+      - 'Cargo.lock'
+      - 'benches/**'
+  schedule:
+    # Run weekly performance tracking
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update performance baseline'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    outputs:
+      pr-comment: ${{ steps.benchmark.outputs.comment }}
+      baseline-updated: ${{ steps.baseline.outputs.updated }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain  
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-benchmark-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install hyperfine for benchmarking
+        run: |
+          curl -Lo hyperfine.deb https://github.com/sharkdp/hyperfine/releases/latest/download/hyperfine_1.18.0_amd64.deb
+          sudo dpkg -i hyperfine.deb
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Create benchmark files
+        run: |
+          mkdir -p benchmark_files
+          # Small file (< 1KB)
+          cat > benchmark_files/small.rs << 'EOF'
+          fn main() {
+              println!("Hello, world!");
+          }
+          EOF
+          
+          # Medium file (~ 10KB)
+          cat > benchmark_files/medium.rs << 'EOF'
+          // Large Rust file for benchmarking
+          use std::collections::HashMap;
+          use std::fs;
+          use std::io::{self, Write};
+          
+          pub struct DataProcessor {
+              data: HashMap<String, Vec<u8>>,
+              config: ProcessorConfig,
+          }
+          
+          pub struct ProcessorConfig {
+              batch_size: usize,
+              compression: bool,
+              parallel: bool,
+          }
+          
+          impl DataProcessor {
+              pub fn new(config: ProcessorConfig) -> Self {
+                  Self {
+                      data: HashMap::new(),
+                      config,
+                  }
+              }
+              
+              pub fn process_file(&mut self, path: &str) -> io::Result<()> {
+                  let content = fs::read(path)?;
+                  self.data.insert(path.to_string(), content);
+                  Ok(())
+              }
+              
+              pub fn batch_process(&mut self, paths: Vec<&str>) -> io::Result<Vec<String>> {
+                  let mut results = Vec::new();
+                  
+                  for path in paths {
+                      match self.process_file(path) {
+                          Ok(_) => results.push(format!("Processed: {}", path)),
+                          Err(e) => results.push(format!("Error {}: {}", path, e)),
+                      }
+                  }
+                  
+                  Ok(results)
+              }
+              
+              pub fn export_data(&self, format: &str) -> String {
+                  match format {
+                      "json" => self.to_json(),
+                      "csv" => self.to_csv(),
+                      _ => "Unsupported format".to_string(),
+                  }
+              }
+              
+              fn to_json(&self) -> String {
+                  // Simplified JSON export
+                  let mut json = String::from("{\n");
+                  for (key, value) in &self.data {
+                      json.push_str(&format!("  \"{}\": {},\n", key, value.len()));
+                  }
+                  json.push_str("}");
+                  json
+              }
+              
+              fn to_csv(&self) -> String {
+                  let mut csv = String::from("file,size\n");
+                  for (key, value) in &self.data {
+                      csv.push_str(&format!("{},{}\n", key, value.len()));
+                  }
+                  csv
+              }
+          }
+          
+          fn main() {
+              let config = ProcessorConfig {
+                  batch_size: 1000,
+                  compression: true,
+                  parallel: false,
+              };
+              
+              let mut processor = DataProcessor::new(config);
+              println!("Data processor initialized");
+          }
+          EOF
+
+      - name: Run comprehensive benchmarks
+        id: benchmark
+        run: |
+          echo "Running performance benchmarks..."
+          
+          # Benchmark different modes
+          echo "## Performance Benchmark Results" > benchmark_results.md
+          echo "" >> benchmark_results.md
+          
+          # Plain mode benchmark
+          echo "### Plain Mode" >> benchmark_results.md
+          hyperfine --warmup 3 --runs 10 \
+            './target/release/batless benchmark_files/medium.rs --mode=plain' \
+            --export-markdown plain_bench.md
+          cat plain_bench.md >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          
+          # Highlight mode benchmark  
+          echo "### Highlight Mode" >> benchmark_results.md
+          hyperfine --warmup 3 --runs 10 \
+            './target/release/batless benchmark_files/medium.rs --mode=highlight' \
+            --export-markdown highlight_bench.md
+          cat highlight_bench.md >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          
+          # JSON mode benchmark
+          echo "### JSON Mode" >> benchmark_results.md
+          hyperfine --warmup 3 --runs 10 \
+            './target/release/batless benchmark_files/medium.rs --mode=json' \
+            --export-markdown json_bench.md
+          cat json_bench.md >> benchmark_results.md
+          echo "" >> benchmark_results.md
+          
+          # Summary mode benchmark
+          echo "### Summary Mode" >> benchmark_results.md
+          hyperfine --warmup 3 --runs 10 \
+            './target/release/batless benchmark_files/medium.rs --mode=summary' \
+            --export-markdown summary_bench.md
+          cat summary_bench.md >> benchmark_results.md
+          
+          # Save results as multiline output
+          {
+            echo 'comment<<EOF'
+            cat benchmark_results.md
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Performance regression check
+        if: github.event_name == 'pull_request'
+        run: |
+          # Run performance check script if it exists
+          if [ -f "scripts/check_performance.sh" ]; then
+            echo "Running performance regression check..."
+            bash scripts/check_performance.sh
+          else
+            echo "No performance check script found, skipping regression check"
+          fi
+
+      - name: Update performance baseline
+        id: baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event.inputs.update_baseline == 'true'
+        run: |
+          echo "Updating performance baseline..."
+          mkdir -p .github/performance
+          
+          # Save current benchmark results as new baseline
+          cp benchmark_results.md .github/performance/baseline.md
+          echo "updated=true" >> $GITHUB_OUTPUT
+          
+          # If we have git changes, commit them
+          if ! git diff --quiet .github/performance/; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add .github/performance/
+            git commit -m "Update performance baseline [skip ci]"
+            git push
+          fi
+
+  comment-pr:
+    name: Comment on PR
+    if: github.event_name == 'pull_request' && needs.benchmark.outputs.pr-comment
+    needs: benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{ needs.benchmark.outputs.pr-comment }}`
+            })
+
+  create-issue:
+    name: Create Performance Issue
+    if: failure() && (github.event_name == 'schedule' || github.event_name == 'push')
+    needs: benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue on performance failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Performance Regression Detected',
+              body: 'Automated performance testing has detected a potential regression. Please investigate.',
+              labels: ['performance', 'bug']
+            })

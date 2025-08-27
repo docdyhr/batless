@@ -9,7 +9,7 @@ use crate::error::{BatlessError, BatlessResult};
 use crate::file_info::FileInfo;
 use crate::language::LanguageDetector;
 use crate::summarizer::SummaryExtractor;
-use crate::tokenizer::TokenExtractor;
+use crate::tokens::TokenExtractor;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;

@@ -1,12 +1,8 @@
-//! Token counting for AI models
+//! AI model token counting and context window management
 //!
-//! This module provides token estimation for different AI models like GPT-4, Claude, etc.
-//! Token counting is approximate and based on common patterns used by these models.
-
-//! Token counting functionality for AI model context estimation
-//!
-//! This module provides token counting capabilities for various AI models,
+//! This module provides token estimation capabilities for various AI models,
 //! allowing users to estimate how much content will fit within model context windows.
+
 use serde::{Deserialize, Serialize};
 
 /// Supported AI models for token counting
@@ -534,12 +530,6 @@ mod tests {
         // (not exact since it's using sampling)
         let expected_words = large_text.split_whitespace().count();
         let word_ratio = count.words as f64 / expected_words as f64;
-
-        // Debug output for troubleshooting
-        println!(
-            "Expected words: {}, Estimated words: {}, Ratio: {:.2}",
-            expected_words, count.words, word_ratio
-        );
 
         // More lenient range for sampling-based estimation
         assert!(word_ratio > 0.5 && word_ratio < 2.0,

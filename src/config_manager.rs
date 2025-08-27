@@ -4,7 +4,7 @@
 use crate::config::{BatlessConfig, CustomProfile, SummaryLevel};
 use crate::error::{BatlessError, BatlessResult};
 use crate::formatter::OutputMode;
-use crate::token_counter::AiModel;
+use crate::tokens::AiModel;
 use clap::{Parser, ValueEnum};
 use is_terminal::IsTerminal;
 use std::str::FromStr;

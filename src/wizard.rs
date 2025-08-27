@@ -6,7 +6,7 @@
 use crate::config::{CustomProfile, SummaryLevel};
 use crate::error::{BatlessError, BatlessResult};
 use crate::language::LanguageDetector;
-use crate::token_counter::AiModel;
+use crate::tokens::AiModel;
 use std::io::{self, Write};
 
 /// Interactive configuration wizard

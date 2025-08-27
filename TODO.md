@@ -1,7 +1,10 @@
-# 📋**Last Updated**: December 19, 2024
+
+# 📋 **Last Updated**: December 19, 2024
 
 **Current Version**: v0.2.5 (Released – December 19, 2024)
+
 **Latest Release**: v0.2.5 (December 19, 2024)
+
 **Next Target**: v0.3.0 (plugin architecture)
 
 **🚀 Current Status**: v0.2.5 shipped! Now implementing v0.3.0 WASM plugin architecture.
@@ -11,6 +14,7 @@
 ## ✅ v0.2.5 – Line Range Selection (Released December 19, 2024)
 
 **Released**: December 19, 2024
+
 **Features Delivered**:
 
 - `--lines=START:END` flag for line range selection
@@ -24,6 +28,7 @@
 ## 🎯 v0.3.0 - Plugin Architecture (In Development)
 
 **Target**: January 2025
+
 **Focus**: WASM-based plugin system for extensibility
 
 ### Design Decisions
@@ -473,9 +478,9 @@ All v0.2.1 features have been successfully delivered and are available in the re
 
 *This TODO list is a living document that evolves with the project. All contributors should keep this updated as tasks are completed or priorities change.*
 
-# TODO: Address CLI Documentation Mismatch
+## TODO: Address CLI Documentation Mismatch
 
-# ✅ CLI Documentation Mismatch - COMPLETED August 15, 2025
+## ✅ CLI Documentation Mismatch - COMPLETED August 15, 2025
 
 ## ✅ Immediate Actions (Completed August 15, 2025)
 

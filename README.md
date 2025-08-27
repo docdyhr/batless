@@ -149,1098 +149,2804 @@ batless --version-json
 - 📦 **Single ~2MB binary** with minimal dependencies
 - 🚀 **Sub-50ms startup** with cached syntax definitions
 
-## ⚡ Installation Options
+## 🚫 What batless is NOT
 
-### GitHub Releases (Recommended)
+**batless** has a focused design philosophy. It intentionally does NOT provide:
 
-Download pre-compiled binaries for your platform:
+### Features We Don't Implement (By Design)
 
-```bash
-# macOS/Linux - download and extract latest release
-curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.1-x86_64-apple-darwin.tar.gz | tar xz
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
 
-# Or use wget
-wget https://github.com/docdyhr/batless/releases/latest/download/batless-0.1.1-x86_64-unknown-linux-gnu.tar.gz
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
 ```
 
-Available builds:
+## 🚀 Quick Start
 
-- **Linux**: `x86_64-unknown-linux-gnu`, `x86_64-unknown-linux-musl`, `aarch64-unknown-linux-gnu`
-- **macOS**: `x86_64-apple-darwin` (Intel), `aarch64-apple-darwin` (Apple Silicon)
-- **Windows**: `x86_64-pc-windows-msvc`
+Get up and running in **under 2 minutes**:
 
-### Homebrew (macOS/Linux)
+### Prerequisites
 
-```bash
-# Add the tap (one-time setup)
-brew tap docdyhr/batless
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
 
-# Install batless
-brew install batless
+### 3-Step Setup
 
-# Or install directly without adding tap
-brew install docdyhr/batless/batless
-```
-
-**Homebrew Tap Repository**: [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
-
-### From Crates.io
+#### 1️⃣ Install batless (Choose One)
 
 ```bash
-# Install the latest version:
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
 cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
 ```
 
-### Docker (Containerized Environments)
-
-```bash
-# Quick syntax highlighting in any environment
-docker run --rm -v $(pwd):/workspace ghcr.io/docdyhr/batless:latest /workspace/src/main.rs
-
-# JSON output for CI/CD pipelines
-docker run --rm -v $(pwd):/workspace ghcr.io/docdyhr/batless:latest --mode=json /workspace/src/main.rs
-
-# Summary mode for AI code analysis
-docker run --rm -v $(pwd):/workspace ghcr.io/docdyhr/batless:latest --mode=summary /workspace/src/
-```
-
-### From Source
-
-```bash
-git clone https://github.com/docdyhr/batless.git
-cd batless
-cargo build --release
-```
-
-## 🍺 Homebrew Tap
-
-The [docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless) tap provides the official Homebrew formula for `batless`.
-
-### Features
-
-- ✅ **Automatically updated** with every release
-- ✅ **Comprehensive testing** included in formula
-- ✅ **Cross-platform** support (macOS & Linux)
-- ✅ **Zero maintenance** - formula stays in sync with releases
-
-### Installation Commands
-
-```bash
-# Method 1: Add tap first (recommended)
-brew tap docdyhr/batless
-brew install batless
-
-# Method 2: Direct install
-brew install docdyhr/batless/batless
-
-# Upgrade to latest version
-brew upgrade batless
-```
-
-The formula automatically compiles from source using Rust, ensuring optimal performance for your system.
-
-## 🎯 Real-World Use Cases
-
-### 🤖 AI Assistant Integration
-
-> **📖 [Complete AI & Editor Integration Guide](docs/AI_EDITOR_INTEGRATION.md)** - Comprehensive setup for Zed, VS Code, and GitHub CLI
-
-**Quick Examples:**
-
-```bash
-# Use built-in AI profiles for optimal results
-batless --profile=claude file.rs        # Claude-optimized summary mode
-batless --profile=copilot file.rs       # GitHub Copilot JSON + tokens
-batless --profile=chatgpt file.rs       # ChatGPT optimized output
-
-# Smart GitHub CLI integration
-export GH_PAGER="batless --plain --max-lines=500 --summary-level=standard"
-gh pr view 42  # Perfect for AI analysis
-```
-
-**Advanced AI Workflows:**
-
-```bash
-# Context-aware fitting for AI models
-batless --fit-context --ai-model=claude35-sonnet large-file.py
-
-# Token counting for context planning
-batless --count-tokens --ai-model=gpt4 file.rs
-
-# Multi-file AI context building
-find src/ -name "*.rs" | head -5 | xargs batless --profile=claude
-```
-
-### 🔄 CI/CD Pipeline Integration
-
-**GitHub Actions Example:**
-
-```yaml
-- name: Show failing test context
-  run: |
-    batless --mode=summary --max-lines=100 tests/failing_test.rs
-
-- name: Extract code metrics
-  run: |
-    batless --mode=json src/main.rs | jq '.total_lines'
-```
-
-**Jenkins Pipeline:**
-
-```groovy
-stage('Code Analysis') {
-    steps {
-        sh 'batless --mode=json --summary src/ | jq ".summary_lines | length"'
-    }
-}
-```
-
-**GitLab CI:**
-
-```yaml
-code_review:
-  script:
-    - batless --color=never --max-lines=50 src/main.rs
-    - batless --mode=summary --max-lines=100 tests/
-```
-
-### 🛠️ Development Workflows
-
-**Code Review Automation:**
-
-```bash
-# Show changed files without paging
-git diff --name-only | xargs batless --mode=summary
-
-# Generate PR context for AI review
-batless --mode=json --include-tokens changed-files.rs
-
-# Quick file preview in terminal
-batless --max-lines=30 --theme="InspiredGitHub" src/new-feature.rs
-```
-
-**Documentation Generation:**
-
-```bash
-# Extract code structure for docs
-batless --mode=summary src/ > code-structure.md
-
-# Generate API documentation context
-batless --mode=json --summary src/api.rs | jq '.summary_lines[]'
-
-# Create code snippets for tutorials
-batless --max-lines=20 examples/hello-world.rs
-```
-
-### 📊 Performance Monitoring
-
-**Build System Integration:**
-
-```bash
-# Show code during build failures (non-blocking)
-batless --color=never --max-lines=30 failing-test.js
-
-# Get code summary for automated analysis
-batless --mode=summary --color=never failing-module.py
-
-# Extract enhanced metadata for build systems
-batless --mode=json src/main.rs | jq '{language, encoding, total_lines, truncated}'
-```
-
-**Large File Processing:**
-
-```bash
-# Process huge files without memory issues
-batless --max-bytes=1048576 --mode=summary huge-log-file.txt
-
-# Stream first 1000 lines of large dataset
-batless --max-lines=1000 --mode=plain data/large-dataset.csv
-
-# Extract key information from massive JSON
-batless --max-bytes=500000 --mode=json config/large-config.json
-```
-
-## 📖 Usage
-
-### Version Metadata (`--version-json`)
-
-Machine-readable build metadata for scripting, telemetry, reproducibility & SBOM enrichment:
-
-```bash
-batless --version-json
-```
-
-Example output:
-
-```json
-{
-  "name": "batless",
-  "version": "0.2.4",
-  "git_hash": "abc1234",
-  "build_timestamp": "2025-08-15T12:34:56Z",
-  "authors": "Thomas <thomas@docdyhr.com>"
-}
-```
-
-Field reference:
-
-- name – Crate/binary identifier
-- version – Semantic version
-- git_hash – Commit hash embedded at build ("unknown" if not provided)
-- build_timestamp – UTC ISO 8601 timestamp ("unknown" if not injected)
-- authors – Cargo package authors string
-
-Build script injects `BATLESS_GIT_HASH` and `BATLESS_BUILD_TIMESTAMP` for release artifacts.
-
-> *Performance note: <5ms reflects median cold start across local Apple Silicon & GitHub macOS runners per `PERFORMANCE_REPORT.md`. Conservative claim leaves room for variance; earlier <50ms badge updated for precision.*
-
-### Basic Usage
+#### 2️⃣ Test Your Installation
 
 ```bash
 # View a file with syntax highlighting
 batless src/main.rs
 
-# Plain text output (no colors)
-batless --mode=plain src/main.rs
-
-# JSON output for parsing
-batless --mode=json src/main.rs
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
 ```
 
-### PAGER Compatibility
-
-**🔧 Use as PAGER replacement** - Perfect for tools like GitHub CLI:
+#### 3️⃣ Integrate with Your Workflow
 
 ```bash
-# GitHub CLI integration
-PAGER="batless --plain" gh pr view 46
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
 
-# General PAGER replacement
-export PAGER="batless --plain"
-
-# Pipeline input support
-echo "Sample content" | batless --plain
-
-# Compatible flags (ignored for compatibility)
-batless --plain --unbuffered --number file.txt
-```
-
-**Key PAGER features:**
-
-- ✅ `--plain` flag for plain text output (no colors/decorations)
-- ✅ stdin support for pipeline input
-- ✅ Compatible with existing PAGER workflows
-- ✅ Gracefully ignores common PAGER flags (`--unbuffered`, `--number`)
-
-### Limiting Output
-
-```bash
-# Limit to first 50 lines
-batless --max-lines=50 large-file.py
-
-# Limit to first 1KB
-batless --max-bytes=1024 data.json
-
-# Combine limits
-batless --max-lines=100 --max-bytes=5000 file.txt
-```
-
-### Language and Syntax
-
-```bash
-# Auto-detect language (default)
-batless script.py
-
-# Force specific language
-batless --language=python unknown-extension
-
-# List supported languages
-batless --language=help
-```
-
-### Color and Themes
-
-```bash
-# Control color output
-batless --color=always file.rs    # Force colors
-batless --color=never file.rs     # No colors
-batless --color=auto file.rs      # Auto-detect terminal
-
-# Choose syntax theme
-batless --theme="Solarized (dark)" file.rs
-batless --theme="InspiredGitHub" file.rs
-
-# List all supported languages and themes
-batless --list-languages
-batless --list-themes
-
-# Strip ANSI codes from output
-batless --strip-ansi file.rs
-```
-
-### Enhanced JSON Mode Examples
-
-```bash
-# Get structured file info with enhanced metadata
-batless --mode=json --max-lines=10 src/main.rs
-
-# Compact vs pretty JSON
-batless --mode=json src/lib.rs               # compact JSON
-batless --mode=json --json-pretty src/lib.rs # pretty-printed JSON
-```
-
-Output:
-
-```json
-{
-  "file": "src/main.rs",
-  "language": "Rust",
-  "lines": ["use std::io;", "// ..."],
-  "total_lines": 10,
-  "total_bytes": 245,
-  "truncated": true,
-  "truncated_by_lines": true,
-  "truncated_by_bytes": false,
-  "encoding": "UTF-8",
-  "syntax_errors": [],
-  "mode": "json"
-}
-```
-
-### AI-Friendly Summary Mode
-
-```bash
-# Extract only important code structures (perfect for AI context)
-batless --mode=summary src/main.rs
-
-# Get function signatures, class definitions, imports only
-batless --mode=summary --max-lines=50 complex-file.py
-```
-
-### Advanced JSON with Tokens and Summary
-
-```bash
-# Full AI analysis with tokens and code summary
+# AI assistant context
 batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
 ```
 
-Enhanced output:
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
 
-```json
-{
-  "file": "src/main.rs",
-  "language": "Rust",
-  "lines": ["use std::io;", "fn main() {", "..."],
-  "summary_lines": ["use std::io;", "fn main() {", "pub struct Config {"],
-  "tokens": ["use", "std", "io", "fn", "main", "pub", "struct", "Config"],
-  "total_lines": 150,
-  "total_bytes": 3420,
-  "truncated": false,
-  "encoding": "UTF-8",
-  "mode": "json"
-}
-```
+## 🌟 What Makes batless Special
 
-### Streaming Large Files
+### 🏆 Feature Comparison
 
-For very large files, `batless` offers a streaming JSON mode that processes the file in chunks, ensuring low memory usage regardless of file size.
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
 
-```bash
-# Stream a large file as JSON chunks
-batless --streaming-json --streaming-chunk-size 2000 large_file.log
-```
+### 🚀 Core Capabilities
 
-This command will output a series of JSON objects, each representing a chunk of the file. This is ideal for processing large log files or data sets in automated pipelines without loading the entire file into memory.
+#### Non-Blocking Guarantees
 
-## 🐳 Docker Usage
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
 
-### Container-Based Code Analysis
+#### Syntax & Language Support
 
-```bash
-# Basic syntax highlighting
-docker run --rm -v $(pwd):/workspace \
-  ghcr.io/docdyhr/batless:latest /workspace/src/main.rs
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
 
-# JSON output for CI/CD integration
-docker run --rm -v $(pwd):/workspace \
-  ghcr.io/docdyhr/batless:latest --mode=json /workspace/src/main.rs
+#### Smart Output Modes
 
-# AI-friendly summary extraction
-docker run --rm -v $(pwd):/workspace \
-  ghcr.io/docdyhr/batless:latest --mode=summary /workspace/src/
-```
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
 
-### CI/CD Pipeline Integration
+#### Built for Automation
 
-```yaml
-# GitHub Actions example
-- name: Analyze code structure
-  run: |
-    docker run --rm -v ${{ github.workspace }}:/workspace \
-      ghcr.io/docdyhr/batless:latest \
-      --mode=json --max-lines=100 /workspace/src/main.rs | \
-      jq '.summary_lines | length'
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
 
-# GitLab CI example
-analyze_code:
-  image: docker:latest
-  script:
-    - docker run --rm -v $PWD:/workspace
-        ghcr.io/docdyhr/batless:latest
-        --mode=summary /workspace/src/
-```
+## 🚫 What batless is NOT
 
-### Kubernetes Jobs
+**batless** has a focused design philosophy. It intentionally does NOT provide:
 
-```yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: code-analysis
-spec:
-  template:
-    spec:
-      containers:
-      - name: batless
-        image: ghcr.io/docdyhr/batless:latest
-        args: ["--mode=json", "/workspace/src/main.rs"]
-        volumeMounts:
-        - name: source-code
-          mountPath: /workspace
-      volumes:
-      - name: source-code
-        hostPath:
-          path: /path/to/source
-      restartPolicy: Never
-```
+### Features We Don't Implement (By Design)
 
-## 🤖 AI Assistant Integration
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
 
-### Claude Code Assistant
+### Common Misconceptions
 
-```bash
-# Get code structure for AI analysis
-batless --mode=summary --max-lines=50 complex-file.py
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
 
-# Full AI context with summary and tokens
-batless --mode=json --summary --include-tokens --max-lines=100 src/main.rs
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
 
-# List supported languages for analysis
-batless --list-languages | grep -i python
-```
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
 
-### CI/CD Pipelines
+### When NOT to Use batless
 
-```bash
-# Show code during build failures (non-blocking)
-batless --color=never --max-lines=30 failing-test.js
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
 
-# Get code summary for automated analysis
-batless --mode=summary --color=never failing-module.py
-
-# Extract enhanced metadata for build systems
-batless --mode=json src/main.rs | jq '{language, encoding, total_lines, truncated}'
-```
-
-## 🎨 Available Themes
-
-Popular themes include:
-
-- `base16-ocean.dark` (default)
-- `InspiredGitHub`
-- `Solarized (dark)`
-- `Solarized (light)`
-- `Monokai`
-- `1337`
-
-View all available themes:
-
-```bash
-batless --list-themes
-```
-
-## 🗣️ Supported Languages
-
-Support for 100+ languages including:
-
-- Rust, Python, JavaScript, TypeScript
-- C, C++, Java, Go, Swift
-- HTML, CSS, JSON, YAML, TOML
-- Shell, Bash, PowerShell
-- And many more...
-
-View all supported languages:
-
-```bash
-batless --list-languages
-```
-
-## ⚙️ Configuration
-
-`batless` supports flexible configuration through files and command-line arguments, with a clear precedence hierarchy:
-
-**Configuration Precedence** (highest to lowest):
-
-1. Command-line arguments
-2. Project-level config (`.batlessrc`, `batless.toml`)
-3. User home config (`~/.batlessrc`, `~/.config/batless/config.toml`)
-4. System defaults
-
-### Configuration Files
-
-#### TOML Format (Recommended)
-
-Create `batless.toml` in your project root or `~/.config/batless/config.toml`:
-
-```toml
-# Maximum lines to display
-max_lines = 15000
-
-# Maximum bytes to process (optional)
-max_bytes = 1048576  # 1MB
-
-# Override language detection
-language = "rust"
-
-# Theme for syntax highlighting
-theme = "monokai"
-
-# Color output control
-use_color = true
-
-# Strip ANSI escape sequences
-strip_ansi = false
-
-# Include tokens in JSON output
-include_tokens = false
-
-# Enable summary mode by default
-summary_mode = true
-```
-
-#### JSON Format (.batlessrc)
-
-Create `.batlessrc` in your project root or home directory:
-
-```json
-{
-  "max_lines": 8000,
-  "theme": "github",
-  "use_color": true,
-  "summary_mode": false,
-  "include_tokens": true
-}
-```
-
-### Configuration Examples
-
-#### Project-Specific Settings
-
-For a Rust project, create `batless.toml`:
-
-```toml
-# Optimize for Rust development
-max_lines = 20000
-theme = "base16-ocean.dark"
-language = "rust"
-summary_mode = true
-use_color = true
-```
-
-#### AI Assistant Profile
-
-For AI code analysis, create `.batlessrc`:
-
-```json
-{
-  "max_lines": 5000,
-  "theme": "github",
-  "use_color": false,
-  "summary_mode": true,
-  "include_tokens": false
-}
-```
-
-#### CI/CD Pipeline Settings
-
-For automation environments:
-
-```toml
-max_lines = 1000
-use_color = false
-strip_ansi = true
-summary_mode = false
-```
-
-### Custom Config File
-
-Use `--config` to specify a custom configuration file:
-
-```bash
-# Use specific config file
-batless --config my-config.toml src/main.rs
-
-# Override with command line args
-batless --config team-settings.toml --max-lines 500 src/lib.rs
-```
-
-### Configuration Discovery
-
-`batless` automatically searches for config files in this order:
-
-1. **Project level**: `.batlessrc`, `batless.toml`
-2. **User home**: `~/.batlessrc`, `~/.config/batless/config.toml`
-3. **System level**: System config directories
-
-### AI Tool Profiles
-
-Instead of manual configuration, use built-in AI profiles:
-
-```bash
-# Claude-optimized (4K lines, summary mode)
-batless --profile claude src/main.rs
-
-# GitHub Copilot (2K lines, JSON + tokens)
-batless --profile copilot src/main.rs
-
-# ChatGPT-optimized (3K lines, JSON + tokens)
-batless --profile chatgpt src/main.rs
-
-# General AI assistant (5K lines, summary)
-batless --profile assistant src/main.rs
-```
-
-### Custom AI Profiles
-
-For more granular control, you can create your own profiles. For example, create a file named `my-claude-profile.json`:
-
-```json
-{
-  "max_lines": 8000,
-  "summary_level": "detailed",
-  "include_tokens": true,
-  "output_mode": "json"
-}
-```
-
-Then, use it with the `--custom-profile` flag:
-
-```bash
-batless --custom-profile my-claude-profile.json src/main.rs
-```
-
-This allows you to define and reuse complex configurations for different AI models or tasks.
-
-### Validation and Help
-
-`batless` validates all configuration and provides helpful error messages:
-
-```bash
-# Example validation error
-$ batless --max-lines 0 src/main.rs
-Error: max_lines must be greater than 0
-Help: Try using --max-lines with a positive number (e.g., --max-lines 1000)
-```
-
-Common configuration patterns and their use cases are documented in the [project wiki](https://github.com/docdyhr/batless/wiki/Configuration-Examples).
-
-## 🆚 Why batless instead of bat?
-
-### When to use `batless`
-
-- ✅ **CI/CD pipelines** - Guaranteed to never hang waiting for input
-- ✅ **AI assistants** - Clean output with JSON mode and code summaries
-- ✅ **Automation scripts** - Predictable, streaming behavior
-- ✅ **Large file processing** - Memory-efficient streaming architecture
-- ✅ **Headless environments** - No terminal detection or pager issues
-
-### When to use `bat`
-
-- ✅ **Interactive terminal use** - Rich features like paging and git integration
-- ✅ **Human code review** - Line numbers, file headers, and decorations
-- ✅ **Git workflows** - Shows inline diffs and modifications
-- ✅ **Terminal multiplexing** - Full terminal UI features
-
-### Feature Comparison
-
-| Feature | `batless` | `bat` |
-|---------|-----------|-------|
-| **Core Philosophy** | Built for machines | Built for humans |
-| **Blocking behavior** | ✅ **NEVER blocks** | ❌ Uses interactive pager |
-| **Default output** | ✅ Clean, no decorations | ❌ Headers, grids, line numbers |
-| **JSON output** | ✅ First-class with metadata | ❌ Not supported |
-| **Summary mode** | ✅ Extract code structure | ❌ Not supported |
-| **Token extraction** | ✅ For AI processing | ❌ Not supported |
-| **Byte limiting** | ✅ Memory-safe streaming | ❌ Loads entire file |
-| **Binary size** | ✅ ~2MB minimal | ❌ ~10MB with features |
-| **Startup time** | ✅ <5ms typical | ⚠️ ~180ms full init |
-| **Dependencies** | ✅ 9 crates | ❌ 20+ crates |
-| **Git integration** | ❌ No (by design) | ✅ Full support |
-| **Line numbers** | ❌ No (use `cat -n` if needed) | ✅ Configurable |
-| **Interactive paging** | ❌ No (by design) | ✅ Smart pager integration |
-
-## 🧪 Testing & Status
-
-### Current Test Status ✅
-
-- **Main Test Suite**: 100% passed
-- **Integration Tests**: 100% passed
-- **Property-Based Tests**: 100% passed
-- **Security Audit**: Clean
-- **CI/CD Pipeline**: Fully functional
-
-### Test Your Installation
-
-```bash
-# Run the demo script
-./demo.sh
-
-# Test with a sample file
-echo 'fn main() { println!("Hello, World!"); }' | batless --language=rust
-
-# Verify JSON output
-batless --mode=json src/main.rs | jq '.language'
-```
-
-## 🔒 Security Status
-
-### Comprehensive Security Testing
-
-Our security posture is continuously monitored through automated testing and vulnerability scanning:
-
-| **Security Area** | **Status** | **Coverage** |
-|------------------|------------|--------------|
-| **Memory Safety** | ✅ Secure | Rust's memory safety guarantees |
-| **Input Validation** | ✅ Secure | All inputs validated and sanitized |
-| **Dependency Audit** | ✅ Secure | Regular `cargo audit` checks |
-| **Binary Security** | ✅ Secure | Stripped, optimized releases |
-| **Supply Chain** | ✅ Secure | Trusted dependencies only |
-
-### Security Features
-
-- **🛡️ Memory Safety**: Built with Rust for guaranteed memory safety
-- **🔍 Input Validation**: All file paths and parameters validated
-- **📊 Dependency Audit**: Automated vulnerability scanning
-- **🚨 Safe Defaults**: No unsafe operations or external commands
-
-### Security Testing Commands
-
-```bash
-# Security audit
-cargo audit
-
-# Dependency check
-cargo deny check
-
-# Format and lint checks
-cargo fmt --all -- --check
-cargo clippy -- -D warnings
-```
-
-## 🐛 Troubleshooting
-
-### Quick Diagnostics
-
-#### Installation Issues
-
-```bash
-# Verify Rust toolchain
-rustc --version
-cargo --version
-
-# Check binary location
-which batless
-batless --version
-
-# Test basic functionality
-echo "test" | batless --mode=plain
-```
-
-#### Performance Issues
-
-```bash
-# Check syntax cache
-ls ~/.cache/batless/ || ls ~/Library/Caches/batless/
-
-# Benchmark performance
-time batless --mode=summary large-file.rs
-
-# Memory usage monitoring
-/usr/bin/time -v batless large-file.rs
-```
-
-#### Output Format Issues
-
-```bash
-# Test color support
-batless --color=always test-file.rs
-
-# Verify JSON format
-batless --mode=json test-file.rs | jq .
-
-# Check theme availability
-batless --list-themes
-```
-
-### Common Error Solutions
-
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `No such file or directory` | File path incorrect | Verify file path exists |
-| `Permission denied` | File permissions | Check read permissions |
-| `Language not found` | Unknown extension | Use `--language` flag |
-| `JSON parse error` | Invalid JSON output | Check file encoding |
-| `Binary not found` | Installation issue | Reinstall or check PATH |
-
-### Getting Help
-
-#### Self-Diagnostics
-
-```bash
-# Version and build info
-batless --version
-
-# List all supported languages
-batless --list-languages
-
-# List all themes
-batless --list-themes
-
-# Test configuration
-batless --help
-```
-
-#### Community Support
-
-- 🐛 [Report Issues](https://github.com/docdyhr/batless/issues)
-- 💬 [Discussions](https://github.com/docdyhr/batless/discussions)
-- 📚 [Documentation](https://github.com/docdyhr/batless/wiki)
-- 📧 [Contact](mailto:support@docdyhr.com)
-
-## 🛠️ Development
-
-### Running Tests
-
-```bash
-# Run all tests
-cargo test
-
-# Run property-based tests
-cargo test --test property_tests
-
-# Run benchmarks
-cargo bench
-
-# Run security checks
-./scripts/security-check.sh
-```
-
-### Building & Quality Checks
-
-```bash
-# Build release
-cargo build --release
-
-# Comprehensive linting
-cargo clippy --all-targets --all-features -- -D warnings
-
-# Code formatting
-cargo fmt --all -- --check
-
-# Security audit
-cargo audit
-
-# Generate coverage report
-cargo install cargo-llvm-cov
-cargo llvm-cov --html
-```
-
-### Security & Testing
-
-This project maintains high security and quality standards:
-
-- ✅ **90%+ test coverage** with unit, integration, and property-based tests
-- ✅ **Daily security audits** with automated vulnerability scanning
-- ✅ **Fuzz testing** for crash resistance and input validation
-- ✅ **Memory safety** verification with Valgrind
-- ✅ **Supply chain security** with OSSF Scorecard monitoring
-- ✅ **Performance benchmarking** with regression detection
-
-See [SECURITY_TESTING.md](SECURITY_TESTING.md) for detailed security measures.
-
-## 📊 Performance
-
-`batless` is designed for speed and low memory usage:
-
-- **Streaming**: Never loads entire files into memory
-- **Fast startup**: Cached syntax sets and optimized loading
-- **Efficient highlighting**: Pre-loaded syntax and theme sets
-- **Small binary**: ~2MB release build
-- **Memory efficient**: Constant memory usage regardless of file size
-
-Enhanced benchmarks on a 10MB Python file:
+### Our Philosophy
 
 ```text
-batless (optimized): 95ms (streaming + cached)
-batless (summary): 45ms (structure only)
-bat: 180ms (full load)
-cat: 50ms (no highlighting)
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
 ```
 
-## 🤝 Contributing
+## 🚀 Quick Start
 
-Contributions are welcome! Please:
+Get up and running in **under 2 minutes**:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Prerequisites
 
-### Branch Protection & Contributing
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
 
-This repository uses branch protection rules to ensure code quality and security:
+### 3-Step Setup
 
-- **Pull requests required** - No direct commits to `main`
-- **CI/CD checks required** - All tests must pass
-- **GPG signed commits recommended** - For authenticity verification
-
-#### Quick Setup
+#### 1️⃣ Install batless (Choose One)
 
 ```bash
-# Setup branch protection (one-time)
-gh auth login
-./scripts/setup-branch-protection-gh.sh
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
 
-# Verify configuration
-./scripts/verify-protection-gh.sh
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
 ```
 
-#### Development Workflow
+#### 2️⃣ Test Your Installation
 
 ```bash
-# 1. Create feature branch
-git checkout -b feature/my-feature
+# View a file with syntax highlighting
+batless src/main.rs
 
-# 2. Make changes and commit
-git add .
-git commit -m "feat: description"
-
-# 3. Push and create PR
-git push origin feature/my-feature
-gh pr create --title "feat: description"
-
-# 4. Wait for CI, then merge
-gh pr merge --squash
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
 ```
 
-See [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md) for detailed guidance.
-
-### Release Automation
-
-This project features fully automated releases and Homebrew tap updates:
-
-- **Automated Releases**: Every git tag triggers cross-platform binary builds, GitHub releases, and crates.io publishing
-- **Homebrew Integration**: The [homebrew-batless](https://github.com/docdyhr/homebrew-batless) tap automatically updates with each release
-- **Zero Maintenance**: Formula SHA256 hashes and versions are calculated and updated automatically
-
-#### Release Process
+#### 3️⃣ Integrate with Your Workflow
 
 ```bash
-# Create and push a new tag - everything else is automated
-git tag v0.1.6
-git push origin v0.1.6
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
 
-# Automated workflows will:
-# ✅ Build binaries for all platforms
-# ✅ Create GitHub release with assets
-# ✅ Publish to crates.io
-# ✅ Update Homebrew tap with correct SHA256
-# ✅ Users get latest version via all install methods
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
 ```
 
-See [`docs/HOMEBREW_AUTOMATION.md`](docs/HOMEBREW_AUTOMATION.md) for technical details.
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
 
-### Development Setup
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
 
 ```bash
-git clone https://github.com/docdyhr/batless.git
-cd batless
-cargo test
-cargo run -- --help
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
 ```
 
-## 📝 License
+#### 2️⃣ Test Your Installation
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
 
-## 🙏 Acknowledgments
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
 
-Special thanks to:
+#### 3️⃣ Integrate with Your Workflow
 
-- **[sharkdp/bat](https://github.com/sharkdp/bat)** - Inspiration for syntax highlighting excellence
-- **[syntect](https://github.com/trishume/syntect)** - Powerful syntax highlighting engine
-- **Rust Community** - For building amazing tools and ecosystem
-- **AI Assistant Communities** - For driving the need for automation-friendly tools
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
 
-## 📚 Documentation
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
 
-### Getting Started
+# Machine-readable version metadata
+batless --version-json
+```
 
-- **[Quick Start Guide](#-quick-start)** - Get running in 2 minutes
-- **[Installation Guide](#-installation-options)** - All installation methods
-- **[Usage Examples](#-real-world-use-cases)** - Common workflows and patterns
-- **[Troubleshooting](#-troubleshooting)** - Common issues and solutions
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
 
-### Advanced Usage
+## 🌟 What Makes batless Special
 
-- **[🤖 AI & Editor Integration Guide](docs/AI_EDITOR_INTEGRATION.md)** - Complete setup for Zed, VS Code, and GitHub CLI
-- **[Configuration Guide](CLAUDE.md)** - All configuration options and profiles
-- **[AI Integration Examples](#-ai-assistant-integration)** - Claude, ChatGPT, Copilot
-- **[CI/CD Integration](#-cicd-pipeline-integration)** - GitHub Actions, Jenkins, GitLab
-- **[Performance Tuning](#-performance)** - Optimization tips and benchmarks
+### 🏆 Feature Comparison
 
-### Development
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
 
-- **[Contributing Guide](CONTRIBUTING.md)** - Development guidelines and setup
-- **[Architecture Overview](docs/ARCHITECTURE.md)** - Module map, data flow, and extension points
-- **[Performance Guard](docs/PERFORMANCE_GUARD.md)** - Benchmark baseline & regression detection
-- **[Security Guidelines](SECURITY.md)** - Security best practices
-- **[Release Process](RELEASE.md)** - How releases are managed
+### 🚀 Core Capabilities
 
-## 🚀 Next Steps
+#### Non-Blocking Guarantees
 
-**Ready to transform your code viewing experience?**
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
 
-1. **⚡ [Install batless](#-installation-options)** - Choose your preferred method (2 minutes)
-2. **🎯 [Try Real Examples](#-real-world-use-cases)** - See what's possible with your workflow
-3. **🤖 [Integrate with AI](#-ai-assistant-integration)** - Enhance your AI assistant workflows
-4. **💬 [Join Community](https://github.com/docdyhr/batless/discussions)** - Get help and share ideas
+#### Syntax & Language Support
 
----
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
 
-## 🔗 Links & Resources
+#### Smart Output Modes
 
-### Distribution Channels
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
 
-- **Main Repository**: [github.com/docdyhr/batless](https://github.com/docdyhr/batless)
-- **Homebrew Tap**: [github.com/docdyhr/homebrew-batless](https://github.com/docdyhr/homebrew-batless)
-- **Crates.io Package**: [crates.io/crates/batless](https://crates.io/crates/batless)
-- **Documentation**: [docs.rs/batless](https://docs.rs/batless)
+#### Built for Automation
 
-### Community & Support
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
 
-- **Issues & Bug Reports**: [github.com/docdyhr/batless/issues](https://github.com/docdyhr/batless/issues)
-- **Feature Discussions**: [github.com/docdyhr/batless/discussions](https://github.com/docdyhr/batless/discussions)
-- **Security Reports**: [security@docdyhr.com](mailto:security@docdyhr.com)
-- **General Support**: [support@docdyhr.com](mailto:support@docdyhr.com)
+## 🚫 What batless is NOT
 
----
+**batless** has a focused design philosophy. It intentionally does NOT provide:
 
-<div align="center">
+### Features We Don't Implement (By Design)
 
-**⭐ Found this helpful? [Give us a star on GitHub!](https://github.com/docdyhr/batless) ⭐**
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
 
-### Made with ❤️ for AI assistants and modern CLI workflows
+### Common Misconceptions
 
-</div>
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```
+
+## 🚀 Quick Start
+
+Get up and running in **under 2 minutes**:
+
+### Prerequisites
+
+- **Rust Toolchain**: For building from source (or use pre-built binaries)
+- **Terminal**: Any POSIX-compatible shell
+- **Files to View**: Any text-based source code files
+
+### 3-Step Setup
+
+#### 1️⃣ Install batless (Choose One)
+
+```bash
+# Option A: Pre-built binaries (fastest)
+curl -L https://github.com/docdyhr/batless/releases/latest/download/batless-x86_64-unknown-linux-gnu.tar.gz | tar xz
+
+# Option B: Via Cargo
+cargo install batless
+
+# Option C: Homebrew (macOS/Linux)
+brew tap docdyhr/batless && brew install batless
+```
+
+#### 2️⃣ Test Your Installation
+
+```bash
+# View a file with syntax highlighting
+batless src/main.rs
+
+# Test JSON output mode
+batless --mode=json --max-lines=10 src/lib.rs
+```
+
+#### 3️⃣ Integrate with Your Workflow
+
+```bash
+# CI/CD pipeline usage
+batless --mode=summary --max-lines=50 failing-test.rs
+
+# AI assistant context
+batless --mode=json --include-tokens --summary src/main.rs
+
+# Machine-readable version metadata
+batless --version-json
+```
+
+📺 **[Try the Demo](demo.sh)** | 📖 **[Complete Setup Guide](#-installation-options)**
+
+## 🌟 What Makes batless Special
+
+### 🏆 Feature Comparison
+
+| Feature | `batless` | `bat` | `cat` |
+|---------|-----------|-------|-------|
+| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
+| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
+| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
+| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
+| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
+| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
+| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+
+### 🚀 Core Capabilities
+
+#### Non-Blocking Guarantees
+
+- 🚫 **NEVER uses a pager** - no `less`, no `more`, no blocking
+- ⚡ **NEVER waits for input** - always streams output immediately
+- 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
+- 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
+
+#### Syntax & Language Support
+
+- 🎨 **Syntax highlighting** for 100+ languages via syntect
+- 🔍 **Language auto-detection** with manual override support
+- 🎭 **Theme support** - Multiple color schemes available
+- 🌐 **Universal support** - Works with any text-based file format
+
+#### Smart Output Modes
+
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📏 **Smart limiting** by lines AND/OR bytes
+- 💾 **Memory efficient** - true streaming, never loads full files
+- 🎯 **Predictable behavior** - same output in terminal or pipe
+
+#### Built for Automation
+
+- 🤖 **AI-optimized JSON** output with metadata, tokens, and summaries
+- 📋 **Summary mode** extracts functions, classes, imports only
+- 🔤 **Token extraction** for LLM context processing
+- 🚫 **Clean defaults** - no line numbers, headers, or decorations
+- 📦 **Single ~2MB binary** with minimal dependencies
+- 🚀 **Sub-50ms startup** with cached syntax definitions
+
+## 🚫 What batless is NOT
+
+**batless** has a focused design philosophy. It intentionally does NOT provide:
+
+### Features We Don't Implement (By Design)
+
+| Feature | Why Not? | Use Instead |
+|---------|----------|-------------|
+| **Pattern Search** | That's `grep`'s job | `grep -rn "pattern" path/` |
+| **Arbitrary Line Ranges** | Beyond our scope | `sed -n '10,50p' file` |
+| **File Globbing** | Shell handles this | `batless *.py` (shell expands) |
+| **Interactive Paging** | We're non-blocking | Use `bat` or `less` |
+| **Git Integration** | Keep it simple | Use `git diff` or `bat` |
+| **File Management** | Not a file browser | `ls`, `find`, `fd` |
+| **Text Editing** | Viewer only | Use your editor |
+
+### Common Misconceptions
+
+❌ **"batless is a drop-in replacement for bat"**
+✅ **Reality**: batless is purpose-built for automation and AI, not interactive use
+
+❌ **"batless should add grep-like search"**
+✅ **Reality**: Unix philosophy - do one thing well. Use `grep` for searching
+
+❌ **"batless needs more features like bat"**
+✅ **Reality**: Less is more. Our constraints are features for automation
+
+### When NOT to Use batless
+
+- 👤 **Interactive code review**: Use `bat` - it has better human-focused features
+- 🔍 **Searching code**: Use `grep`, `rg` (ripgrep), or `ag` (silver searcher)
+- 📝 **Editing files**: Use your favorite editor
+- 📊 **Complex analysis**: Use language-specific tools (pylint, rust-analyzer, etc.)
+- 🎨 **Pretty printing**: Use `bat` with its full decoration suite
+
+### Our Philosophy
+
+```text
+Do ONE thing well: Stream code with syntax highlighting, never block.
+Everything else? There's already a better tool for that.
+```

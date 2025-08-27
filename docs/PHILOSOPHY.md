@@ -1,3 +1,13 @@
+batless was born from a simple frustration: tools that hang in automation. When you're piping output in CI/CD, running scripts, or feeding code to AI assistants, the last thing you need is an interactive pager waiting for input that will never come.
+Line numbers are decoration. Our default output should be clean and pipeable. We added `-n` for cat compatibility, but it's not our default because most automation doesn't need it.
+Unix philosophy: do one thing well. grep exists, is incredibly optimized, and handles pattern matching better than we ever could. Instead of reimplementing grep poorly, we focus on what we do best: syntax highlighting.
+Memory is finite. Files are not. A truly robust tool must handle any size input without consuming unbounded memory. Streaming is the only way to guarantee this.
+Modern automation isn't just bash scripts. AI assistants, observability platforms, and analysis tools need structured data. JSON is the universal language of automation.
+batless will grow, but always within these constraints:
+If a feature would make batless block, wait, or consume unbounded resources, it doesn't belong here.
+When contributing, ask yourself:
+If you answered "no" to any of these, the feature probably belongs in a different tool.
+
 # The batless Philosophy
 
 ## Core Principle: Never Block, Always Stream

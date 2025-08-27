@@ -14,11 +14,10 @@ pub mod language;
 pub mod processor;
 pub mod streaming;
 pub mod summarizer;
-pub mod token_counter;
-pub mod tokenizer;
+pub mod tokens;
 
 // Re-export for fuzzing and external use
-pub use tokenizer::TokenExtractor;
+pub use tokens::TokenExtractor;
 pub mod wizard;
 
 // Re-export commonly used types
@@ -31,7 +30,7 @@ pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValida
 pub use language::{LanguageDetector, ThemeManager};
 pub use processor::FileProcessor;
 pub use streaming::{StreamingCheckpoint, StreamingChunk, StreamingProcessor};
-pub use token_counter::{AiModel, TokenCount, TokenCounter};
+pub use tokens::{AiModel, TokenCount, TokenCounter};
 pub use wizard::ConfigurationWizard;
 
 /// Main entry point for processing a file with batless
