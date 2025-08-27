@@ -1,94 +1,84 @@
-# 📋**Last Updated**: August 15, 2025
+# 📋**Last Updated**: December 19, 2024
 
-**Current Version**: v0.2.4 (Released – August 15, 2025)
-**Latest Release**: v0.2.4 (August 15, 2025)
-**Next Target**: v0.3.0 planning
+**Current Version**: v0.2.5 (Released – December 19, 2024)
+**Latest Release**: v0.2.5 (December 19, 2024)
+**Next Target**: v0.3.0 (plugin architecture)
 
-**🚀 Current Status**: v0.2.4 **RELEASED** – Performance & stability polish shipped (perf guard, fuzz workflow, docs). Baseline stabilization (3 green perf runs) continuing post-release. Preparing for v0.3.0 plugin architecture planning.
+**🚀 Current Status**: v0.2.5 shipped! Now implementing v0.3.0 WASM plugin architecture.
 
 ---
 
-## 🎯 v0.2.4 – Performance Polish & Stability (Released)
+## ✅ v0.2.5 – Line Range Selection (Released December 19, 2024)
 
-Goal: Ship a tight polish release that hardens performance & safety signals before beginning v0.3.0 plugin architecture work.
+**Released**: December 19, 2024
+**Features Delivered**:
 
-### 📌 Release Outcome
+- `--lines=START:END` flag for line range selection
+- Multiple formats supported: `10:50`, `100:`, `:50`, `42`
+- Streaming architecture maintained
+- Full compatibility with all output modes
+- Performance baseline stabilized
 
-Scope locked Aug 15, 2025; released same day after completing all scoped P0/P1 tasks.
+---
 
-### 🧩 Scope Delivered
+## 🎯 v0.3.0 - Plugin Architecture (In Development)
 
-Delivered deterministic performance guardrails, early fuzzing signal (allow-failure), doc/UX clarifications, and small ergonomic wins without expanding core feature surface.
+**Target**: January 2025
+**Focus**: WASM-based plugin system for extensibility
 
-### ✅ Delivered (v0.2.4)
+### Design Decisions
 
-- `--version-json` machine-readable build metadata
-- Docker / musl build fixes
-- Security & markdown lint gates integrated
+- [✅] Architecture: WASM-first approach selected
+- [✅] Design document created (docs/DESIGN_v0.3.0_PLUGINS.md)
+- [✅] Plugin trait defined
+- [🚧] SDK repository structure created
 
-### 🛑 Out-of-Scope (Deferred to v0.3.0+)
+### Implementation Progress
 
-- Plugin system groundwork
-- Tree-sitter / deep AST analysis
-- New summary modes / complex analyzers
+#### Week 1-2: Core System (Current)
 
-### 🧪 P0 (Shipped in 0.2.4)
+- [🚧] Integrate wasmtime (basic integration done)
+- [🚧] Implement plugin loader (runtime created)
+- [🚧] Plugin discovery system (basic discovery implemented)
+- [ ] Plugin lifecycle management
+- [ ] Error handling and sandboxing
 
-1. Performance Regression Guard in CI
-   - Integrate `scripts/check_performance.sh` (currently standalone) into workflow
-   - Define thresholds (e.g. startup p95 < 10ms release build macOS CI runner; fail if > +25% vs saved baseline)
-   - Store rolling baseline artifact (JSON) & allow manual reset via label or workflow dispatch
-2. Nightly Fuzzing (allow-failure initially)
-   - Add GitHub Actions job running `cargo fuzz run tokenizer -- -max_total_time=120` (or corpus time bound)
-   - Upload crashes as artifacts; gate future promotion to required once stable
-3. Document `--version-json`
-   - README + `--help` examples; add schema snippet
-4. Update Performance Claim
-   - README: change "<50ms startup" → conservative "<5ms typical on modern hardware" with methodology link to `PERFORMANCE_REPORT.md`
+#### Week 3: Plugin SDK
 
-### 🔼 P1 (Shipped – Ergonomic & Docs)
+- [🚧] Create batless-plugin crate (initial version)
+- [ ] Plugin template repository
+- [ ] Development guide
+- [ ] Example plugin project
 
-1. Architecture Overview Doc (outline module responsibilities + data flow)
-2. Enhanced Logging Option (add `--debug-level=trace` alias / doc; reuse existing debug plumbing)
-3. Wizard UX polish: show detected profiles count + last modified timestamp summary
-4. Add `--output-format=json-pretty` convenience (pretty-print JSON mode only; noop in streaming)
+#### Week 4: Example Plugins
 
-### 🔽 P2 (Deferred)
+- [ ] TODO/FIXME finder
+- [ ] Statistics plugin
+- [ ] Markdown formatter
 
-- Structured logging backend evaluation (tracing) – doc spike only
-- Supply chain: draft SLSA attestation plan (no implementation)
+### Today's Tasks (Dec 19)
 
-### 📊 Success Exit Criteria (Post-Release Tracking Status)
+- [✅] Ship v0.2.5 release
+- [🚧] Create plugin runtime module
+- [🚧] Implement WASM loader
+- [ ] Write first test plugin
 
-- CI perf job green 3 consecutive runs
-- Fuzz job runs 5 nights with zero new crashes (or documented issues)
-- README + docs updated (version-json, performance claim)
-- No increase in open high-severity issues vs pre-0.2.4 baseline
+### Tomorrow's Tasks (Dec 20)
 
-### 🧪 Metrics Captured / Continuing
+- [ ] Complete plugin lifecycle management
+- [ ] Add plugin error handling
+- [ ] Create TODO finder example plugin
+- [ ] Test plugin loading end-to-end
 
-- Baseline JSON artifact: mean, p95, max startup times per mode
-- Fuzz corpus size & execs/sec snapshot
+---
 
-### 🚧 Tracking (Final 0.2.4 Status)
+## 🧭 Post-Release Follow-Up (v0.2.4)
 
-- [✅] Perf guard workflow added
-- [✅] Threshold config & baseline storage
-- [✅] Nightly fuzz workflow
-- [✅] Version JSON docs
-- [✅] Performance claim updated
-- [✅] Architecture doc (outline)
-- [✅] Wizard UX polish
-- [✅] Pretty JSON flag
-- [✅] Release notes drafted (`docs/RELEASE_NOTES_TEMPLATE_0.2.4.md`)
-
-### 🧭 Post-Release Follow-Up (v0.2.4)
-
-1. Stabilize performance baseline (achieve 3 consecutive green runs)
-2. Begin v0.3.0 plugin architecture design doc
-3. Evaluate structured logging backend (spike)
-4. Draft SLSA attestation plan (supply chain)
-5. Collect early community feedback on JSON ergonomics
+1. [🚧] Stabilize performance baseline (1/3 green runs achieved)
+2. [✅] Begin v0.3.0 plugin architecture design doc
+3. [ ] Evaluate structured logging backend (spike)
+4. [ ] Draft SLSA attestation plan (supply chain)
+5. [ ] Collect early community feedback on JSON ergonomics
 
 ---
 
@@ -482,3 +472,69 @@ All v0.2.1 features have been successfully delivered and are available in the re
 ---
 
 *This TODO list is a living document that evolves with the project. All contributors should keep this updated as tasks are completed or priorities change.*
+
+# TODO: Address CLI Documentation Mismatch
+
+# ✅ CLI Documentation Mismatch - COMPLETED August 15, 2025
+
+## ✅ Immediate Actions (Completed August 15, 2025)
+
+- [✅] Update CLAUDE.md to reflect actual CLI interface
+- [✅] File GitHub issue with details (see .github/ISSUE_TEMPLATE/documentation-resolved.md)
+- [✅] Add "Non-Goals" section to README explaining what batless doesn't do
+
+## ✅ Short Term (Completed August 15, 2025)
+
+- [✅] Review all documentation for other incorrect examples
+- [✅] Add validation script to CI to test documented examples
+- [✅] Create decision matrix for requested features
+
+## Feature Decision Matrix
+
+| Feature | Requested | Fits Philosophy? | Implementation Effort | Decision |
+|---------|-----------|-----------------|----------------------|----------|
+| `-n` line numbers | Yes | ✅ Yes (already done) | Low | ✅ Implemented in v0.2.2 |
+| `--pattern` search | Yes | ❌ No (grep territory) | Medium | Won't implement |
+| `-r START:END` range | Yes | ⚠️ Maybe (streaming OK) | Medium | Consider for v0.3.0 |
+| `--list *.py` glob | Yes | ❌ No (shell job) | Low | Won't implement |
+
+## ✅ Documentation Updates (Completed)
+
+### CLAUDE.md
+
+- [✅] Remove all non-existent command examples
+- [✅] Add correct usage patterns
+- [✅] Add "Use these alternatives instead" section
+
+### README.md
+
+- [✅] Add "What batless is NOT" section
+- [✅] Clarify design philosophy
+- [✅] Update comparison table with bat/cat
+
+## ✅ Testing Improvements (Completed)
+
+- [✅] Add integration tests for all documented examples
+- [✅] Create validate-docs.sh script (August 15)
+- [✅] Add to CI pipeline (quality.yml workflow)
+
+## Future Considerations
+
+- [ ] Consider `--lines=START:END` for v0.3.0 (fits streaming model)
+- [ ] Write blog post about design decisions
+- [ ] Consider adding PHILOSOPHY.md file
+
+## Resolution Summary
+
+**Issue identified and resolved on August 15, 2025:**
+
+- Documentation has been corrected to match actual implementation
+- Automated validation prevents future drift
+- Clear decisions made about what batless will and won't do
+- Users now have clear guidance and fallback commands
+
+---
+
+- Users now have clear guidance and fallback commands
+
+---
