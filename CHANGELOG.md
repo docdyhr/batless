@@ -2,8 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.2.5] - 2024-12-19
+
+### Added
+
+- `--lines=START:END` flag for selecting specific line ranges
+  - Supports formats: `10:50` (lines 10-50), `100:` (from line 100), `:50` (up to line 50), `42` (from line 42)
+  - Works with all output modes (plain, json, summary)
+  - Combines with `--max-lines` for additional control
+  - Maintains streaming architecture for memory efficiency
+
+### Fixed
+
+- Performance baseline stabilization (3 consecutive green CI runs achieved)
+- CLI documentation mismatch with CLAUDE.md resolved
+
+### Documentation
+
+- Added line range examples to README
+- Updated CLI help text with range format examples
+- Fixed CLAUDE.md to reflect actual CLI capabilities
 
 ## [0.2.4] - 2025-08-15
 
