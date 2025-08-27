@@ -23,6 +23,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Performance testing temporary files
+.perf_tmp/
+
 # Runtime data
 pids
 *.pid
