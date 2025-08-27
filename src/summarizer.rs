@@ -3,6 +3,7 @@
 //! This module extracts important code structures and patterns from source files
 //! to provide concise summaries of the code content.
 
+use crate::traits::SummaryExtraction;
 use std::collections::HashSet;
 
 /// Code summary extractor
@@ -64,9 +65,9 @@ impl SummaryExtractor {
         match language.map(|s| s.as_str()) {
             Some("Python") => Self::is_python_summary_worthy(trimmed),
             Some("Rust") => Self::is_rust_summary_worthy(trimmed),
-            Some("JavaScript") | Some("TypeScript") => Self::is_js_ts_summary_worthy(trimmed),
+            Some("JavaScript" | "TypeScript") => Self::is_js_ts_summary_worthy(trimmed),
             Some("Java") => Self::is_java_summary_worthy(trimmed),
-            Some("C") | Some("C++") => Self::is_c_cpp_summary_worthy(trimmed),
+            Some("C" | "C++") => Self::is_c_cpp_summary_worthy(trimmed),
             Some("Go") => Self::is_go_summary_worthy(trimmed),
             Some("Ruby") => Self::is_ruby_summary_worthy(trimmed),
             Some("PHP") => Self::is_php_summary_worthy(trimmed),
@@ -351,6 +352,17 @@ impl SummaryExtractor {
                 (1.0 - (summary_lines.len() as f64 / original_lines.len() as f64)) * 100.0
             },
         }
+    }
+}
+
+impl SummaryExtraction for SummaryExtractor {
+    fn extract_summary(&self, lines: &[String], language: Option<&str>) -> Vec<String> {
+        Self::extract_summary(lines, language.map(|s| s.to_string()).as_ref())
+    }
+    
+    fn is_summary_worthy(&self, line: &str, language: Option<&str>) -> bool {
+        let lang_string = language.map(|s| s.to_string());
+        Self::is_summary_worthy(line, &lang_string.as_ref())
     }
 }
 

@@ -8,20 +8,28 @@ pub mod config_manager;
 pub mod error;
 pub mod file_info;
 pub mod formatter;
+pub mod formatters;
 pub mod highlighter;
 pub mod json_schema;
 pub mod language;
+pub mod performance;
 pub mod processor;
+pub mod processor_builder;
+pub mod profile;
 pub mod streaming;
 pub mod summarizer;
+pub mod summary;
 pub mod tokens;
+pub mod traits;
 
 // Re-export for fuzzing and external use
 pub use tokens::TokenExtractor;
 pub mod wizard;
 
 // Re-export commonly used types
-pub use config::{BatlessConfig, CustomProfile, SummaryLevel};
+pub use config::BatlessConfig;
+pub use profile::CustomProfile;
+pub use summary::SummaryLevel;
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};

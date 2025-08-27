@@ -4,324 +4,12 @@
 //! default values, validation, and configuration parsing.
 
 use crate::error::{BatlessError, BatlessResult};
+use crate::summary::SummaryLevel;
+use crate::traits::ProcessingConfig;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Summary extraction level for code analysis
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, Hash)]
-pub enum SummaryLevel {
-    /// No summary extraction
-    #[default]
-    None,
-    /// Minimal summary: functions and exports only
-    Minimal,
-    /// Standard summary: functions, classes, imports (current behavior)
-    Standard,
-    /// Detailed summary: includes comments, complexity metrics
-    Detailed,
-}
-
-impl SummaryLevel {
-    /// Parse summary level from string
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the input string doesn't match any valid summary level
-    pub fn parse(s: &str) -> Result<Self, String> {
-        match s.to_lowercase().as_str() {
-            "none" | "false" | "off" => Ok(Self::None),
-            "minimal" | "min" => Ok(Self::Minimal),
-            "standard" | "std" | "true" | "on" => Ok(Self::Standard),
-            "detailed" | "detail" | "full" => Ok(Self::Detailed),
-            _ => Err(format!(
-                "Unknown summary level: {s}. Valid options: none, minimal, standard, detailed"
-            )),
-        }
-    }
-
-    /// Get string representation
-    #[must_use]
-    pub const fn as_str(&self) -> &'static str {
-        match self {
-            Self::None => "none",
-            Self::Minimal => "minimal",
-            Self::Standard => "standard",
-            Self::Detailed => "detailed",
-        }
-    }
-
-    /// Check if summary extraction is enabled
-    #[must_use]
-    pub const fn is_enabled(&self) -> bool {
-        !matches!(self, Self::None)
-    }
-}
-
-/// Custom AI profile for personalized batless configurations
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CustomProfile {
-    /// Profile name
-    pub name: String,
-    /// Profile description
-    pub description: Option<String>,
-    /// Profile version for compatibility tracking
-    #[serde(default = "default_profile_version")]
-    pub version: String,
-    /// Maximum number of lines to process
-    pub max_lines: Option<usize>,
-    /// Maximum number of bytes to process
-    pub max_bytes: Option<usize>,
-    /// Override language detection
-    pub language: Option<String>,
-    /// Theme for syntax highlighting
-    pub theme: Option<String>,
-    /// Whether to strip ANSI escape sequences
-    pub strip_ansi: Option<bool>,
-    /// Whether to use color output
-    pub use_color: Option<bool>,
-    /// Whether to include tokens in output
-    pub include_tokens: Option<bool>,
-    /// Summary extraction level
-    pub summary_level: Option<SummaryLevel>,
-    /// Output mode preference
-    pub output_mode: Option<String>,
-    /// AI model preference
-    pub ai_model: Option<String>,
-    /// Enable streaming JSON output for large files
-    pub streaming_json: Option<bool>,
-    /// Chunk size for streaming output (in lines)
-    pub streaming_chunk_size: Option<usize>,
-    /// Enable resume capability with checkpoint support
-    pub enable_resume: Option<bool>,
-    /// Enable debug mode
-    pub debug: Option<bool>,
-    /// Tags for profile categorization
-    #[serde(default)]
-    pub tags: Vec<String>,
-    /// Profile creation timestamp
-    pub created_at: Option<String>,
-    /// Profile last modified timestamp
-    pub updated_at: Option<String>,
-}
-
-fn default_profile_version() -> String {
-    "1.0".to_string()
-}
-
-impl CustomProfile {
-    /// Create a new custom profile with basic information
-    pub fn new(name: String, description: Option<String>) -> Self {
-        Self {
-            name,
-            description,
-            version: default_profile_version(),
-            max_lines: None,
-            max_bytes: None,
-            language: None,
-            theme: None,
-            strip_ansi: None,
-            use_color: None,
-            include_tokens: None,
-            summary_level: None,
-            output_mode: None,
-            ai_model: None,
-            streaming_json: None,
-            streaming_chunk_size: None,
-            enable_resume: None,
-            debug: None,
-            tags: Vec::new(),
-            created_at: None,
-            updated_at: None,
-        }
-    }
-
-    /// Apply this custom profile to a configuration
-    pub fn apply_to_config(&self, mut config: BatlessConfig) -> BatlessConfig {
-        if let Some(max_lines) = self.max_lines {
-            config = config.with_max_lines(max_lines);
-        }
-        if let Some(max_bytes) = self.max_bytes {
-            config = config.with_max_bytes(Some(max_bytes));
-        }
-        if let Some(ref language) = self.language {
-            config = config.with_language(Some(language.clone()));
-        }
-        if let Some(ref theme) = self.theme {
-            config = config.with_theme(theme.clone());
-        }
-        if let Some(strip_ansi) = self.strip_ansi {
-            config = config.with_strip_ansi(strip_ansi);
-        }
-        if let Some(use_color) = self.use_color {
-            config = config.with_use_color(use_color);
-        }
-        if let Some(include_tokens) = self.include_tokens {
-            config = config.with_include_tokens(include_tokens);
-        }
-        if let Some(ref summary_level) = self.summary_level {
-            config = config.with_summary_level(summary_level.clone());
-        }
-        config
-    }
-
-    /// Get the preferred output mode for this profile
-    pub fn get_output_mode(&self) -> Option<String> {
-        self.output_mode.clone()
-    }
-
-    /// Get the preferred AI model for this profile
-    pub fn get_ai_model(&self) -> Option<String> {
-        self.ai_model.clone()
-    }
-
-    /// Validate the custom profile
-    pub fn validate(&self) -> BatlessResult<()> {
-        // Validate profile name
-        if self.name.is_empty() {
-            return Err(BatlessError::config_error_with_help(
-                "Profile name cannot be empty".to_string(),
-                Some(
-                    "Profile names should be descriptive identifiers like 'my-coding-profile'"
-                        .to_string(),
-                ),
-            ));
-        }
-
-        if self.name.len() > 50 {
-            return Err(BatlessError::config_error_with_help(
-                format!(
-                    "Profile name is too long: '{}' (max 50 characters)",
-                    self.name
-                ),
-                Some("Consider using a shorter, more concise profile name".to_string()),
-            ));
-        }
-
-        // Validate individual settings by creating a temporary config
-        let temp_config = self.apply_to_config(BatlessConfig::default());
-        temp_config.validate()?;
-
-        Ok(())
-    }
-
-    /// Load custom profile from file
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> BatlessResult<Self> {
-        let path = path.as_ref();
-        let content = fs::read_to_string(path).map_err(|e| {
-            BatlessError::config_error_with_help(
-                format!("Failed to read profile file '{}': {}", path.display(), e),
-                Some("Check that the file exists and you have read permissions".to_string()),
-            )
-        })?;
-
-        let profile: CustomProfile = if path.extension().and_then(|s| s.to_str()) == Some("toml") {
-            toml::from_str(&content).map_err(|e| {
-                BatlessError::config_error_with_help(
-                    format!("Failed to parse TOML profile '{}': {}", path.display(), e),
-                    Some(
-                        "Check the TOML syntax and ensure all fields are properly formatted"
-                            .to_string(),
-                    ),
-                )
-            })?
-        } else {
-            serde_json::from_str(&content).map_err(|e| {
-                BatlessError::config_error_with_help(
-                    format!("Failed to parse JSON profile '{}': {}", path.display(), e),
-                    Some(
-                        "Check the JSON syntax and ensure all fields are properly formatted"
-                            .to_string(),
-                    ),
-                )
-            })?
-        };
-
-        profile.validate()?;
-        Ok(profile)
-    }
-
-    /// Save custom profile to file
-    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> BatlessResult<()> {
-        let path = path.as_ref();
-        self.validate()?;
-
-        let content = if path.extension().and_then(|s| s.to_str()) == Some("toml") {
-            toml::to_string_pretty(self).map_err(|e| {
-                BatlessError::config_error_with_help(
-                    format!("Failed to serialize profile to TOML: {e}"),
-                    Some("Check that all profile fields contain valid data".to_string()),
-                )
-            })?
-        } else {
-            serde_json::to_string_pretty(self).map_err(|e| {
-                BatlessError::config_error_with_help(
-                    format!("Failed to serialize profile to JSON: {e}"),
-                    Some("Check that all profile fields contain valid data".to_string()),
-                )
-            })?
-        };
-
-        // Create directory if it doesn't exist
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|e| {
-                BatlessError::config_error_with_help(
-                    format!("Failed to create directory '{}': {}", parent.display(), e),
-                    Some(
-                        "Check that you have write permissions to the parent directory".to_string(),
-                    ),
-                )
-            })?;
-        }
-
-        fs::write(path, content).map_err(|e| {
-            BatlessError::config_error_with_help(
-                format!("Failed to write profile to '{}': {}", path.display(), e),
-                Some("Check that you have write permissions to the target location".to_string()),
-            )
-        })?;
-
-        Ok(())
-    }
-
-    /// Discover custom profiles in standard locations
-    pub fn discover_profiles() -> Vec<PathBuf> {
-        let mut profiles = Vec::new();
-
-        // Standard profile locations
-        let search_paths = [
-            // Current directory
-            PathBuf::from(".batless/profiles"),
-            // User config directory
-            dirs::config_dir()
-                .map(|d| d.join("batless/profiles"))
-                .unwrap_or_default(),
-            // User home directory
-            dirs::home_dir()
-                .map(|d| d.join(".batless/profiles"))
-                .unwrap_or_default(),
-        ];
-
-        for search_path in &search_paths {
-            if search_path.exists() && search_path.is_dir() {
-                if let Ok(entries) = fs::read_dir(search_path) {
-                    for entry in entries.flatten() {
-                        let path = entry.path();
-                        if path.is_file() {
-                            if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
-                                if ext == "json" || ext == "toml" {
-                                    profiles.push(path);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        profiles
-    }
-}
 
 /// Configuration structure for batless operations
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -543,7 +231,7 @@ impl BatlessConfig {
     pub fn effective_summary_level(&self) -> SummaryLevel {
         // Priority: summary_level takes precedence over deprecated summary_mode
         if self.summary_level != SummaryLevel::None {
-            self.summary_level.clone()
+            self.summary_level
         } else if self.summary_mode {
             SummaryLevel::Standard
         } else {
@@ -556,7 +244,7 @@ impl BatlessConfig {
         // Validate max_lines
         if self.max_lines == 0 {
             return Err(BatlessError::config_error_with_help(
-                "max_lines must be greater than 0".to_string(),
+                "validation failed: max_lines must be greater than 0".to_string(),
                 Some(
                     "Try using --max-lines with a positive number (e.g., --max-lines 1000)"
                         .to_string(),
@@ -581,7 +269,7 @@ impl BatlessConfig {
         if let Some(max_bytes) = self.max_bytes {
             if max_bytes == 0 {
                 return Err(BatlessError::config_error_with_help(
-                    "max_bytes must be greater than 0".to_string(),
+                    "validation failed: max_bytes must be greater than 0".to_string(),
                     Some(
                         "Try using --max-bytes with a positive number (e.g., --max-bytes 1048576)"
                             .to_string(),
@@ -895,9 +583,32 @@ impl BatlessConfig {
     }
 }
 
+impl ProcessingConfig for BatlessConfig {
+    fn max_lines(&self) -> usize {
+        self.max_lines
+    }
+    
+    fn max_bytes(&self) -> Option<usize> {
+        self.max_bytes
+    }
+    
+    fn language(&self) -> Option<&str> {
+        self.language.as_deref()
+    }
+    
+    fn summary_mode(&self) -> bool {
+        self.summary_mode
+    }
+    
+    fn include_tokens(&self) -> bool {
+        self.include_tokens
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::profile::CustomProfile;
 
     #[test]
     fn test_default_config() {
@@ -1336,8 +1047,8 @@ max_lines = "not_a_number"
             updated_at: None,
         };
 
-        assert_eq!(profile.get_output_mode(), Some("summary".to_string()));
-        assert_eq!(profile.get_ai_model(), Some("claude35-sonnet".to_string()));
+        assert_eq!(profile.get_output_mode(), Some("summary"));
+        assert_eq!(profile.get_ai_model(), Some("claude35-sonnet"));
     }
 
     #[test]

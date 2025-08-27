@@ -270,7 +270,7 @@ impl OutputFormatter {
         let stats = file_info.get_stats_summary();
 
         format!(
-            r#"File Processing Statistics
+            r"File Processing Statistics
 ==========================
 File: {}
 Language: {}
@@ -283,7 +283,7 @@ Truncated: {}
 Syntax Errors: {}
 Tokens: {}
 Summary Lines: {}
-Processing Ratio: {:.2}%"#,
+Processing Ratio: {:.2}%",
             file_path,
             stats.language.as_deref().unwrap_or("Unknown"),
             stats.encoding,

@@ -3,7 +3,8 @@
 //! batless for their specific needs, creating custom profiles and setting
 //! up optimal configurations.
 
-use crate::config::{CustomProfile, SummaryLevel};
+use crate::profile::CustomProfile;
+use crate::summary::SummaryLevel;
 use crate::error::{BatlessError, BatlessResult};
 use crate::language::LanguageDetector;
 use crate::tokens::AiModel;
@@ -241,7 +242,12 @@ impl ConfigurationWizard {
                 print!(" [{default_val}]");
             }
             print!(": ");
-            io::stdout().flush().unwrap();
+            if let Err(e) = io::stdout().flush() {
+                return Err(BatlessError::config_error_with_help(
+                    format!("Failed to flush output: {e}"),
+                    Some("Terminal output error".to_string()),
+                ));
+            }
 
             let mut input = String::new();
             io::stdin().read_line(&mut input).map_err(|e| {
@@ -272,7 +278,12 @@ impl ConfigurationWizard {
             print!(" [{default_val}]");
         }
         print!(": ");
-        io::stdout().flush().unwrap();
+        if let Err(e) = io::stdout().flush() {
+            return Err(BatlessError::config_error_with_help(
+                format!("Failed to flush output: {e}"),
+                Some("Terminal output error".to_string()),
+            ));
+        }
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {
@@ -296,7 +307,12 @@ impl ConfigurationWizard {
 
         loop {
             print!("🔹 {prompt} [{default_str}]: ");
-            io::stdout().flush().unwrap();
+            if let Err(e) = io::stdout().flush() {
+                return Err(BatlessError::config_error_with_help(
+                    format!("Failed to flush output: {e}"),
+                    Some("Terminal output error".to_string()),
+                ));
+            }
 
             let mut input = String::new();
             io::stdin().read_line(&mut input).map_err(|e| {
@@ -325,7 +341,12 @@ impl ConfigurationWizard {
         };
 
         print!("🔹 {prompt} [{default_str}]: ");
-        io::stdout().flush().unwrap();
+        if let Err(e) = io::stdout().flush() {
+            return Err(BatlessError::config_error_with_help(
+                format!("Failed to flush output: {e}"),
+                Some("Terminal output error".to_string()),
+            ));
+        }
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {
@@ -360,7 +381,12 @@ impl ConfigurationWizard {
                 print!(" [{default_val}]");
             }
             print!(" ({min}-{max}): ");
-            io::stdout().flush().unwrap();
+            if let Err(e) = io::stdout().flush() {
+                return Err(BatlessError::config_error_with_help(
+                    format!("Failed to flush output: {e}"),
+                    Some("Terminal output error".to_string()),
+                ));
+            }
 
             let mut input = String::new();
             io::stdin().read_line(&mut input).map_err(|e| {
@@ -430,7 +456,12 @@ impl ConfigurationWizard {
     fn prompt_tags() -> BatlessResult<Vec<String>> {
         println!("🔹 Enter tags separated by commas (e.g., 'coding, rust, development'):");
         print!("Tags: ");
-        io::stdout().flush().unwrap();
+        if let Err(e) = io::stdout().flush() {
+            return Err(BatlessError::config_error_with_help(
+                format!("Failed to flush output: {e}"),
+                Some("Terminal output error".to_string()),
+            ));
+        }
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {

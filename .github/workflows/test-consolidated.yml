@@ -1,0 +1,188 @@
+name: Comprehensive Testing
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run comprehensive tests weekly
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  # Core testing across platforms and Rust versions
+  test:
+    name: Test (${{ matrix.os }}, ${{ matrix.rust }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable, beta, nightly]
+        exclude:
+          - os: windows-latest
+            rust: nightly
+          - os: macos-latest
+            rust: nightly
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ matrix.rust }}-
+            ${{ runner.os }}-cargo-
+
+      - name: Run tests
+        run: cargo test --verbose --all-features
+
+      - name: Run clippy
+        if: matrix.rust == 'stable'
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Check formatting
+        if: matrix.rust == 'stable'
+        run: cargo fmt -- --check
+
+  # Minimum supported Rust version testing
+  msrv:
+    name: MSRV Compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [1.72.0, 1.75.0]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Test compilation
+        run: cargo check --all-features
+
+  # Cross-compilation validation
+  cross-compile:
+    name: Cross Compile (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build for target
+        run: cargo build --target ${{ matrix.target }} --release
+
+  # Integration tests
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ubuntu-integration-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run integration tests
+        run: cargo test --test integration_tests --verbose
+
+      - name: Run CLI coverage tests
+        run: cargo test --test cli_coverage_tests --verbose
+
+      - name: Run property tests
+        run: cargo test --test property_tests --verbose
+
+      - name: Run streaming coverage tests
+        run: cargo test --test streaming_coverage_tests --verbose
+
+  # Documentation tests
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ubuntu-docs-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Test documentation
+        run: cargo doc --no-deps --document-private-items
+
+      - name: Run doc tests
+        run: cargo test --doc

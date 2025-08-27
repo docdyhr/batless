@@ -282,10 +282,12 @@ impl BatlessError {
     /// Suggest similar files in the current directory
     fn suggest_similar_files(target: &str) -> Vec<String> {
         let target_path = Path::new(target);
-        let dir = if target_path.parent().is_some()
-            && !target_path.parent().unwrap().as_os_str().is_empty()
-        {
-            target_path.parent().unwrap()
+        let dir = if let Some(parent) = target_path.parent() {
+            if !parent.as_os_str().is_empty() {
+                parent
+            } else {
+                Path::new(".")
+            }
         } else {
             Path::new(".")
         };
@@ -309,14 +311,17 @@ impl BatlessError {
                 }
             }
             suggestions.sort_by(|a, b| {
-                Self::levenshtein_distance(
-                    &filename,
-                    Path::new(a).file_name().unwrap().to_str().unwrap(),
-                )
-                .cmp(&Self::levenshtein_distance(
-                    &filename,
-                    Path::new(b).file_name().unwrap().to_str().unwrap(),
-                ))
+                let a_name = Path::new(a)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                let b_name = Path::new(b)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+                
+                Self::levenshtein_distance(&filename, a_name)
+                    .cmp(&Self::levenshtein_distance(&filename, b_name))
             });
             suggestions.truncate(3);
             suggestions

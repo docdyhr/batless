@@ -1,7 +1,9 @@
 //! Manages application configuration by merging settings from files,
 //! command-line arguments, and profiles.
 
-use crate::config::{BatlessConfig, CustomProfile, SummaryLevel};
+use crate::config::BatlessConfig;
+use crate::profile::CustomProfile;
+use crate::summary::SummaryLevel;
 use crate::error::{BatlessError, BatlessResult};
 use crate::formatter::OutputMode;
 use crate::tokens::AiModel;

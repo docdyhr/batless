@@ -295,7 +295,7 @@ fn test_completion_generation_all_shells() {
     assert!(stdout.len() > 0, "Should generate fish completions");
     
     // Test PowerShell completion
-    let output = run_batless_args(&["--generate-completions", "powershell"]);
+    let output = run_batless_args(&["--generate-completions", "power-shell"]);
     assert!(output.status.success(), "PowerShell completion generation should succeed");
     let stdout = String::from_utf8(output.stdout).expect("Valid UTF-8");
     assert!(stdout.len() > 0, "Should generate PowerShell completions");

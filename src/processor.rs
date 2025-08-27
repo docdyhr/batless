@@ -41,7 +41,8 @@ impl FileProcessor {
         // Detect language (use config override if provided)
         let language = config
             .language
-            .clone()
+            .as_ref()
+            .cloned()
             .or_else(|| LanguageDetector::detect_language_with_fallback(file_path));
 
         // Read and process file content
@@ -66,8 +67,8 @@ impl FileProcessor {
             let summary_lines =
                 SummaryExtractor::extract_summary(&lines, file_info.language.as_ref());
             // In summary mode, replace the output lines with summary
-            file_info.lines = summary_lines.clone();
-            file_info = file_info.with_summary_lines(Some(summary_lines));
+            file_info = file_info.with_summary_lines(Some(summary_lines.clone()));
+            file_info.lines = summary_lines;
         }
 
         // Extract tokens if requested
@@ -127,7 +128,7 @@ impl FileProcessor {
             };
 
         // Detect language from content (limited for stdin without filename)
-        let language = config.language.clone(); // Use configured language or none
+        let language = config.language.as_ref().cloned(); // Use configured language or none
 
         // Create FileInfo
         let mut file_info = FileInfo::with_metadata(
@@ -148,8 +149,8 @@ impl FileProcessor {
             let summary_lines =
                 SummaryExtractor::extract_summary(&final_lines, file_info.language.as_ref());
             // In summary mode, replace the output lines with summary
-            file_info.lines = summary_lines.clone();
-            file_info = file_info.with_summary_lines(Some(summary_lines));
+            file_info = file_info.with_summary_lines(Some(summary_lines.clone()));
+            file_info.lines = summary_lines;
         }
 
         // Extract tokens if requested

@@ -225,6 +225,7 @@ impl JsonSchemaValidator {
     /// FileInfo JSON schema
     fn file_info_schema(&self) -> Value {
         json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
                 "lines": {
@@ -263,6 +264,7 @@ impl JsonSchemaValidator {
     /// JSON output schema for batless
     fn json_output_schema(&self) -> Value {
         json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
                 "file_path": { "type": "string" },
@@ -288,6 +290,7 @@ impl JsonSchemaValidator {
     /// Token count schema
     fn token_count_schema(&self) -> Value {
         json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
                 "tokens": { "type": "integer" },
@@ -307,6 +310,7 @@ impl JsonSchemaValidator {
     /// Processing stats schema
     fn processing_stats_schema(&self) -> Value {
         json!({
+            "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
                 "total_lines": { "type": "integer" },

@@ -1,0 +1,34 @@
+name: 'Run Rust Tests'
+description: 'Run comprehensive Rust test suite'
+
+inputs:
+  test-type:
+    description: 'Type of tests to run (unit, integration, all)'
+    required: false
+    default: 'all'
+  additional-args:
+    description: 'Additional arguments for cargo test'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run unit tests
+      if: inputs.test-type == 'unit' || inputs.test-type == 'all'
+      shell: bash
+      run: cargo test --verbose --lib ${{ inputs.additional-args }}
+
+    - name: Run integration tests
+      if: inputs.test-type == 'integration' || inputs.test-type == 'all'
+      shell: bash
+      run: |
+        cargo test --test integration_tests --verbose ${{ inputs.additional-args }}
+        cargo test --test cli_coverage_tests --verbose ${{ inputs.additional-args }}
+        cargo test --test property_tests --verbose ${{ inputs.additional-args }}
+        cargo test --test streaming_coverage_tests --verbose ${{ inputs.additional-args }}
+
+    - name: Run doc tests
+      if: inputs.test-type == 'all'
+      shell: bash
+      run: cargo test --doc ${{ inputs.additional-args }}

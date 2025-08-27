@@ -4,6 +4,7 @@
 //! and provides utilities for listing available languages and themes.
 
 use crate::error::{BatlessError, BatlessResult};
+use crate::traits::LanguageDetection;
 use std::path::Path;
 use std::sync::OnceLock;
 use syntect::highlighting::ThemeSet;
@@ -147,6 +148,29 @@ impl LanguageDetector {
             .find_syntax_for_file(path)
             .ok()
             .flatten()
+    }
+}
+
+impl LanguageDetection for LanguageDetector {
+    fn detect_language_with_fallback(&self, file_path: &str) -> Option<String> {
+        Self::detect_language_with_fallback(file_path)
+    }
+    
+    fn detect_from_content(&self, content: &str, file_path: Option<&str>) -> Option<String> {
+        if let Some(path) = file_path {
+            Self::detect_language(path)
+        } else {
+            // Simple content-based detection for common patterns
+            if content.contains("fn main()") || content.contains("pub fn") {
+                Some("Rust".to_string())
+            } else if content.contains("function ") || content.contains("const ") {
+                Some("JavaScript".to_string())
+            } else if content.contains("def ") || content.contains("import ") {
+                Some("Python".to_string())
+            } else {
+                None
+            }
+        }
     }
 }
 
