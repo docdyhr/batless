@@ -3,10 +3,10 @@
 //! batless for their specific needs, creating custom profiles and setting
 //! up optimal configurations.
 
-use crate::profile::CustomProfile;
-use crate::summary::SummaryLevel;
 use crate::error::{BatlessError, BatlessResult};
 use crate::language::LanguageDetector;
+use crate::profile::CustomProfile;
+use crate::summary::SummaryLevel;
 use crate::tokens::AiModel;
 use std::io::{self, Write};
 

@@ -25,7 +25,7 @@ brew install docdyhr/batless
 **batless** is a minimal, blazing-fast syntax viewer that **never blocks, never pages, never hangs**. Unlike `bat`, it's purpose-built for:
 
 - 🤖 **AI code assistants** that need predictable, streaming output
-- 🔄 **CI/CD pipelines** where interactive pagers would hang forever  
+- 🔄 **CI/CD pipelines** where interactive pagers would hang forever
 - 📜 **Automation scripts** that require guaranteed non-blocking behavior
 - 🚀 **Modern workflows** where JSON output and code summaries matter more than line numbers
 
@@ -52,17 +52,17 @@ batless --max-lines=50 large-file.py
 
 - ✅ **NEVER blocks** - no pager, no interactive prompts
 - 🎨 **Syntax highlighting** for 100+ languages
-- 📊 **Multiple output modes**: plain, highlighted, JSON, summary  
+- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
 - 🤖 **AI-optimized** with metadata and token extraction
 - 💾 **Memory efficient** - true streaming architecture
 - 📦 **Single binary** with minimal dependencies
 
 ## Links
 
-- **Homepage**: https://github.com/docdyhr/batless
-- **Documentation**: https://github.com/docdyhr/batless/blob/main/README.md
-- **Releases**: https://github.com/docdyhr/batless/releases
-- **Issues**: https://github.com/docdyhr/batless/issues
+- **Homepage**: <https://github.com/docdyhr/batless>
+- **Documentation**: <https://github.com/docdyhr/batless/blob/main/README.md>
+- **Releases**: <https://github.com/docdyhr/batless/releases>
+- **Issues**: <https://github.com/docdyhr/batless/issues>
 
 ## Support
 

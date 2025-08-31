@@ -10,23 +10,22 @@ impl ErrorFormatter {
     /// Format error with context information
     pub fn format_error(error: &BatlessError, file_path: &str, output_mode: OutputMode) -> String {
         let error_type = Self::error_type_name(error);
-        
+
         match output_mode {
-            OutputMode::Json => {
-                serde_json::json!({
-                    "error": true,
-                    "error_type": error_type,
-                    "message": error.to_string(),
-                    "file": file_path,
-                    "mode": "json"
-                }).to_string()
-            }
+            OutputMode::Json => serde_json::json!({
+                "error": true,
+                "error_type": error_type,
+                "message": error.to_string(),
+                "file": file_path,
+                "mode": "json"
+            })
+            .to_string(),
             _ => {
                 format!("batless: {error_type}: {error}")
             }
         }
     }
-    
+
     /// Get human-readable error type name
     fn error_type_name(error: &BatlessError) -> &'static str {
         match error {
@@ -45,7 +44,7 @@ impl ErrorFormatter {
             BatlessError::OutputError(_) => "output error",
         }
     }
-    
+
     /// Format a simple error message
     pub fn format_simple(message: &str, file_path: &str) -> String {
         format!("batless: error: {message} (file: {file_path})")
@@ -58,15 +57,15 @@ mod tests {
 
     #[test]
     fn test_error_type_names() {
-        let error = BatlessError::FileNotFound { 
-            path: "test.txt".to_string(), 
-            suggestions: vec![] 
+        let error = BatlessError::FileNotFound {
+            path: "test.txt".to_string(),
+            suggestions: vec![],
         };
         assert_eq!(ErrorFormatter::error_type_name(&error), "file not found");
-        
-        let error = BatlessError::PermissionDenied { 
-            path: "test.txt".to_string(), 
-            help: "Check permissions".to_string() 
+
+        let error = BatlessError::PermissionDenied {
+            path: "test.txt".to_string(),
+            help: "Check permissions".to_string(),
         };
         assert_eq!(ErrorFormatter::error_type_name(&error), "permission denied");
     }

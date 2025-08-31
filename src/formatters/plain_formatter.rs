@@ -11,7 +11,12 @@ use crate::highlighter::SyntaxHighlighter;
 pub struct PlainFormatter;
 
 impl Formatter for PlainFormatter {
-    fn format(&self, file_info: &FileInfo, _file_path: &str, _config: &BatlessConfig) -> BatlessResult<String> {
+    fn format(
+        &self,
+        file_info: &FileInfo,
+        _file_path: &str,
+        _config: &BatlessConfig,
+    ) -> BatlessResult<String> {
         let mut output = Vec::new();
 
         // For now, just return the content without line numbers
@@ -30,7 +35,12 @@ impl Formatter for PlainFormatter {
 pub struct HighlightFormatter;
 
 impl Formatter for HighlightFormatter {
-    fn format(&self, file_info: &FileInfo, file_path: &str, config: &BatlessConfig) -> BatlessResult<String> {
+    fn format(
+        &self,
+        file_info: &FileInfo,
+        file_path: &str,
+        config: &BatlessConfig,
+    ) -> BatlessResult<String> {
         // Use the highlighter's existing method
         SyntaxHighlighter::highlight_content(&file_info.lines.join("\n"), file_path, config)
     }
@@ -71,11 +81,7 @@ mod tests {
 
     #[test]
     fn test_line_numbering() {
-        let lines = vec![
-            "line 1".to_string(),
-            "".to_string(),
-            "line 3".to_string(),
-        ];
+        let lines = vec!["line 1".to_string(), "".to_string(), "line 3".to_string()];
 
         let numbered = add_line_numbers(&lines, false);
         assert_eq!(numbered.len(), 3);

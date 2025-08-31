@@ -67,6 +67,7 @@ Ensure these workflow files exist in your repository:
 ### Step 4: Test the Automation
 
 1. **Create a test release**:
+
    ```bash
    # Create and push a new tag
    git tag v0.1.6-test
@@ -74,16 +75,17 @@ Ensure these workflow files exist in your repository:
    ```
 
 2. **Monitor the workflows**:
+
    ```bash
    # Watch the release workflow
    gh run list --workflow="release.yml"
-   
+
    # Watch the homebrew update workflow
    gh run list --workflow="update-homebrew.yml"
    ```
 
 3. **Verify the homebrew tap was updated**:
-   - Check https://github.com/docdyhr/homebrew-batless/commits
+   - Check <https://github.com/docdyhr/homebrew-batless/commits>
    - Look for automated commit from `batless-bot`
 
 ## 🔍 Troubleshooting
@@ -91,22 +93,27 @@ Ensure these workflow files exist in your repository:
 ### Common Issues
 
 #### 1. `HOMEBREW_TAP_TOKEN` Not Set
+
 **Error**: `HOMEBREW_TAP_TOKEN secret is not set`
 
 **Solution**: Follow Step 2 above to add the token to repository secrets.
 
 #### 2. Permission Denied
+
 **Error**: `Permission denied` when updating homebrew tap
 
-**Solution**: 
+**Solution**:
+
 - Ensure the token has `repo` scope
 - Verify the token hasn't expired
 - Check that the token belongs to an account with write access to `homebrew-batless`
 
 #### 3. Workflow Not Triggering
+
 **Problem**: Homebrew update doesn't start after release
 
 **Check**:
+
 ```bash
 # Verify the release workflow completed successfully
 gh run list --workflow="release.yml" --limit 1
@@ -116,9 +123,11 @@ gh run list --workflow="update-homebrew.yml" --limit 1
 ```
 
 #### 4. Formula Validation Fails
+
 **Error**: `Formula syntax is valid` fails
 
 **Common causes**:
+
 - Network issues downloading source tarball
 - Incorrect SHA256 calculation
 - Malformed Ruby syntax in formula template
@@ -179,6 +188,7 @@ batless --version
 With automation set up, your release process becomes:
 
 1. **Tag and push**:
+
    ```bash
    git tag v0.1.6
    git push origin v0.1.6
@@ -193,6 +203,7 @@ With automation set up, your release process becomes:
    - ✅ Update formula version
 
 3. **Users automatically get**:
+
    ```bash
    brew upgrade batless  # Gets v0.1.6
    ```

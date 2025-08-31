@@ -13,7 +13,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'Cargo.toml' 
+      - 'Cargo.toml'
       - 'Cargo.lock'
       - 'benches/**'
   schedule:
@@ -39,14 +39,14 @@ jobs:
     outputs:
       pr-comment: ${{ steps.benchmark.outputs.comment }}
       baseline-updated: ${{ steps.baseline.outputs.updated }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - name: Install Rust toolchain  
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
@@ -77,25 +77,25 @@ jobs:
               println!("Hello, world!");
           }
           EOF
-          
+
           # Medium file (~ 10KB)
           cat > benchmark_files/medium.rs << 'EOF'
           // Large Rust file for benchmarking
           use std::collections::HashMap;
           use std::fs;
           use std::io::{self, Write};
-          
+
           pub struct DataProcessor {
               data: HashMap<String, Vec<u8>>,
               config: ProcessorConfig,
           }
-          
+
           pub struct ProcessorConfig {
               batch_size: usize,
               compression: bool,
               parallel: bool,
           }
-          
+
           impl DataProcessor {
               pub fn new(config: ProcessorConfig) -> Self {
                   Self {
@@ -103,26 +103,26 @@ jobs:
                       config,
                   }
               }
-              
+
               pub fn process_file(&mut self, path: &str) -> io::Result<()> {
                   let content = fs::read(path)?;
                   self.data.insert(path.to_string(), content);
                   Ok(())
               }
-              
+
               pub fn batch_process(&mut self, paths: Vec<&str>) -> io::Result<Vec<String>> {
                   let mut results = Vec::new();
-                  
+
                   for path in paths {
                       match self.process_file(path) {
                           Ok(_) => results.push(format!("Processed: {}", path)),
                           Err(e) => results.push(format!("Error {}: {}", path, e)),
                       }
                   }
-                  
+
                   Ok(results)
               }
-              
+
               pub fn export_data(&self, format: &str) -> String {
                   match format {
                       "json" => self.to_json(),
@@ -130,7 +130,7 @@ jobs:
                       _ => "Unsupported format".to_string(),
                   }
               }
-              
+
               fn to_json(&self) -> String {
                   // Simplified JSON export
                   let mut json = String::from("{\n");
@@ -140,7 +140,7 @@ jobs:
                   json.push_str("}");
                   json
               }
-              
+
               fn to_csv(&self) -> String {
                   let mut csv = String::from("file,size\n");
                   for (key, value) in &self.data {
@@ -149,14 +149,14 @@ jobs:
                   csv
               }
           }
-          
+
           fn main() {
               let config = ProcessorConfig {
                   batch_size: 1000,
                   compression: true,
                   parallel: false,
               };
-              
+
               let mut processor = DataProcessor::new(config);
               println!("Data processor initialized");
           }
@@ -166,11 +166,11 @@ jobs:
         id: benchmark
         run: |
           echo "Running performance benchmarks..."
-          
+
           # Benchmark different modes
           echo "## Performance Benchmark Results" > benchmark_results.md
           echo "" >> benchmark_results.md
-          
+
           # Plain mode benchmark
           echo "### Plain Mode" >> benchmark_results.md
           hyperfine --warmup 3 --runs 10 \
@@ -178,15 +178,15 @@ jobs:
             --export-markdown plain_bench.md
           cat plain_bench.md >> benchmark_results.md
           echo "" >> benchmark_results.md
-          
-          # Highlight mode benchmark  
+
+          # Highlight mode benchmark
           echo "### Highlight Mode" >> benchmark_results.md
           hyperfine --warmup 3 --runs 10 \
             './target/release/batless benchmark_files/medium.rs --mode=highlight' \
             --export-markdown highlight_bench.md
           cat highlight_bench.md >> benchmark_results.md
           echo "" >> benchmark_results.md
-          
+
           # JSON mode benchmark
           echo "### JSON Mode" >> benchmark_results.md
           hyperfine --warmup 3 --runs 10 \
@@ -194,14 +194,14 @@ jobs:
             --export-markdown json_bench.md
           cat json_bench.md >> benchmark_results.md
           echo "" >> benchmark_results.md
-          
+
           # Summary mode benchmark
           echo "### Summary Mode" >> benchmark_results.md
           hyperfine --warmup 3 --runs 10 \
             './target/release/batless benchmark_files/medium.rs --mode=summary' \
             --export-markdown summary_bench.md
           cat summary_bench.md >> benchmark_results.md
-          
+
           # Save results as multiline output
           {
             echo 'comment<<EOF'
@@ -226,11 +226,11 @@ jobs:
         run: |
           echo "Updating performance baseline..."
           mkdir -p .github/performance
-          
+
           # Save current benchmark results as new baseline
           cp benchmark_results.md .github/performance/baseline.md
           echo "updated=true" >> $GITHUB_OUTPUT
-          
+
           # If we have git changes, commit them
           if ! git diff --quiet .github/performance/; then
             git config --local user.email "action@github.com"

@@ -55,7 +55,7 @@ echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "📦 Publishing to crates.io..."
     cargo publish
-    
+
     echo ""
     echo "🎉 Successfully published!"
     echo ""

@@ -10,16 +10,16 @@ use crate::file_info::FileInfo;
 pub trait LanguageDetection {
     /// Detect language from file path
     fn detect_language_with_fallback(&self, file_path: &str) -> Option<String>;
-    
+
     /// Detect language from content
     fn detect_from_content(&self, content: &str, file_path: Option<&str>) -> Option<String>;
 }
 
-/// Trait for summary extraction functionality  
+/// Trait for summary extraction functionality
 pub trait SummaryExtraction {
     /// Extract summary lines from content
     fn extract_summary(&self, lines: &[String], language: Option<&str>) -> Vec<String>;
-    
+
     /// Check if a line is summary-worthy
     fn is_summary_worthy(&self, line: &str, language: Option<&str>) -> bool;
 }
@@ -28,7 +28,7 @@ pub trait SummaryExtraction {
 pub trait TokenExtraction {
     /// Extract tokens from content
     fn extract_tokens(&self, content: &str, file_path: &str) -> Vec<String>;
-    
+
     /// Count tokens in content
     fn count_tokens(&self, content: &str) -> usize;
 }
@@ -37,10 +37,10 @@ pub trait TokenExtraction {
 pub trait FileProcessing {
     /// Process a file and return FileInfo
     fn process_file(file_path: &str, config: &dyn ProcessingConfig) -> BatlessResult<FileInfo>;
-    
+
     /// Process stdin input
     fn process_stdin(config: &dyn ProcessingConfig) -> BatlessResult<FileInfo>;
-    
+
     /// Validate file access
     fn validate_file_access(file_path: &str) -> BatlessResult<()>;
 }
@@ -63,7 +63,7 @@ pub trait EncodingDetection {
 /// Factory trait for creating processors with injected dependencies
 pub trait ProcessorFactory {
     type Processor: FileProcessing;
-    
+
     fn create_processor(
         language_detector: Box<dyn LanguageDetection>,
         summary_extractor: Box<dyn SummaryExtraction>,

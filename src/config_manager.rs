@@ -2,10 +2,10 @@
 //! command-line arguments, and profiles.
 
 use crate::config::BatlessConfig;
-use crate::profile::CustomProfile;
-use crate::summary::SummaryLevel;
 use crate::error::{BatlessError, BatlessResult};
 use crate::formatter::OutputMode;
+use crate::profile::CustomProfile;
+use crate::summary::SummaryLevel;
 use crate::tokens::AiModel;
 use clap::{Parser, ValueEnum};
 use is_terminal::IsTerminal;

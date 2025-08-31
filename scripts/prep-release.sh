@@ -122,7 +122,7 @@ cargo update -p batless
 if [ -f "CHANGELOG.md" ]; then
     log_info "Please update CHANGELOG.md with the changes for version $NEW_VERSION"
     log_info "Opening CHANGELOG.md..."
-    
+
     # Try to open with common editors
     if command -v code &> /dev/null; then
         code CHANGELOG.md
@@ -133,7 +133,7 @@ if [ -f "CHANGELOG.md" ]; then
     else
         log_info "Please manually edit CHANGELOG.md"
     fi
-    
+
     read -p "Press Enter when you've finished updating CHANGELOG.md..."
 else
     log_warning "CHANGELOG.md not found. Consider creating one."

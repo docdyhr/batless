@@ -1,12 +1,15 @@
 # PRD: Git Integration for Batless
 
 ## Title
+
 Git Integration for `batless`
 
 ## Author
+
 docdyhr / Claude (2025-01-22)
 
 ## Status
+
 Proposed
 
 ## Overview
@@ -68,7 +71,7 @@ From [`bat` Git integration](https://github.com/sharkdp/bat#git-integration), wh
 
 ## User Stories
 
-### Developer using `batless` in a terminal:
+### Developer using `batless` in a terminal
 
 > As a developer, I want to view Git diffs inline with syntax highlighting, so I can understand changes at a glance.
 
@@ -76,7 +79,7 @@ From [`bat` Git integration](https://github.com/sharkdp/bat#git-integration), wh
 batless --diff main.rs
 ```
 
-### Claude user consuming logs:
+### Claude user consuming logs
 
 > As an AI agent reading file output, I want to understand what changed in a file using colored but static markup, not ANSI prompts.
 

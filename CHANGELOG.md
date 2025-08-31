@@ -27,7 +27,7 @@ All notable changes to this project will be documented in this file.
 
 - **🚀 Workflow Consolidation**: Streamlined from 12→3 focused workflows (62% reduction in YAML)
   - `test-consolidated.yml` - Comprehensive testing across platforms
-  - `quality-consolidated.yml` - Linting, security, and quality checks  
+  - `quality-consolidated.yml` - Linting, security, and quality checks
   - `release-consolidated.yml` - Automated releases with proper artifacts
 - **♻️ Reusable Actions**: Created modular GitHub Actions in `.github/actions/`
 - **📊 Enhanced Testing**: 247+ tests with improved coverage and reliability
@@ -42,7 +42,7 @@ All notable changes to this project will be documented in this file.
 ### Bug Fixes
 
 - **✅ Test Reliability**: Fixed 7 failing CLI integration tests
-- **🔧 Schema Validation**: Added proper "$schema" fields to all JSON outputs  
+- **🔧 Schema Validation**: Added proper "$schema" fields to all JSON outputs
 - **🐚 Shell Completion**: Fixed PowerShell completion generation
 - **⚠️ Validation**: Enhanced error messages with "validation" keywords for better UX
 

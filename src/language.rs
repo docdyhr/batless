@@ -155,7 +155,7 @@ impl LanguageDetection for LanguageDetector {
     fn detect_language_with_fallback(&self, file_path: &str) -> Option<String> {
         Self::detect_language_with_fallback(file_path)
     }
-    
+
     fn detect_from_content(&self, content: &str, file_path: Option<&str>) -> Option<String> {
         if let Some(path) = file_path {
             Self::detect_language(path)

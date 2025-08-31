@@ -359,7 +359,7 @@ impl SummaryExtraction for SummaryExtractor {
     fn extract_summary(&self, lines: &[String], language: Option<&str>) -> Vec<String> {
         Self::extract_summary(lines, language.map(|s| s.to_string()).as_ref())
     }
-    
+
     fn is_summary_worthy(&self, line: &str, language: Option<&str>) -> bool {
         let lang_string = language.map(|s| s.to_string());
         Self::is_summary_worthy(line, &lang_string.as_ref())

@@ -41,16 +41,19 @@ This security policy covers:
 ### Security Considerations
 
 #### File Processing
+
 - batless processes files locally and does not send data to external services
 - File content is streamed and not stored permanently
 - No network connections are made during normal operation
 
 #### Dependencies
+
 - We regularly audit dependencies for known vulnerabilities
 - Dependencies are kept up to date with security patches
 - We use `cargo audit` in our CI/CD pipeline
 
 #### Input Validation
+
 - File paths are validated to prevent directory traversal
 - Input limits are enforced to prevent resource exhaustion
 - Malformed files are handled gracefully without crashes

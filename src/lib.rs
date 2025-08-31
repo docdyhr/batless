@@ -28,8 +28,6 @@ pub mod wizard;
 
 // Re-export commonly used types
 pub use config::BatlessConfig;
-pub use profile::CustomProfile;
-pub use summary::SummaryLevel;
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};
@@ -37,7 +35,9 @@ pub use highlighter::SyntaxHighlighter;
 pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValidator};
 pub use language::{LanguageDetector, ThemeManager};
 pub use processor::FileProcessor;
+pub use profile::CustomProfile;
 pub use streaming::{StreamingCheckpoint, StreamingChunk, StreamingProcessor};
+pub use summary::SummaryLevel;
 pub use tokens::{AiModel, TokenCount, TokenCounter};
 pub use wizard::ConfigurationWizard;
 

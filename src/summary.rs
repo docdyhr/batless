@@ -61,9 +61,18 @@ mod tests {
     #[test]
     fn test_summary_level_parse() {
         assert_eq!(SummaryLevel::parse("none").unwrap(), SummaryLevel::None);
-        assert_eq!(SummaryLevel::parse("minimal").unwrap(), SummaryLevel::Minimal);
-        assert_eq!(SummaryLevel::parse("standard").unwrap(), SummaryLevel::Standard);
-        assert_eq!(SummaryLevel::parse("detailed").unwrap(), SummaryLevel::Detailed);
+        assert_eq!(
+            SummaryLevel::parse("minimal").unwrap(),
+            SummaryLevel::Minimal
+        );
+        assert_eq!(
+            SummaryLevel::parse("standard").unwrap(),
+            SummaryLevel::Standard
+        );
+        assert_eq!(
+            SummaryLevel::parse("detailed").unwrap(),
+            SummaryLevel::Detailed
+        );
         assert!(SummaryLevel::parse("invalid").is_err());
     }
 

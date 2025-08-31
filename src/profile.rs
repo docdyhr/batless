@@ -282,7 +282,10 @@ mod tests {
 
     #[test]
     fn test_custom_profile_creation() {
-        let profile = CustomProfile::new("test-profile".to_string(), Some("Test description".to_string()));
+        let profile = CustomProfile::new(
+            "test-profile".to_string(),
+            Some("Test description".to_string()),
+        );
         assert_eq!(profile.name, "test-profile");
         assert_eq!(profile.description, Some("Test description".to_string()));
         assert_eq!(profile.version, "1.0");
@@ -302,8 +305,11 @@ mod tests {
 
     #[test]
     fn test_custom_profile_serialization() -> BatlessResult<()> {
-        let profile = CustomProfile::new("test-profile".to_string(), Some("Test description".to_string()));
-        
+        let profile = CustomProfile::new(
+            "test-profile".to_string(),
+            Some("Test description".to_string()),
+        );
+
         // Test TOML serialization
         let toml_str = toml::to_string_pretty(&profile).unwrap();
         let deserialized: CustomProfile = toml::from_str(&toml_str).unwrap();
@@ -320,7 +326,7 @@ mod tests {
     #[test]
     fn test_custom_profile_file_operations() -> BatlessResult<()> {
         let profile = CustomProfile::new("file-test".to_string(), Some("File test".to_string()));
-        
+
         // Test JSON file
         let temp_file = NamedTempFile::new().unwrap();
         let json_path = temp_file.path().with_extension("json");

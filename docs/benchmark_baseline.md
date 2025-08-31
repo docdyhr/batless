@@ -3,6 +3,7 @@
 This document captures the baseline performance metrics for batless to detect performance regressions.
 
 ## Test Environment
+
 - Date: 2025-07-29
 - Version: 0.1.5
 - Rust: 1.84.0
@@ -36,7 +37,7 @@ These test config validation performance:
 ## Performance Regression Thresholds
 
 - **Critical regression**: >50% performance degradation
-- **Major regression**: >25% performance degradation  
+- **Major regression**: >25% performance degradation
 - **Minor regression**: >10% performance degradation
 
 ## Key Optimizations Implemented
@@ -54,7 +55,7 @@ To reproduce these benchmarks:
 # Run all startup operation benchmarks
 cargo bench --bench performance startup_operations
 
-# Run all config operation benchmarks  
+# Run all config operation benchmarks
 cargo bench --bench performance config_operations
 
 # Run specific benchmark

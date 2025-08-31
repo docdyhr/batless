@@ -36,7 +36,7 @@ echo ""
 # Suggest maintenance actions
 echo "🛠️  Maintenance Suggestions:"
 
-# Check if any workflows haven't run recently  
+# Check if any workflows haven't run recently
 LAST_SUCCESS=$(gh run list --status success --limit 1 --json createdAt | jq -r '.[0].createdAt')
 if [ -n "$LAST_SUCCESS" ] && [ "$LAST_SUCCESS" != "null" ]; then
   echo "✅ Recent successful run: $(echo "$LAST_SUCCESS" | cut -c1-19)"

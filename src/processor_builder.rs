@@ -164,7 +164,9 @@ impl SummaryExtraction for FastSummaryExtractor {
             .iter()
             .filter(|line| {
                 let trimmed = line.trim();
-                trimmed.starts_with("fn ") || trimmed.starts_with("class ") || trimmed.starts_with("import ")
+                trimmed.starts_with("fn ")
+                    || trimmed.starts_with("class ")
+                    || trimmed.starts_with("import ")
             })
             .cloned()
             .collect()
@@ -172,7 +174,9 @@ impl SummaryExtraction for FastSummaryExtractor {
 
     fn is_summary_worthy(&self, line: &str, _language: Option<&str>) -> bool {
         let trimmed = line.trim();
-        trimmed.starts_with("fn ") || trimmed.starts_with("class ") || trimmed.starts_with("import ")
+        trimmed.starts_with("fn ")
+            || trimmed.starts_with("class ")
+            || trimmed.starts_with("import ")
     }
 }
 
@@ -212,10 +216,18 @@ mod tests {
     #[test]
     fn test_mock_implementations() {
         let mock_detector = MockLanguageDetector;
-        assert_eq!(mock_detector.detect_language_with_fallback("test.rs"), Some("MockLanguage".to_string()));
+        assert_eq!(
+            mock_detector.detect_language_with_fallback("test.rs"),
+            Some("MockLanguage".to_string())
+        );
 
         let mock_extractor = MockSummaryExtractor;
-        let lines = vec!["line1".to_string(), "line2".to_string(), "line3".to_string(), "line4".to_string()];
+        let lines = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+            "line4".to_string(),
+        ];
         let summary = mock_extractor.extract_summary(&lines, None);
         assert_eq!(summary.len(), 3);
 

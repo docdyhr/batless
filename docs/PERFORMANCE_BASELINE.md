@@ -55,6 +55,7 @@ This document establishes performance baselines for batless v0.1.0 to track perf
 ## Monitoring Guidelines
 
 1. Run benchmarks before major releases:
+
    ```bash
    cargo bench
    ```
@@ -66,6 +67,7 @@ This document establishes performance baselines for batless v0.1.0 to track perf
 ## Optimization Opportunities
 
 Based on current benchmarks:
+
 - Summary mode adds ~75% overhead (60.6µs vs 34.8µs)
 - Language detection is fast and cached
 - Plain mode is 10x faster than highlighted mode

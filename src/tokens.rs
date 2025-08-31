@@ -27,7 +27,7 @@ impl TokenExtraction for TokenExtractor {
     fn extract_tokens(&self, content: &str, file_path: &str) -> Vec<String> {
         TokenExtractor::extract_tokens(content, file_path)
     }
-    
+
     fn count_tokens(&self, content: &str) -> usize {
         TokenExtractor::extract_tokens(content, "").len()
     }

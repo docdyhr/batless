@@ -82,22 +82,26 @@ Features are ranked by Impact (user value) vs Effort (development time):
 ## Recommended Development Order
 
 ### Phase 1: Quick Wins (v0.1.4)
+
 - [ ] Shell completions
 - [ ] Configuration file support
 - [ ] Performance marketing update
 - [ ] Better error messages
 
 ### Phase 2: Format Extensions (v0.1.5)
+
 - [ ] CSV output mode
 - [ ] XML output mode
 - [ ] Enhanced stdin support
 
 ### Phase 3: Ecosystem (v0.1.6)
+
 - [ ] Package manager submissions
 - [ ] VS Code extension
 - [ ] Community outreach
 
 ### Phase 4: Major Features (v0.2.0)
+
 - [ ] Tree-sitter integration
 - [ ] Plugin system architecture
 - [ ] Breaking changes if needed
@@ -113,7 +117,7 @@ Features are ranked by Impact (user value) vs Effort (development time):
    - Unicode edge cases
    - Very large line handling
 
-3. **Documentation**: 
+3. **Documentation**:
    - API documentation
    - Integration examples
    - Video demo
@@ -121,6 +125,7 @@ Features are ranked by Impact (user value) vs Effort (development time):
 ## Success Metrics
 
 Track adoption through:
+
 - GitHub stars growth rate
 - Crates.io downloads
 - GitHub issues/PRs from community

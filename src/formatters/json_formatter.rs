@@ -11,7 +11,12 @@ use serde_json::json;
 pub struct JsonFormatter;
 
 impl Formatter for JsonFormatter {
-    fn format(&self, file_info: &FileInfo, file_path: &str, config: &BatlessConfig) -> BatlessResult<String> {
+    fn format(
+        &self,
+        file_info: &FileInfo,
+        file_path: &str,
+        config: &BatlessConfig,
+    ) -> BatlessResult<String> {
         let json_output = json!({
             "file": file_path,
             "language": file_info.language,
@@ -44,7 +49,12 @@ impl Formatter for JsonFormatter {
 pub struct CompactJsonFormatter;
 
 impl Formatter for CompactJsonFormatter {
-    fn format(&self, file_info: &FileInfo, file_path: &str, _config: &BatlessConfig) -> BatlessResult<String> {
+    fn format(
+        &self,
+        file_info: &FileInfo,
+        file_path: &str,
+        _config: &BatlessConfig,
+    ) -> BatlessResult<String> {
         let json_output = json!({
             "file": file_path,
             "language": file_info.language,

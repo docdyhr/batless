@@ -76,18 +76,18 @@ run_check() {
     local check_name="$1"
     local check_command="$2"
     local fix_command="$3"
-    
+
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
     log_info "Running: $check_name"
-    
+
     if [ "$GENERATE_REPORT" = true ]; then
         echo "## $check_name" >> "$REPORT_FILE"
     fi
-    
+
     if eval "$check_command" 2>&1; then
         log_success "$check_name: PASSED"
         PASSED_CHECKS=$((PASSED_CHECKS + 1))
-        
+
         if [ "$GENERATE_REPORT" = true ]; then
             echo "✅ **PASSED**" >> "$REPORT_FILE"
             echo "" >> "$REPORT_FILE"
@@ -95,12 +95,12 @@ run_check() {
     else
         log_error "$check_name: FAILED"
         FAILED_CHECKS=$((FAILED_CHECKS + 1))
-        
+
         if [ "$GENERATE_REPORT" = true ]; then
             echo "❌ **FAILED**" >> "$REPORT_FILE"
             echo "" >> "$REPORT_FILE"
         fi
-        
+
         if [ "$FIX_ISSUES" = true ] && [ -n "$fix_command" ]; then
             log_info "Attempting to fix: $check_name"
             if eval "$fix_command"; then
@@ -233,7 +233,7 @@ echo ""
 log_info "Security Check Summary:"
 echo "  Total Checks: $TOTAL_CHECKS"
 echo "  Passed: $PASSED_CHECKS"
-echo "  Failed: $FAILED_CHECKS"  
+echo "  Failed: $FAILED_CHECKS"
 echo "  Warnings: $WARNINGS"
 
 if [ "$GENERATE_REPORT" = true ]; then
@@ -244,10 +244,10 @@ if [ "$GENERATE_REPORT" = true ]; then
     echo "- **Failed**: $FAILED_CHECKS" >> "$REPORT_FILE"
     echo "- **Warnings**: $WARNINGS" >> "$REPORT_FILE"
     echo "" >> "$REPORT_FILE"
-    
+
     SCORE=$(echo "scale=1; $PASSED_CHECKS * 100 / $TOTAL_CHECKS" | bc)
     echo "**Security Score**: $SCORE/100" >> "$REPORT_FILE"
-    
+
     log_success "Security report generated: $REPORT_FILE"
 fi
 

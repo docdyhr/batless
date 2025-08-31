@@ -14,7 +14,7 @@ Generated: 2025-07-25
 
 ### Startup Performance by File Size
 
-| File Size | Mean Time | Min Time | Max Time | 
+| File Size | Mean Time | Min Time | Max Time |
 |-----------|-----------|----------|----------|
 | Small (47B) | 1.6ms | 1.4ms | 2.7ms |
 | Medium (46KB) | 2.2ms | 2.0ms | 3.0ms |
@@ -39,6 +39,7 @@ Generated: 2025-07-25
 ## Comparison to Claims
 
 The README claims "<50ms startup with cached syntax definitions". Our benchmarks show:
+
 - **Reality**: 1.6-2.2ms average (with outliers up to 14.8ms)
 - **Conservative claim**: 50ms allows for slower systems and edge cases
 - **Actual performance**: **95%+ faster than advertised**
@@ -66,7 +67,7 @@ hyperfine --warmup 5 --min-runs 20 -N \
   './target/release/batless benchmark_files/medium.rs' \
   './target/release/batless benchmark_files/large.rs --max-lines=100'
 
-# Mode benchmarks  
+# Mode benchmarks
 hyperfine --warmup 3 -N \
   './target/release/batless benchmark_files/medium.rs --mode=plain' \
   './target/release/batless benchmark_files/medium.rs --mode=highlight' \

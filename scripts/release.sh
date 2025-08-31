@@ -113,24 +113,24 @@ fi
 # Pre-release checks
 if [ "$SKIP_CHECKS" = false ]; then
     log_info "Running pre-release checks..."
-    
+
     if [ "$DRY_RUN" = false ]; then
         # Pull latest changes
         log_info "Pulling latest changes..."
         git pull origin main
-        
+
         # Run tests
         log_info "Running tests..."
         cargo test
-        
+
         # Format check
         log_info "Checking code formatting..."
         cargo fmt --all -- --check
-        
+
         # Clippy check
         log_info "Running clippy..."
         cargo clippy --all-targets --all-features -- -D warnings
-        
+
         # Security audit (if available)
         if command -v cargo-audit &> /dev/null; then
             log_info "Running security audit..."
@@ -138,11 +138,11 @@ if [ "$SKIP_CHECKS" = false ]; then
         else
             log_warning "cargo-audit not installed. Skipping security audit."
         fi
-        
+
         # Build release version
         log_info "Building release version..."
         cargo build --release
-        
+
         # Test release binary
         log_info "Testing release binary..."
         if ! ./target/release/batless --version | grep -q "$CURRENT_VERSION"; then
@@ -169,7 +169,7 @@ if [ "$DRY_RUN" = false ]; then
         # GNU sed (Linux)
         sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
     fi
-    
+
     # Update Cargo.lock
     log_info "Updating Cargo.lock..."
     cargo update -p batless
@@ -181,7 +181,7 @@ fi
 if [ "$DRY_RUN" = false ]; then
     log_info "Building with new version..."
     cargo build --release
-    
+
     # Verify new version
     if ! ./target/release/batless --version | grep -q "$NEW_VERSION"; then
         log_error "Version verification failed after update"
@@ -196,7 +196,7 @@ log_info "Preparing changelog..."
 if [ -f "CHANGELOG.md" ] && [ "$DRY_RUN" = false ]; then
     # Create a backup
     cp CHANGELOG.md CHANGELOG.md.backup
-    
+
     # Get commits since last tag
     LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
     if [ -n "$LAST_TAG" ]; then
@@ -206,7 +206,7 @@ if [ -f "CHANGELOG.md" ] && [ "$DRY_RUN" = false ]; then
         log_info "No previous tags found, getting recent commits..."
         COMMITS=$(git log --oneline --no-merges -10 | sed 's/^/- /')
     fi
-    
+
     # Create temporary changelog entry
     cat > temp_changelog.md << EOF
 ## [${NEW_VERSION}] - $(date +%Y-%m-%d)
@@ -225,7 +225,7 @@ $COMMITS
 <!-- Features removed in this version -->
 
 EOF
-    
+
     # Prepend to existing changelog
     if grep -q "## \[" CHANGELOG.md; then
         # Insert after the header, before the first release entry
@@ -234,16 +234,16 @@ EOF
         # Prepend to the entire file
         cat temp_changelog.md CHANGELOG.md > CHANGELOG.md.new && mv CHANGELOG.md.new CHANGELOG.md
     fi
-    
+
     rm temp_changelog.md
-    
+
     log_info "Please review and edit the changelog entry:"
     if command -v code &> /dev/null; then
         code CHANGELOG.md
     else
         log_info "Changelog prepared. Please edit CHANGELOG.md manually."
     fi
-    
+
     read -p "Press Enter when you've finished editing CHANGELOG.md (or Ctrl+C to cancel)..."
 else
     log_info "Would update CHANGELOG.md with version $NEW_VERSION"

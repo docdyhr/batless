@@ -10,12 +10,17 @@ use crate::formatters::Formatter;
 pub struct SummaryFormatter;
 
 impl Formatter for SummaryFormatter {
-    fn format(&self, file_info: &FileInfo, file_path: &str, _config: &BatlessConfig) -> BatlessResult<String> {
+    fn format(
+        &self,
+        file_info: &FileInfo,
+        file_path: &str,
+        _config: &BatlessConfig,
+    ) -> BatlessResult<String> {
         let mut output = Vec::new();
-        
+
         // File header with basic info
         let stats = file_info.get_stats_summary();
-        
+
         output.push(format!(
             r"File Processing Statistics
 ==========================

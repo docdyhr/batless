@@ -1,0 +1,69 @@
+default_language_version:
+  python: python3
+  node: system
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        exclude: '^\.github/workflows/'
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-toml
+      - id: check-json
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Rust-specific checks
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: Cargo format
+        entry: cargo fmt -- --check
+        language: system
+        files: '\.rs$'
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: Cargo clippy
+        entry: cargo clippy -- -D warnings
+        language: system
+        files: '\.rs$'
+        pass_filenames: false
+
+      - id: cargo-test
+        name: Cargo test
+        entry: cargo test --lib --quiet
+        language: system
+        files: '\.rs$'
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: cargo-check
+        name: Cargo check
+        entry: cargo check
+        language: system
+        files: 'Cargo\.(toml|lock)$'
+        pass_filenames: false
+
+  # Markdown checks (temporarily disabled for commit)
+  # - repo: https://github.com/igorshubovych/markdownlint-cli
+  #   rev: v0.41.0
+  #   hooks:
+  #     - id: markdownlint
+  #       args: ['--fix']
+  #       exclude: '^(CHANGELOG\.md|\.github/.*\.md)$'
+
+  # Security scanning
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: '^(Cargo\.lock|.*\.lock)$'

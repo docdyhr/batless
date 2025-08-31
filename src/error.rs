@@ -319,7 +319,7 @@ impl BatlessError {
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("");
-                
+
                 Self::levenshtein_distance(&filename, a_name)
                     .cmp(&Self::levenshtein_distance(&filename, b_name))
             });

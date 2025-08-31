@@ -1,9 +1,10 @@
 # PRD.md
 
-## Product Requirements Document  
-**Project Name:** `batless` – A Minimal, AI-Safe Syntax Code Viewer  
-**Status:** Draft  
-**Author:** Thomas  
+## Product Requirements Document
+
+**Project Name:** `batless` – A Minimal, AI-Safe Syntax Code Viewer
+**Status:** Draft
+**Author:** Thomas
 **Target Users:** LLM-based code agents (e.g., Claude Code, Gemini), developers using automation, non-interactive CI pipelines.
 
 ---
@@ -33,6 +34,7 @@ Tools like `bat` often block on `less`, break in CI, or output too much formatti
 ## 4. Features
 
 ### Required (MVP)
+
 - `--plain`: Raw content, no decorations
 - `--language=auto|<lang>`: Auto-detect or force syntax
 - `--mode=highlight|plain|json`: Output format modes
@@ -40,11 +42,13 @@ Tools like `bat` often block on `less`, break in CI, or output too much formatti
 - Streamed output (never loads entire file)
 
 ### Highlighting and Color Output
+
 - ANSI syntax highlighting
 - `--color=never` or `--strip-ansi` support
 - Configurable theme (basic light/dark)
 
 ### Optional (Post-MVP)
+
 - `--ast`: Emit syntax structure
 - `--summary`: Show top-level code only
 - `--llm-mode`: Safe defaults for agents

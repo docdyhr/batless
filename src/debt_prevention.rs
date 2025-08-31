@@ -42,48 +42,48 @@ impl QualityChecker {
             gates: QualityGate::default(),
         }
     }
-    
+
     /// Create a quality checker with custom gates
     pub fn with_gates(gates: QualityGate) -> Self {
         Self { gates }
     }
-    
+
     /// Check a single file against quality gates
     pub fn check_file(&self, file_path: &Path) -> QualityReport {
         let mut report = QualityReport::new(file_path.to_path_buf());
-        
+
         if let Ok(content) = fs::read_to_string(file_path) {
             let lines: Vec<&str> = content.lines().collect();
-            
+
             // Check module size
             if lines.len() > self.gates.max_module_lines {
                 report.violations.push(QualityViolation {
                     rule: "module_size".to_string(),
                     message: format!(
-                        "Module has {} lines (max: {})", 
-                        lines.len(), 
+                        "Module has {} lines (max: {})",
+                        lines.len(),
                         self.gates.max_module_lines
                     ),
                     severity: Severity::High,
                     location: Location::Module,
                 });
             }
-            
+
             // Check for clone() usage
             let clone_count = content.matches(".clone()").count();
             if clone_count > self.gates.max_clone_calls {
                 report.violations.push(QualityViolation {
                     rule: "clone_usage".to_string(),
                     message: format!(
-                        "Found {} clone() calls (max: {})", 
-                        clone_count, 
+                        "Found {} clone() calls (max: {})",
+                        clone_count,
                         self.gates.max_clone_calls
                     ),
                     severity: Severity::Medium,
                     location: Location::Module,
                 });
             }
-            
+
             // Check for unwrap() usage in non-test code
             if !file_path.to_string_lossy().contains("test") {
                 let unwrap_count = content.matches(".unwrap()").count();
@@ -91,8 +91,8 @@ impl QualityChecker {
                     report.violations.push(QualityViolation {
                         rule: "unwrap_usage".to_string(),
                         message: format!(
-                            "Found {} unwrap() calls in production code (max: {})", 
-                            unwrap_count, 
+                            "Found {} unwrap() calls in production code (max: {})",
+                            unwrap_count,
                             self.gates.max_unwrap_calls
                         ),
                         severity: Severity::High,
@@ -100,7 +100,7 @@ impl QualityChecker {
                     });
                 }
             }
-            
+
             // Check for TODO/FIXME comments
             let todo_count = content.matches("TODO").count() + content.matches("FIXME").count();
             if todo_count > 0 {
@@ -111,47 +111,47 @@ impl QualityChecker {
                     location: Location::Module,
                 });
             }
-            
+
             // Check function sizes
             self.check_function_sizes(&content, &mut report);
         }
-        
+
         report
     }
-    
+
     /// Check function sizes in the content
     fn check_function_sizes(&self, content: &str, report: &mut QualityReport) {
         let lines: Vec<&str> = content.lines().collect();
         let mut in_function = false;
         let mut function_start = 0;
         let mut brace_count = 0;
-        
+
         for (line_num, line) in lines.iter().enumerate() {
             let trimmed = line.trim();
-            
+
             // Simple heuristic for function detection
-            if (trimmed.starts_with("pub fn ") || trimmed.starts_with("fn ") || 
+            if (trimmed.starts_with("pub fn ") || trimmed.starts_with("fn ") ||
                 trimmed.starts_with("async fn ")) && trimmed.contains("(") {
                 in_function = true;
                 function_start = line_num;
                 brace_count = 0;
             }
-            
+
             if in_function {
                 brace_count += line.matches('{').count() as i32;
                 brace_count -= line.matches('}').count() as i32;
-                
+
                 if brace_count == 0 && line.contains('}') {
                     in_function = false;
                     let function_lines = line_num - function_start + 1;
-                    
+
                     if function_lines > self.gates.max_function_lines {
                         report.violations.push(QualityViolation {
                             rule: "function_size".to_string(),
                             message: format!(
-                                "Function at line {} has {} lines (max: {})", 
-                                function_start + 1, 
-                                function_lines, 
+                                "Function at line {} has {} lines (max: {})",
+                                function_start + 1,
+                                function_lines,
                                 self.gates.max_function_lines
                             ),
                             severity: Severity::Medium,
@@ -162,11 +162,11 @@ impl QualityChecker {
             }
         }
     }
-    
+
     /// Check an entire directory recursively
     pub fn check_directory(&self, dir_path: &Path) -> Vec<QualityReport> {
         let mut reports = Vec::new();
-        
+
         if let Ok(entries) = fs::read_dir(dir_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
@@ -177,7 +177,7 @@ impl QualityChecker {
                 }
             }
         }
-        
+
         reports
     }
 }
@@ -203,20 +203,20 @@ impl QualityReport {
             violations: Vec::new(),
         }
     }
-    
+
     /// Check if the file passes quality gates
     pub fn passes(&self) -> bool {
-        self.violations.is_empty() || 
+        self.violations.is_empty() ||
         self.violations.iter().all(|v| matches!(v.severity, Severity::Low))
     }
-    
+
     /// Get high severity violations
     pub fn high_severity_violations(&self) -> Vec<&QualityViolation> {
         self.violations.iter()
             .filter(|v| matches!(v.severity, Severity::High))
             .collect()
     }
-    
+
     /// Get violations count by severity
     pub fn violations_by_severity(&self, severity: Severity) -> usize {
         self.violations.iter()
@@ -282,12 +282,12 @@ impl ArchitectureDecisionRecord {
             date: chrono::Utc::now().format("%Y-%m-%d").to_string(),
         }
     }
-    
+
     /// Add a consequence
     pub fn add_consequence(&mut self, consequence: String) {
         self.consequences.push(consequence);
     }
-    
+
     /// Generate markdown format
     pub fn to_markdown(&self) -> String {
         format!(
@@ -335,11 +335,11 @@ mod tests {
         assert_eq!(gate.max_module_lines, 500);
         assert_eq!(gate.max_unwrap_calls, 0);
     }
-    
+
     #[test]
     fn test_quality_checker() {
         let checker = QualityChecker::new();
-        
+
         // Create a test file with violations
         let mut temp_file = NamedTempFile::new().unwrap();
         let test_content = r#"
@@ -354,16 +354,16 @@ fn another_function() {
 }
 "#;
         fs::write(temp_file.path(), test_content).unwrap();
-        
+
         let report = checker.check_file(temp_file.path());
         assert!(!report.violations.is_empty());
-        
+
         // Should find unwrap and clone violations
         let has_unwrap_violation = report.violations.iter()
             .any(|v| v.rule == "unwrap_usage");
         assert!(has_unwrap_violation);
     }
-    
+
     #[test]
     fn test_adr_creation() {
         let mut adr = ArchitectureDecisionRecord::new(
@@ -371,10 +371,10 @@ fn another_function() {
             "We need flexible formatting".to_string(),
             "Use trait objects to enable different formatters".to_string(),
         );
-        
+
         adr.add_consequence("Better testability".to_string());
         adr.add_consequence("More flexible architecture".to_string());
-        
+
         let markdown = adr.to_markdown();
         assert!(markdown.contains("Use trait objects"));
         assert!(markdown.contains("Better testability"));

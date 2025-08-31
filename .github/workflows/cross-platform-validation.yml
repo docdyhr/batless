@@ -46,7 +46,7 @@ jobs:
           - os: ubuntu-latest
             target: armv7-unknown-linux-gnueabihf
             cross: true
-          
+
           # Windows targets
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -54,7 +54,7 @@ jobs:
           - os: windows-latest
             target: i686-pc-windows-msvc
             cross: false
-          
+
           # macOS targets
           - os: macos-latest
             target: x86_64-apple-darwin
@@ -62,7 +62,7 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             cross: false
-          
+
           # Additional targets for broader compatibility
           - os: ubuntu-latest
             target: x86_64-unknown-freebsd
@@ -115,7 +115,7 @@ jobs:
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             binary_path="${binary_path}.exe"
           fi
-          
+
           # Test basic functionality
           $binary_path --version
           echo "fn main() { println!(\"test\"); }" | $binary_path --mode=plain --max-lines=1 /dev/stdin || echo "stdin test skipped"
@@ -168,7 +168,7 @@ jobs:
           # Create test files with platform-specific paths
           mkdir -p "test dir/sub dir"
           echo "test content" > "test dir/sub dir/test file.txt"
-          
+
           # Test handling of spaces in filenames
           ./target/release/batless${{ matrix.binary_extension }} "test dir/sub dir/test file.txt" --mode=plain --max-lines=1
 
@@ -178,11 +178,11 @@ jobs:
           # Test XDG config directory
           mkdir -p ~/.config/batless
           echo 'max_lines = 42' > ~/.config/batless/config.toml
-          
+
           # Test that config is discovered
           result=$(./target/release/batless${{ matrix.binary_extension }} README.md --mode=json --max-lines=1 | jq -r '.metadata.total_lines')
           echo "Config discovery test passed (result: $result)"
-          
+
           # Cleanup
           rm -rf ~/.config/batless
 
@@ -194,11 +194,11 @@ jobs:
           $configDir = "$env:APPDATA\batless"
           New-Item -ItemType Directory -Force -Path $configDir
           'max_lines = 42' | Out-File -FilePath "$configDir\config.toml" -Encoding utf8
-          
+
           # Test that config is discovered
           $result = & ".\target\release\batless.exe" README.md --mode=json --max-lines=1 | ConvertFrom-Json
           Write-Host "Config discovery test passed"
-          
+
           # Cleanup
           Remove-Item -Recurse -Force $configDir
 
@@ -207,7 +207,7 @@ jobs:
         run: |
           # Create files with various encodings
           echo "Hello, 世界! 🦀" > unicode_test.txt
-          
+
           # Test Unicode handling
           ./target/release/batless${{ matrix.binary_extension }} unicode_test.txt --mode=plain --max-lines=1
 
@@ -216,7 +216,7 @@ jobs:
         run: |
           # Create a moderately large file (cross-platform compatible)
           python3 -c "for i in range(1000): print(f'line {i+1} with some content')" > large_test.txt
-          
+
           # Test with various limits
           ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-lines=100 --mode=plain > /dev/null
           ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-bytes=1024 --mode=plain > /dev/null
@@ -238,7 +238,7 @@ jobs:
     runs-on: ubuntu-latest
     if: inputs.test_type == 'full'
     needs: [cross-compile-targets]
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -251,10 +251,10 @@ jobs:
       - name: Validate binary artifacts
         run: |
           echo "📦 Validating binary artifacts..."
-          
+
           # List all downloaded artifacts
           find . -name "batless*" -type f -exec ls -la {} \;
-          
+
           # Check that we have binaries for expected platforms
           expected_targets=(
             "x86_64-unknown-linux-gnu"
@@ -263,7 +263,7 @@ jobs:
             "x86_64-apple-darwin"
             "aarch64-apple-darwin"
           )
-          
+
           for target in "${expected_targets[@]}"; do
             if find . -path "*$target*" -name "batless*" | grep -q .; then
               echo "✅ Found binary for $target"
@@ -272,7 +272,7 @@ jobs:
               exit 1
             fi
           done
-          
+
           echo "🎯 All expected binaries present!"
 
   cross-platform-report:
@@ -280,7 +280,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs: [cross-compile-targets, platform-specific-tests, integration-validation]
-    
+
     steps:
       - name: Generate cross-platform report
         run: |
@@ -291,7 +291,7 @@ jobs:
           echo "- Platform-Specific Tests: ${{ needs.platform-specific-tests.result }}" >> report.md
           echo "- Integration Validation: ${{ needs.integration-validation.result }}" >> report.md
           echo "" >> report.md
-          
+
           if [[ "${{ needs.cross-compile-targets.result }}" == "success" ]] && \
              [[ "${{ needs.platform-specific-tests.result }}" == "success" ]] && \
              [[ "${{ needs.integration-validation.result }}" == "success" ]]; then
@@ -303,7 +303,7 @@ jobs:
             echo "" >> report.md
             echo "Please review the failed jobs and address platform-specific issues." >> report.md
           fi
-          
+
           cat report.md
 
       - name: Comment on PR with results

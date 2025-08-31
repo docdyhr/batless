@@ -22,17 +22,17 @@ class Batless < Formula
 
     # Test basic functionality
     assert_match "Hello, batless!", shell_output("#{bin}/batless #{testpath}/test.rs")
-    
+
     # Test version output
     assert_match version.to_s, shell_output("#{bin}/batless --version")
-    
+
     # Test help output
     assert_match "batless", shell_output("#{bin}/batless --help")
-    
+
     # Test JSON mode
     json_output = shell_output("#{bin}/batless --mode=json #{testpath}/test.rs")
     assert_match '"mode": "json"', json_output
-    
+
     # Test summary mode
     summary_output = shell_output("#{bin}/batless --mode=summary #{testpath}/test.rs")
     assert_match "fn main", summary_output
