@@ -1,8 +1,9 @@
 name: Enhanced Testing
 
 on:
-  pull_request:
-    branches: [main]
+  # Replaced by CI/CD Optimized workflow - keeping for scheduled runs only
+  # pull_request:
+  #   branches: [main]
   schedule:
     # Run comprehensive tests weekly
     - cron: "0 3 * * 1"

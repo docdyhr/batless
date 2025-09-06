@@ -1,10 +1,11 @@
 name: Comprehensive Testing
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  # Replaced by optimized workflows - keeping for scheduled comprehensive testing
+  # push:
+  #   branches: [main, develop]
+  # pull_request:
+  #   branches: [main]
   schedule:
     # Run comprehensive tests weekly
     - cron: "0 3 * * 1"
