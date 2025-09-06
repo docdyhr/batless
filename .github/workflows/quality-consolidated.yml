@@ -171,4 +171,8 @@ jobs:
         run: cargo install cargo-license
 
       - name: Check licenses
-        run: cargo license --json | jq -r '.[] | select(.license != "MIT" and .license != "Apache-2.0" and .license != "BSD-3-Clause" and .license != "ISC") | .name + ": " + .license'
+        run: |
+          cargo license --json | jq -r '.[] |
+          select(.license != "MIT" and .license != "Apache-2.0" and
+          .license != "BSD-3-Clause" and .license != "ISC") |
+          .name + ": " + .license'
