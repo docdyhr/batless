@@ -1,21 +1,22 @@
 name: Performance Management
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'benches/**'
-      - 'scripts/check_performance.sh'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - 'benches/**'
+  # Temporarily disabled for CI optimization testing
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'src/**'
+  #     - 'Cargo.toml'
+  #     - 'Cargo.lock'
+  #     - 'benches/**'
+  #     - 'scripts/check_performance.sh'
+  # pull_request:
+  #   branches: [main]
+  #   paths:
+  #     - 'src/**'
+  #     - 'Cargo.toml'
+  #     - 'Cargo.lock'
+  #     - 'benches/**'
   schedule:
     # Run weekly performance tracking
     - cron: "0 4 * * 1"

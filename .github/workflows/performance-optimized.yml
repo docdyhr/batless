@@ -1,11 +1,17 @@
 name: Performance Optimized CI
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches: [main, develop]
+  # Safe testing mode - manual triggers only
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  # push:
+  #   branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      test_reason:
+        description: 'Reason for performance testing'
+        required: false
+        default: 'Performance optimization testing'
 
 # Aggressive concurrency to cancel outdated runs
 concurrency:

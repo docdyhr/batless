@@ -1,12 +1,18 @@
 name: CI/CD Optimized
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
+  # Safe testing mode - no automatic triggers during optimization
+  # push:
+  #   branches: [main, develop]
+  # pull_request:
+  #   branches: [main]
+  #   types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for testing optimized CI'
+        required: false
+        default: 'Manual optimization testing'
 
 # Concurrency controls to prevent redundant runs
 concurrency:

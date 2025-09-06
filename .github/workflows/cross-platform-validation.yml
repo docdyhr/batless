@@ -1,12 +1,13 @@
 name: Cross-Platform Validation
 
 on:
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
+  # Temporarily disabled for CI optimization testing
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'src/**'
+  #     - 'Cargo.toml'
+  #     - 'Cargo.lock'
   schedule:
     # Run comprehensive cross-platform tests weekly (disabled for now)
     # - cron: "0 6 * * 1"
