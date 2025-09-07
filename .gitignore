@@ -94,3 +94,11 @@ bench_results/
 # Profiling data
 *.prof
 # Force CI refresh
+
+# CI/CD Monitoring temporary files
+reports/metrics/*.json
+*.log
+pipeline_failure.log
+test_output.log
+failing_tests.txt
+docker_build.log
