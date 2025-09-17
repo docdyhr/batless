@@ -12,9 +12,9 @@ Built for automation, AI assistants, and modern CLI workflows
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?logo=opensource&logoColor=white)](https://opensource.org/licenses/MIT)
 [![GitHub Release](https://img.shields.io/github/v/release/docdyhr/batless?include_prereleases&logo=github&logoColor=white)](https://github.com/docdyhr/batless/releases)
 
-[![CI/CD](https://github.com/docdyhr/batless/actions/workflows/ci-optimized.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/ci-optimized.yml)
+[![Health Check](https://github.com/docdyhr/batless/actions/workflows/health-check.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/health-check.yml)
 [![Security](https://github.com/docdyhr/batless/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/security.yml)
-[![Release](https://github.com/docdyhr/batless/actions/workflows/release-v2.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/release-v2.yml)
+[![Fuzz Testing](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml)
 [![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg?logo=codecov&logoColor=white)](https://codecov.io/gh/docdyhr/batless)
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust&logoColor=white)](https://github.com/docdyhr/batless)
