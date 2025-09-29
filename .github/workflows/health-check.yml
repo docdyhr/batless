@@ -132,7 +132,7 @@ jobs:
 
       - name: Create issue if problems found
         if: env.HEALTH_STATUS == 'issues_found' && github.event_name == 'schedule'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
