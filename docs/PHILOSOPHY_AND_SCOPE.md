@@ -12,6 +12,7 @@ Following the Unix philosophy, batless intentionally maintains a narrow, focused
 ## What batless IS
 
 ✅ **A non-blocking code viewer**
+
 - Views individual files with syntax highlighting
 - Provides multiple output modes (plain, highlight, json, summary)
 - Never blocks or waits for user input
@@ -19,12 +20,14 @@ Following the Unix philosophy, batless intentionally maintains a narrow, focused
 - Memory-efficient streaming for large files
 
 ✅ **An AI-friendly formatter**
+
 - JSON output with structured metadata
 - Token counting for context estimation
 - AI model profiles (Claude, GPT, Copilot)
 - Summary mode for code structure extraction
 
 ✅ **A cat/bat alternative**
+
 - Drop-in replacement for `cat` with highlighting
 - Compatible with pipelines and scripts
 - Predictable, scriptable output
@@ -44,6 +47,7 @@ Following the Unix philosophy, batless intentionally maintains a narrow, focused
 **Decision**: Keep searching separate
 
 **Rationale**:
+
 - `grep` and `rg` are mature, optimized search tools
 - Search requires different performance characteristics (indexing, parallel scanning)
 - Would duplicate existing excellent tools
@@ -56,6 +60,7 @@ Following the Unix philosophy, batless intentionally maintains a narrow, focused
 **Decision**: Keep file discovery separate
 
 **Rationale**:
+
 - `ls`, `find`, `fd`, `tree` are purpose-built for this
 - Directory traversal adds complexity
 - Respecting `.gitignore` requires git integration
@@ -68,17 +73,20 @@ Following the Unix philosophy, batless intentionally maintains a narrow, focused
 **Decision**: This one is debatable
 
 **Arguments FOR adding `--range`**:
+
 - Very common use case
 - Simple to implement
 - Doesn't violate core mission
 - Would improve usability significantly
 
 **Arguments AGAINST**:
+
 - `sed`, `head`, `tail` already exist
 - Adds API surface area
 - Not strictly "viewing" (more like "extracting")
 
 **Recommendation**: Consider for v0.4.0, but with caveats:
+
 - Only if trivial to implement
 - Only basic syntax: `-r START:END`
 - No complex features (negative indices, multiple ranges)
@@ -90,11 +98,13 @@ Instead of adding features, improve the **user experience when using the right t
 ### 1. ✅ Helpful Error Messages
 
 **Current**:
+
 ```
 Error: unexpected argument '--pattern' found
 ```
 
 **Improved**:
+
 ```
 Error: unexpected argument '--pattern' found
 
@@ -112,6 +122,7 @@ Error: unexpected argument '--pattern' found
 **Current state**: Documentation exists but could be better integrated
 
 **Improvements**:
+
 - Quick reference guide with common patterns
 - Cheat sheet for "I want to X" → "Use Y"
 - Examples of batless in pipelines
@@ -174,18 +185,21 @@ COMMON PATTERNS
 ### Phase 2: Consider Minimal Range Support (v0.4.0) 🤔 **Debatable**
 
 **Only if**:
+
 - Community strongly requests it
 - Implementation is trivial (<100 lines)
 - Doesn't add dependencies
 - Doesn't compromise performance
 
 **Implementation**:
+
 ```rust
 // Simple, no-frills range support
 --range START:END   // e.g., --range 10:50
 ```
 
 **No complex features**:
+
 - ❌ Negative indices
 - ❌ Multiple ranges
 - ❌ Regex-based ranges
@@ -194,6 +208,7 @@ COMMON PATTERNS
 ### Phase 3: NO Feature Creep ❌ **Not Recommended**
 
 **Do NOT add**:
+
 - Pattern searching (`--pattern`)
 - File listing (`--list`)
 - Interactive features
@@ -224,12 +239,14 @@ When considering new features, ask:
 ## Real-World Example: The Error Reports
 
 Users tried:
+
 - `batless --list .vscode/`
 - `batless --pattern "import.*@/" src/`
 
 **Wrong response**: Add these features
 
 **Right response**:
+
 1. Fix documentation ✅ (Done)
 2. Improve error messages with hints ✅ (Recommended)
 3. Document the correct tools to use ✅ (Recommended)
@@ -278,6 +295,7 @@ Users tried:
 — Antoine de Saint-Exupéry
 
 This philosophy guide ensures batless remains:
+
 - **Simple** to understand
 - **Easy** to maintain
 - **Reliable** in behavior

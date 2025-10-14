@@ -7,11 +7,13 @@ Enhance user experience by providing helpful error messages with actionable sugg
 ## Current State
 
 **Before**:
+
 ```
 Error: unexpected argument '--pattern' found
 ```
 
 Users get confused and have to:
+
 1. Search documentation
 2. Try different approaches
 3. Eventually find grep/rg
@@ -50,6 +52,7 @@ if args.contains("--pattern") || args.contains("-p") {
 ```
 
 **Output**:
+
 ```
 Error: batless doesn't support pattern searching
 
@@ -282,6 +285,7 @@ Error: batless doesn't support pattern searching
 ```
 
 This ensures you quickly learn the right tool for each task.
+
 ```
 
 ### Update README.md
@@ -299,11 +303,13 @@ grep -rn "TODO" src/ | head -20
 ```
 
 **Want to list files?**
+
 ```bash
 # ❌ batless --list src/  # Doesn't exist
 # ✅ Use ls/find/fd
 fd -e rs | xargs batless
 ```
+
 ```
 
 ## Rollout Plan
