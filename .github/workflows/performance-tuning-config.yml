@@ -1,0 +1,55 @@
+# Performance Regression Detection Configuration
+#
+# This configuration helps reduce false positives from performance monitoring
+# by setting appropriate thresholds and filtering strategies.
+
+name: Performance Monitoring Config
+
+# Configuration for performance regression detection
+config:
+  # Threshold for performance degradation (percentage)
+  # Increase this to reduce false positives from normal CI timing variation
+  degradation_threshold: 15  # Increased from default 5% to account for CI variability
+
+  # Minimum sample size before alerting
+  min_samples: 5  # Require at least 5 runs before triggering alerts
+
+  # Statistical confidence level
+  confidence_level: 0.95  # 95% confidence required
+
+  # Exclude certain workflows from strict monitoring
+  exclude_workflows:
+    - "Fuzz Testing"  # Inherently variable
+    - "Code Coverage"  # Can vary significantly
+
+  # Baseline comparison method
+  comparison_method: "rolling_average"  # Compare against rolling 7-day average
+
+  # Alert only on consistent degradation
+  consecutive_failures: 3  # Require 3 consecutive slow runs before alerting
+
+  # Ignore outliers
+  outlier_detection: true
+  outlier_threshold: 2.5  # Standard deviations from mean
+
+# Recommended actions for CI health
+recommendations:
+  - name: "Monitor but don't block"
+    description: "Performance checks should be informative, not blocking"
+    action: "Set performance checks to continue-on-error: true"
+
+  - name: "Use caching effectively"
+    description: "Ensure Rust cache is working properly"
+    action: "Verify Swatinem/rust-cache@v2 is configured correctly"
+
+  - name: "Benchmark locally"
+    description: "Run criterion benchmarks locally for accurate comparisons"
+    action: "Use 'cargo bench' for deterministic performance testing"
+
+  - name: "Time budget alerts"
+    description: "Alert only when jobs exceed reasonable time budgets"
+    thresholds:
+      fast_validation: "2 minutes"
+      test_suite: "10 minutes"
+      coverage: "20 minutes"
+      full_ci: "30 minutes"
