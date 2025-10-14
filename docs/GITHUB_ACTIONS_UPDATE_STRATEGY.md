@@ -11,6 +11,7 @@ As of October 2025, the project uses various GitHub Actions with pinned major ve
 ### 1. Phased Update Approach
 
 #### Phase 1: Non-Breaking Updates (Immediate)
+
 Update actions with backward-compatible changes:
 
 - ✅ `actions/checkout`: v4 → v5 (minor breaking changes, well-documented)
@@ -18,6 +19,7 @@ Update actions with backward-compatible changes:
 - ⚠️ Skip for now: Actions with major API changes
 
 #### Phase 2: Test Breaking Changes (Next Sprint)
+
 - **`codecov/codecov-action`: v4 → v5**
   - ⚠️ Breaking changes:
     - `file` → `files` (parameter renamed)
@@ -39,6 +41,7 @@ Update actions with backward-compatible changes:
     - Verify runner version compatibility
 
 #### Phase 3: Major Ecosystem Updates (Future)
+
 - **`github/codeql-action`: v3 → v4**
 - **`EmbarkStudios/cargo-deny-action`: v1 → v2**
 - **Other major version bumps**
@@ -46,11 +49,13 @@ Update actions with backward-compatible changes:
 ## 🔧 Implementation Plan
 
 ### Step 1: Create Feature Branch
+
 ```bash
 git checkout -b ci/github-actions-updates-phase1
 ```
 
 ### Step 2: Update Non-Breaking Actions
+
 Update the following in `.github/workflows/*.yml`:
 
 ```yaml
@@ -60,6 +65,7 @@ Update the following in `.github/workflows/*.yml`:
 ```
 
 ### Step 3: Test Breaking Changes Locally
+
 For codecov v5:
 
 ```yaml
@@ -86,6 +92,7 @@ For codecov v5:
 ## 📊 Testing Procedure
 
 ### Pre-Deployment
+
 1. Create test PR with actions updates
 2. Run full CI/CD pipeline
 3. Verify all checks pass
@@ -94,6 +101,7 @@ For codecov v5:
 6. Check for any warnings or deprecations
 
 ### Post-Deployment
+
 1. Monitor first 3-5 CI runs
 2. Check for any errors or warnings
 3. Verify performance hasn't degraded
@@ -118,12 +126,14 @@ git push --force
 ### Codecov v4 → v5
 
 **Migration Guide:**
+
 - Replace `file:` with `files:`
 - Replace `plugin:` with `plugins:`
 - Review token requirements (new opt-out feature for public repos)
-- See: https://github.com/codecov/codecov-action#migration-guide
+- See: <https://github.com/codecov/codecov-action#migration-guide>
 
 **New Features:**
+
 - Wrapper architecture (faster updates)
 - Optional tokens for public repositories
 - New parameters: `binary`, `gcov_*`, `report_type`, etc.
@@ -131,9 +141,11 @@ git push --force
 ### Actions/Download-Artifact v4 → v5
 
 **Breaking Change:**
+
 - Single artifact downloads by ID now extract directly to path (not nested)
 
 **Migration:**
+
 ```yaml
 # Before v5 (nested structure)
 - uses: actions/download-artifact@v4

@@ -39,6 +39,32 @@ fn print_error(error: &BatlessError) {
 }
 
 fn main() {
+    // Check for common unsupported features before parsing
+    let args: Vec<String> = std::env::args().collect();
+
+    // Check for --pattern / -p (but not -p from existing flags like --plain)
+    if args.iter().any(|a| a == "--pattern" || a == "-p") {
+        print_pattern_not_supported();
+        std::process::exit(1);
+    }
+
+    // Check for --list / -l
+    if args.iter().any(|a| a == "--list" || a == "-l") {
+        print_list_not_supported();
+        std::process::exit(1);
+    }
+
+    // Check for --range or -r with value (but not standalone -r which doesn't exist anyway)
+    if args.iter().any(|a| {
+        a == "--range"
+            || a.starts_with("--range=")
+            || a.starts_with("-r=")
+            || (a.starts_with("-r") && a.len() > 2 && !a.starts_with("--"))
+    }) {
+        print_range_not_supported();
+        std::process::exit(1);
+    }
+
     if let Err(e) = run() {
         print_error(&e);
         std::process::exit(e.error_code() as i32);
@@ -292,4 +318,95 @@ fn validate_json_output(json_output: &str) -> BatlessResult<()> {
         eprintln!("⚠️  JSON validation warning: {e}. Output may not be fully AI-compatible.");
     }
     Ok(())
+}
+
+// Helpful error messages for unsupported features
+
+fn print_pattern_not_supported() {
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true));
+    let _ = writeln!(
+        &mut stderr,
+        "Error: batless doesn't support pattern searching"
+    );
+    let _ = stderr.reset();
+    let _ = writeln!(&mut stderr);
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)));
+    let _ = writeln!(&mut stderr, "💡 Tip: Use dedicated search tools:");
+    let _ = stderr.reset();
+    let _ = writeln!(&mut stderr, "     grep -rn \"pattern\" src/");
+    let _ = writeln!(
+        &mut stderr,
+        "     rg \"pattern\" src/          # even faster!"
+    );
+    let _ = writeln!(&mut stderr);
+    let _ = writeln!(&mut stderr, "   Then view results with batless:");
+    let _ = writeln!(&mut stderr, "     batless $(grep -l \"pattern\" src/*)");
+    let _ = writeln!(&mut stderr);
+    let _ = writeln!(
+        &mut stderr,
+        "Why? batless focuses on viewing files. grep/rg are"
+    );
+    let _ = writeln!(
+        &mut stderr,
+        "optimized for searching. Use the best tool for each job!"
+    );
+}
+
+fn print_list_not_supported() {
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true));
+    let _ = writeln!(&mut stderr, "Error: batless doesn't list files");
+    let _ = stderr.reset();
+    let _ = writeln!(&mut stderr);
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)));
+    let _ = writeln!(&mut stderr, "💡 Tip: Use file listing tools:");
+    let _ = stderr.reset();
+    let _ = writeln!(&mut stderr, "     ls -la src/");
+    let _ = writeln!(&mut stderr, "     find . -name \"*.py\"");
+    let _ = writeln!(
+        &mut stderr,
+        "     fd -e rs                  # modern alternative"
+    );
+    let _ = writeln!(&mut stderr, "     tree src/                 # tree view");
+    let _ = writeln!(&mut stderr);
+    let _ = writeln!(&mut stderr, "   Then view files with batless:");
+    let _ = writeln!(&mut stderr, "     fd -e py | xargs batless");
+    let _ = writeln!(&mut stderr);
+    let _ = writeln!(
+        &mut stderr,
+        "Why? batless views individual files. Use ls/find/fd/tree"
+    );
+    let _ = writeln!(
+        &mut stderr,
+        "for file discovery, then pipe to batless for viewing."
+    );
+}
+
+fn print_range_not_supported() {
+    let mut stderr = StandardStream::stderr(ColorChoice::Auto);
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true));
+    let _ = writeln!(&mut stderr, "Error: batless doesn't support line ranges");
+    let _ = stderr.reset();
+    let _ = writeln!(&mut stderr);
+    let _ = stderr.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)));
+    let _ = writeln!(&mut stderr, "💡 Tip: Use these alternatives:");
+    let _ = stderr.reset();
+    let _ = writeln!(
+        &mut stderr,
+        "     sed -n '10,50p' file.py | batless --language=python"
+    );
+    let _ = writeln!(&mut stderr, "     head -50 file.py | tail -41 | batless");
+    let _ = writeln!(&mut stderr);
+    let _ = writeln!(&mut stderr, "   Or use batless with limiting:");
+    let _ = writeln!(&mut stderr, "     batless --max-lines=100 file.py");
+    let _ = writeln!(&mut stderr);
+    let _ = writeln!(
+        &mut stderr,
+        "Note: Line range support may be added in a future version."
+    );
+    let _ = writeln!(
+        &mut stderr,
+        "See: https://github.com/docdyhr/batless/issues/57"
+    );
 }
