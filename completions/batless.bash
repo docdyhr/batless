@@ -23,7 +23,7 @@ _batless() {
 
     case "${cmd}" in
         batless)
-            opts="-u -n -b -h -V --language --max-lines --max-bytes --mode --color --theme --strip-ansi --list-languages --list-themes --include-tokens --summary --summary-level --count-tokens --ai-model --fit-context --prompt-tokens --validate-json --get-schema --generate-completions --profile --custom-profile --config --streaming-json --streaming-chunk-size --enable-resume --checkpoint --configure --list-profiles --edit-profile --debug --plain --unbuffered --number --number-nonblank --no-title --version-json --help --version [FILE]"
+            opts="-u -n -b -h -V --language --max-lines --max-bytes --mode --color --theme --strip-ansi --list-languages --list-themes --include-tokens --summary --summary-level --count-tokens --ai-model --fit-context --prompt-tokens --validate-json --get-schema --generate-completions --profile --custom-profile --config --streaming-json --streaming-chunk-size --enable-resume --checkpoint --configure --list-profiles --edit-profile --debug --plain --unbuffered --number --number-nonblank --no-title --version-json --json-pretty --help --version [FILE]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

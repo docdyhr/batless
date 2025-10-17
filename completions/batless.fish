@@ -53,5 +53,6 @@ complete -c batless -s n -l number -d 'CAT compatibility: show line numbers (lik
 complete -c batless -s b -l number-nonblank -d 'CAT compatibility: number non-blank output lines (like cat -b)'
 complete -c batless -l no-title -d 'PAGER compatibility: ignored for compatibility with less (no title bar)'
 complete -c batless -l version-json -d 'Output version information as machine-readable JSON'
+complete -c batless -l json-pretty -d 'Pretty-print JSON output (when --mode=json); does not affect streaming'
 complete -c batless -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c batless -s V -l version -d 'Print version'

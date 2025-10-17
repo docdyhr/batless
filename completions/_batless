@@ -65,6 +65,7 @@ assistant\:"General AI assistant profile (5K lines, balanced output)"))' \
 '--number-nonblank[CAT compatibility\: number non-blank output lines (like cat -b)]' \
 '--no-title[PAGER compatibility\: ignored for compatibility with less (no title bar)]' \
 '--version-json[Output version information as machine-readable JSON]' \
+'--json-pretty[Pretty-print JSON output (when --mode=json); does not affect streaming]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \

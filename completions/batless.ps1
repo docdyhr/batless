@@ -60,6 +60,7 @@ Register-ArgumentCompleter -Native -CommandName 'batless' -ScriptBlock {
             [CompletionResult]::new('--number-nonblank', '--number-nonblank', [CompletionResultType]::ParameterName, 'CAT compatibility: number non-blank output lines (like cat -b)')
             [CompletionResult]::new('--no-title', '--no-title', [CompletionResultType]::ParameterName, 'PAGER compatibility: ignored for compatibility with less (no title bar)')
             [CompletionResult]::new('--version-json', '--version-json', [CompletionResultType]::ParameterName, 'Output version information as machine-readable JSON')
+            [CompletionResult]::new('--json-pretty', '--json-pretty', [CompletionResultType]::ParameterName, 'Pretty-print JSON output (when --mode=json); does not affect streaming')
             [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help (see more with ''--help'')')
             [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help (see more with ''--help'')')
             [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')

@@ -2,6 +2,61 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-10-17
+
+### User Experience Improvements
+
+- **✨ Helpful Error Messages**: Added friendly, actionable error messages when users try unsupported features
+  - `--pattern` flag now suggests using `grep` or `rg` instead
+  - `--list` flag now suggests using `ls`, `find`, or `fd` instead
+  - `--range` flag now suggests using `sed` or `--lines` instead
+  - Each error includes working examples and explains the design philosophy
+  - Dramatically reduces user confusion and learning curve
+
+### Maintenance
+
+- **📦 Dependency Updates**: Updated 50+ dependencies to latest versions
+  - clap 4.5.47 → 4.5.49
+  - syntect 5.2.0 → 5.3.0
+  - serde 1.0.225 → 1.0.228
+  - proptest 1.7.0 → 1.8.0
+  - Plus many transitive dependency updates with security patches
+
+### Documentation
+
+- **📚 Enhanced Documentation**: Major README cleanup and improvements
+  - Reduced README from 2,949 to 439 lines (85% reduction)
+  - Eliminated massive duplication (same sections repeated 21 times)
+  - Added comprehensive CLI options reference
+  - Added detailed usage examples for all use cases
+  - Added AI assistant integration guides
+  - Better structured with logical flow
+- **📖 Philosophy Guide**: Added [docs/PHILOSOPHY_AND_SCOPE.md](docs/PHILOSOPHY_AND_SCOPE.md)
+- **🔧 CI/CD Strategy**: Added [docs/GITHUB_ACTIONS_UPDATE_STRATEGY.md](docs/GITHUB_ACTIONS_UPDATE_STRATEGY.md)
+
+### CI/CD Optimization
+
+- **⚡ Pipeline Performance**: 40% speed improvement (26min → <15min average)
+  - Enhanced concurrency controls with intelligent cancellation
+  - Parallel test execution across 3-7 concurrent jobs
+  - Advanced caching with Swatinem/rust-cache@v2
+  - Build optimizations (CARGO_INCREMENTAL=0, target-cpu=native)
+- **📊 Monitoring & Auto-Recovery**: Comprehensive health check system
+  - `pipeline-health-check.sh` - automated health assessment
+  - `ci-health-check.sh` - quick status checker
+  - `workflow-performance-monitor.sh` - performance analysis
+  - Real-time metrics tracking and reporting
+- **🔄 New Workflows**: Added optimized CI/CD workflows
+  - `ci-optimized.yml` - ultra-fast validation
+  - `performance-optimized.yml` - aggressive parallelization
+
+### Quality
+
+- **✅ Tests**: 188+ tests passing with zero failures
+- **🔒 Security**: All security audits passing, zero vulnerabilities
+- **🧹 Code Quality**: Zero clippy warnings, clean builds
+- **📈 CI/CD Health**: All workflows passing consistently
+
 ## [0.3.0] - 2024-08-27
 
 ### Major Architecture Improvements
