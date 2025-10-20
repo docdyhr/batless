@@ -25,6 +25,11 @@ Thumbs.db
 
 # Performance testing temporary files
 .perf_tmp/
+benchmark_baseline.json
+benchmark_baseline.txt
+benchmark_current.txt
+performance_summary.json
+performance_summary.md
 
 # Runtime data
 pids
