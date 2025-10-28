@@ -63,8 +63,9 @@ jobs:
 
       - name: Install hyperfine for benchmarking
         run: |
-          curl -Lo hyperfine.deb https://github.com/sharkdp/hyperfine/releases/latest/download/hyperfine_1.18.0_amd64.deb
-          sudo dpkg -i hyperfine.deb
+          curl -Lo hyperfine.tar.gz https://github.com/sharkdp/hyperfine/releases/download/v1.18.0/hyperfine-v1.18.0-x86_64-unknown-linux-gnu.tar.gz
+          tar xzf hyperfine.tar.gz
+          sudo install hyperfine-v1.18.0-x86_64-unknown-linux-gnu/hyperfine /usr/local/bin/
 
       - name: Build release binary
         run: cargo build --release
