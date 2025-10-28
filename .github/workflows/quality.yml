@@ -37,7 +37,7 @@ jobs:
             "MD024": { "siblings_only": true },
             "MD036": false
           }
-          JSON
+JSON
           fi
           if [ ! -f "markdownlint-cli2.jsonc" ]; then
             cat > markdownlint-cli2.jsonc <<'JSON'
@@ -53,7 +53,7 @@ jobs:
                 "MD040": false
               }
             }
-            JSON
+JSON
           fi
       - name: Run markdownlint
         continue-on-error: true
