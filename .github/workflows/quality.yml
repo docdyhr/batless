@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
       - name: Install markdownlint-cli2
@@ -133,7 +133,7 @@ jobs:
           echo '```' >> coverage-summary.md
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: |
@@ -361,7 +361,7 @@ jobs:
           fi
 
       - name: Upload complexity report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: complexity-analysis
           path: complexity-report.md
@@ -397,7 +397,7 @@ jobs:
           echo "state=$STATE" >> $GITHUB_OUTPUT
           exit 0  # Never fail this job while continue-on-error in effect
       - name: Upload performance artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
             name: performance-benchmarks
             path: |

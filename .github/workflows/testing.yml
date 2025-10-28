@@ -314,7 +314,7 @@ jobs:
     needs: [unit-tests, property-based-testing, fuzz-testing, stress-testing]
     steps:
       - name: Download test artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           merge-multiple: true
 

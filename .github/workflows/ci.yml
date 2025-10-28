@@ -195,7 +195,7 @@ jobs:
           fi
 
       - name: Upload binary to release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: release-binaries-${{ matrix.target }}
           path: batless-*-${{ matrix.target }}.*
