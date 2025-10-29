@@ -296,6 +296,56 @@ Use with:
 batless --custom-profile ~/.batless/profiles/my-profile.toml file.rs
 ```
 
+### Shell Completions
+
+batless includes built-in shell completion support for bash, zsh, fish, and PowerShell.
+
+#### Bash
+
+```bash
+# Generate and install completions
+batless --generate-completions bash > ~/.local/share/bash-completion/completions/batless
+
+# Or for system-wide installation
+sudo batless --generate-completions bash > /usr/share/bash-completion/completions/batless
+
+# Then reload your shell or source the completion file
+source ~/.local/share/bash-completion/completions/batless
+```
+
+#### Zsh
+
+```bash
+# Generate and install completions
+batless --generate-completions zsh > ~/.zsh/completions/_batless
+
+# Add to your ~/.zshrc (if not already present)
+fpath=(~/.zsh/completions $fpath)
+autoload -Uz compinit && compinit
+
+# Then reload your shell
+exec zsh
+```
+
+#### Fish
+
+```bash
+# Generate and install completions
+batless --generate-completions fish > ~/.config/fish/completions/batless.fish
+
+# Completions are automatically loaded in new fish shells
+```
+
+#### PowerShell
+
+```powershell
+# Generate and add to your profile
+batless --generate-completions powershell | Out-String | Invoke-Expression
+
+# Or save to your profile for persistence
+batless --generate-completions powershell >> $PROFILE
+```
+
 ## 🔧 CLI Options
 
 ### Output Modes
