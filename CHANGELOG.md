@@ -2,6 +2,66 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2025-10-29
+
+### Bug Fixes
+
+- **🔧 CI/CD Pipeline Fixes**: Resolved critical workflow issues blocking automated builds
+  - Fixed YAML syntax errors in quality.yml (heredoc delimiter issues)
+  - Fixed performance benchmark workflow hyperfine installation
+  - Resolved heredoc delimiter compatibility between bash and YAML
+- **🛠️ Workflow Stability**: All CI/CD pipelines now passing consistently
+  - Unified CI/CD Pipeline operational
+  - Code Quality & Security checks passing
+  - Performance benchmarks restored
+
+### Maintenance
+
+- **📦 Dependency Updates**: Updated to latest stable versions
+  - clap: 4.5.49 → 4.5.50
+  - is-terminal: 0.4.16 → 0.4.17 (cleaner dependency tree)
+  - proptest: 1.8.0 → 1.9.0 (removed lazy_static dependency)
+- **🔄 GitHub Actions Updates**: Updated across 12 workflow files
+  - actions/upload-artifact: v4 → v5 (Node v24 support)
+  - actions/download-artifact: v5 → v6
+  - actions/setup-node: v4 → v6
+  - codecov/codecov-action: v4 → v5 (standardized)
+  - github/codeql-action: v3 → v4
+  - EmbarkStudios/cargo-deny-action: v1 → v2
+  - dawidd6/action-homebrew-bump-formula: v3 → v5
+- **🧹 Repository Cleanup**: Pruned stale branches and references
+  - Removed 4 obsolete Dependabot branches
+  - Cleaned up local and remote branch references
+
+### Documentation
+
+- **📚 Roadmap Update**: Updated [ROADMAP.md](ROADMAP.md) with 2025-2026 timeline
+  - Marked v0.3.1 achievements
+  - Set realistic targets for v0.4.0 through v1.0.0
+  - Updated success metrics to reflect current progress
+- **🤝 Community Infrastructure**: Established contributor ecosystem
+  - Enabled GitHub Discussions for community Q&A
+  - Created 3 "good first issue" items for new contributors
+  - Added labels: `good first issue`, `help wanted`, `documentation`
+
+### Infrastructure
+
+- **✅ Quality Verification**: Comprehensive testing and validation
+  - Verified Rust beta channel compatibility (1.92.0-beta.1)
+  - All 188 unit tests passing
+  - Clippy clean on both stable and beta channels
+  - Code formatting verified
+- **🔐 Security**: All security audits passing
+  - Dependabot security updates applied
+  - CodeQL analysis passing
+  - No known vulnerabilities
+
+### Contributors
+
+Special thanks to Dependabot for automated dependency updates and to the community for issue reports.
+
+---
+
 ## [0.3.1] - 2025-10-17
 
 ### User Experience Improvements

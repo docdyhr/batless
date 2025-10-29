@@ -1,6 +1,6 @@
 [package]
 name = "batless"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 authors = ["Thomas <thomas@docdyhr.com>"]
 description = "A non-blocking, LLM-friendly code viewer inspired by bat"
