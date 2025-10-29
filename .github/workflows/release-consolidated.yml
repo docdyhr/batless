@@ -76,7 +76,7 @@ jobs:
           fi
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: batless-${{ matrix.target }}
           path: batless-${{ matrix.target }}.*
@@ -92,7 +92,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
 
       - name: Generate changelog
         id: changelog
@@ -142,7 +142,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v3
+        uses: dawidd6/action-homebrew-bump-formula@v5
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           tap: docdyhr/homebrew-tap

@@ -73,7 +73,7 @@ jobs:
 
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-audit-results
           path: audit-results.json
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload SBOM
         if: hashFiles('batless-sbom.json') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: software-bill-of-materials
           path: batless-sbom.json
@@ -204,7 +204,7 @@ jobs:
 
       - name: Upload license report
         if: hashFiles('licenses.json') != ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: license-report
           path: licenses.json
