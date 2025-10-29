@@ -26,7 +26,7 @@ jobs:
       - name: Prepare markdownlint config
         run: |
           if [ ! -f ".markdownlint.jsonc" ]; then
-            cat > .markdownlint.jsonc <<'JSON'
+            cat > .markdownlint.jsonc <<'EOF'
           {
             "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
             "default": true,
@@ -37,10 +37,10 @@ jobs:
             "MD024": { "siblings_only": true },
             "MD036": false
           }
-JSON
+          EOF
           fi
           if [ ! -f "markdownlint-cli2.jsonc" ]; then
-            cat > markdownlint-cli2.jsonc <<'JSON'
+            cat > markdownlint-cli2.jsonc <<'EOF'
             {
               "globs": ["**/*.md", "!target/**"],
               "config": {
@@ -53,7 +53,7 @@ JSON
                 "MD040": false
               }
             }
-JSON
+          EOF
           fi
       - name: Run markdownlint
         continue-on-error: true
