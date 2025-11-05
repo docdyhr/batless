@@ -369,8 +369,8 @@ impl BatlessError {
         for (i, row) in matrix.iter_mut().enumerate().take(a_len + 1) {
             row[0] = i;
         }
-        for j in 0..=b_len {
-            matrix[0][j] = j;
+        for (j, item) in matrix[0].iter_mut().enumerate().take(b_len + 1) {
+            *item = j;
         }
 
         for i in 1..=a_len {
