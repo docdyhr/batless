@@ -102,6 +102,15 @@ fn test_json_mode() {
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
     assert_eq!(json["mode"], "json");
     assert_eq!(json["language"], "Rust");
+    assert_eq!(
+        json["processed_lines"]
+            .as_u64()
+            .expect("processed_lines should be numeric"),
+        json["lines"]
+            .as_array()
+            .expect("lines should be an array")
+            .len() as u64
+    );
     assert!(json["lines"].is_array());
     assert!(json["total_lines"].is_number());
     assert!(json["total_bytes"].is_number());
@@ -293,7 +302,8 @@ fn test_multiple_options_combined() {
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
 
     assert_eq!(json["language"], "python");
-    assert_eq!(json["total_lines"], 2);
+    assert_eq!(json["processed_lines"], 2);
+    assert!(json["total_lines"].as_i64().unwrap() >= json["processed_lines"].as_i64().unwrap());
     assert_eq!(json["truncated"], true);
     assert_eq!(json["lines"].as_array().unwrap().len(), 2);
 }
@@ -388,6 +398,8 @@ fn test_enhanced_json_output() {
     assert!(json["syntax_errors"].is_array());
     assert!(json["truncated_by_lines"].is_boolean());
     assert!(json["truncated_by_bytes"].is_boolean());
+    assert!(json["processed_lines"].is_number());
+    assert!(json["total_lines"].is_number());
     assert!(json["tokens"].is_array());
 }
 

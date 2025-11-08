@@ -71,11 +71,12 @@ impl OutputFormatter {
         file_path: &str,
         config: &BatlessConfig,
     ) -> BatlessResult<String> {
-        // Create backward-compatible JSON format
+        // Create backward-compatible JSON format while reporting both totals and processed counts
         let mut json_data = json!({
             "file": file_path,
             "lines": file_info.lines,
-            "total_lines": file_info.processed_lines(),
+            "processed_lines": file_info.processed_lines(),
+            "total_lines": file_info.total_lines,
             "total_bytes": file_info.total_bytes,
             "truncated": file_info.truncated,
             "truncated_by_lines": file_info.truncated_by_lines,
@@ -429,7 +430,8 @@ mod tests {
         // Should be valid JSON
         let parsed: Value = serde_json::from_str(&result)?;
         assert!(parsed["file"].as_str().unwrap() == "test.rs");
-        assert!(parsed["total_lines"].as_u64().unwrap() == 3);
+        assert_eq!(parsed["processed_lines"].as_u64().unwrap(), 3);
+        assert_eq!(parsed["total_lines"].as_u64().unwrap(), 10);
         assert!(parsed["lines"].is_array());
 
         Ok(())

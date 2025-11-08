@@ -10,6 +10,7 @@ use crate::file_info::FileInfo;
 use crate::language::LanguageDetector;
 use crate::processor::FileProcessor;
 use crate::summarizer::SummaryExtractor;
+use crate::summary::SummaryLevel;
 use crate::tokens::TokenExtractor;
 use crate::traits::{LanguageDetection, SummaryExtraction, TokenExtraction};
 
@@ -131,11 +132,21 @@ impl LanguageDetection for MockLanguageDetector {
 struct MockSummaryExtractor;
 
 impl SummaryExtraction for MockSummaryExtractor {
-    fn extract_summary(&self, lines: &[String], _language: Option<&str>) -> Vec<String> {
+    fn extract_summary(
+        &self,
+        lines: &[String],
+        _language: Option<&str>,
+        _level: SummaryLevel,
+    ) -> Vec<String> {
         lines.iter().take(3).cloned().collect()
     }
 
-    fn is_summary_worthy(&self, _line: &str, _language: Option<&str>) -> bool {
+    fn is_summary_worthy(
+        &self,
+        _line: &str,
+        _language: Option<&str>,
+        _level: SummaryLevel,
+    ) -> bool {
         true
     }
 }
@@ -159,7 +170,12 @@ impl TokenExtraction for MockTokenExtractor {
 struct FastSummaryExtractor;
 
 impl SummaryExtraction for FastSummaryExtractor {
-    fn extract_summary(&self, lines: &[String], _language: Option<&str>) -> Vec<String> {
+    fn extract_summary(
+        &self,
+        lines: &[String],
+        _language: Option<&str>,
+        _level: SummaryLevel,
+    ) -> Vec<String> {
         lines
             .iter()
             .filter(|line| {
@@ -172,7 +188,7 @@ impl SummaryExtraction for FastSummaryExtractor {
             .collect()
     }
 
-    fn is_summary_worthy(&self, line: &str, _language: Option<&str>) -> bool {
+    fn is_summary_worthy(&self, line: &str, _language: Option<&str>, _level: SummaryLevel) -> bool {
         let trimmed = line.trim();
         trimmed.starts_with("fn ")
             || trimmed.starts_with("class ")
@@ -228,7 +244,7 @@ mod tests {
             "line3".to_string(),
             "line4".to_string(),
         ];
-        let summary = mock_extractor.extract_summary(&lines, None);
+        let summary = mock_extractor.extract_summary(&lines, None, SummaryLevel::Standard);
         assert_eq!(summary.len(), 3);
 
         let mock_tokenizer = MockTokenExtractor;

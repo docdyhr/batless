@@ -63,9 +63,13 @@ impl FileProcessor {
         );
 
         // Process summary if requested
-        if config.summary_mode {
-            let summary_lines =
-                SummaryExtractor::extract_summary(&lines, file_info.language.as_ref());
+        let summary_level = config.effective_summary_level();
+        if summary_level.is_enabled() {
+            let summary_lines = SummaryExtractor::extract_summary(
+                &lines,
+                file_info.language.as_ref(),
+                summary_level,
+            );
             // In summary mode, replace the output lines with summary
             file_info = file_info.with_summary_lines(Some(summary_lines.clone()));
             file_info.lines = summary_lines;
@@ -145,9 +149,13 @@ impl FileProcessor {
         );
 
         // Process summary if requested
-        if config.summary_mode {
-            let summary_lines =
-                SummaryExtractor::extract_summary(&final_lines, file_info.language.as_ref());
+        let summary_level = config.effective_summary_level();
+        if summary_level.is_enabled() {
+            let summary_lines = SummaryExtractor::extract_summary(
+                &final_lines,
+                file_info.language.as_ref(),
+                summary_level,
+            );
             // In summary mode, replace the output lines with summary
             file_info = file_info.with_summary_lines(Some(summary_lines.clone()));
             file_info.lines = summary_lines;
@@ -231,6 +239,7 @@ impl FileProcessor {
         let mut truncated = false;
         let mut truncated_by_lines = false;
         let mut truncated_by_bytes = false;
+        let mut capturing = true;
 
         for line_result in reader.lines() {
             let line = line_result.map_err(|e| BatlessError::FileReadError {
@@ -242,23 +251,25 @@ impl FileProcessor {
             total_lines += 1;
             total_bytes += line_bytes;
 
-            // Check line limit
-            if lines.len() >= config.max_lines {
+            if capturing && lines.len() >= config.max_lines {
                 truncated = true;
                 truncated_by_lines = true;
-                break;
+                capturing = false;
             }
 
-            // Check byte limit
-            if let Some(max_bytes) = config.max_bytes {
-                if total_bytes > max_bytes {
-                    truncated = true;
-                    truncated_by_bytes = true;
-                    break;
+            if capturing {
+                if let Some(max_bytes) = config.max_bytes {
+                    if total_bytes > max_bytes {
+                        truncated = true;
+                        truncated_by_bytes = true;
+                        capturing = false;
+                    }
                 }
             }
 
-            lines.push(line);
+            if capturing {
+                lines.push(line);
+            }
         }
 
         let metadata = FileMetadata {

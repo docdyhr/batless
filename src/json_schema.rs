@@ -261,29 +261,54 @@ impl JsonSchemaValidator {
         })
     }
 
-    /// JSON output schema for batless
+    /// JSON output schema for batless (matches --mode=json output)
     fn json_output_schema(&self) -> Value {
         json!({
             "$schema": "http://json-schema.org/draft-07/schema#",
             "type": "object",
             "properties": {
-                "file_path": { "type": "string" },
-                "file_info": { "$ref": "#/definitions/file_info" },
-                "processing_stats": { "$ref": "#/definitions/processing_stats" },
+                "file": { "type": "string" },
+                "lines": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
+                "processed_lines": { "type": "integer" },
+                "total_lines": { "type": "integer" },
+                "total_bytes": { "type": "integer" },
+                "truncated": { "type": "boolean" },
+                "truncated_by_lines": { "type": "boolean" },
+                "truncated_by_bytes": { "type": "boolean" },
+                "language": {
+                    "type": ["string", "null"]
+                },
+                "encoding": { "type": "string" },
+                "syntax_errors": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                },
                 "tokens": {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
                 },
-                "summary": {
+                "summary_lines": {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
-                }
+                },
+                "mode": { "type": "string" }
             },
-            "required": ["file_path", "file_info"],
-            "definitions": {
-                "file_info": self.file_info_schema(),
-                "processing_stats": self.processing_stats_schema()
-            }
+            "required": [
+                "file",
+                "lines",
+                "processed_lines",
+                "total_lines",
+                "total_bytes",
+                "truncated",
+                "truncated_by_lines",
+                "truncated_by_bytes",
+                "encoding",
+                "syntax_errors",
+                "mode"
+            ]
         })
     }
 
@@ -475,27 +500,27 @@ mod tests {
     #[test]
     fn test_validate_batless_output() {
         let json_str = r#"{
-            "file_path": "test.rs",
-            "file_info": {
-                "lines": ["line1"],
-                "total_lines": 1,
-                "total_bytes": 10,
-                "truncated": false,
-                "truncated_by_lines": false,
-                "truncated_by_bytes": false,
-                "language": "rust",
-                "encoding": "UTF-8",
-                "syntax_errors": [],
-                "tokens": null,
-                "summary_lines": null
-            }
+            "file": "test.rs",
+            "lines": ["line1"],
+            "processed_lines": 1,
+            "total_lines": 1,
+            "total_bytes": 10,
+            "truncated": false,
+            "truncated_by_lines": false,
+            "truncated_by_bytes": false,
+            "language": "rust",
+            "encoding": "UTF-8",
+            "syntax_errors": [],
+            "tokens": null,
+            "summary_lines": null,
+            "mode": "json"
         }"#;
 
-        // This will likely fail with current simplified schema validation
-        // but demonstrates the API
         let result = validate_batless_output(json_str);
-        // For now, just ensure it runs without panicking
-        let _ = result;
+        assert!(
+            result.is_ok(),
+            "json_output validation should pass for sample payload: {result:?}"
+        );
     }
 
     #[test]

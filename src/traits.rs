@@ -5,6 +5,7 @@
 
 use crate::error::BatlessResult;
 use crate::file_info::FileInfo;
+use crate::summary::SummaryLevel;
 
 /// Trait for language detection functionality
 pub trait LanguageDetection {
@@ -18,10 +19,15 @@ pub trait LanguageDetection {
 /// Trait for summary extraction functionality
 pub trait SummaryExtraction {
     /// Extract summary lines from content
-    fn extract_summary(&self, lines: &[String], language: Option<&str>) -> Vec<String>;
+    fn extract_summary(
+        &self,
+        lines: &[String],
+        language: Option<&str>,
+        level: SummaryLevel,
+    ) -> Vec<String>;
 
     /// Check if a line is summary-worthy
-    fn is_summary_worthy(&self, line: &str, language: Option<&str>) -> bool;
+    fn is_summary_worthy(&self, line: &str, language: Option<&str>, level: SummaryLevel) -> bool;
 }
 
 /// Trait for token extraction functionality

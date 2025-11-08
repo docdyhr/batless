@@ -135,7 +135,7 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
             BatlessError::config_error_with_help(
                 format!("Unknown schema format '{format}'"),
                 Some(
-                    "Available schemas: file_info, json_output, token_count, processing_stats"
+                    "Available schemas: file_info, json_output, token_count, processing_stats, streaming_chunk"
                         .to_string(),
                 ),
             )

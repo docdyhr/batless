@@ -577,6 +577,33 @@ impl BatlessConfig {
         if other.summary_mode != default.summary_mode {
             self.summary_mode = other.summary_mode;
         }
+        if other.summary_level != default.summary_level {
+            self.summary_level = other.summary_level;
+        }
+        if other.streaming_json != default.streaming_json {
+            self.streaming_json = other.streaming_json;
+        }
+        if other.streaming_chunk_size != default.streaming_chunk_size {
+            self.streaming_chunk_size = other.streaming_chunk_size;
+        }
+        if other.enable_resume != default.enable_resume {
+            self.enable_resume = other.enable_resume;
+        }
+        if other.schema_version != default.schema_version {
+            self.schema_version = other.schema_version;
+        }
+        if other.debug != default.debug {
+            self.debug = other.debug;
+        }
+        if other.show_line_numbers != default.show_line_numbers {
+            self.show_line_numbers = other.show_line_numbers;
+        }
+        if other.show_line_numbers_nonblank != default.show_line_numbers_nonblank {
+            self.show_line_numbers_nonblank = other.show_line_numbers_nonblank;
+        }
+        if other.pretty_json != default.pretty_json {
+            self.pretty_json = other.pretty_json;
+        }
 
         self
     }
@@ -607,7 +634,7 @@ impl ProcessingConfig for BatlessConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::profile::CustomProfile;
+    use crate::{profile::CustomProfile, summary::SummaryLevel};
 
     #[test]
     fn test_default_config() {
@@ -723,12 +750,28 @@ mod tests {
         let override_config = BatlessConfig::default()
             .with_max_lines(2000)
             .with_theme("solarized".to_string())
-            .with_summary_mode(true);
+            .with_summary_level(SummaryLevel::Detailed)
+            .with_streaming_json(true)
+            .with_streaming_chunk_size(42)
+            .with_enable_resume(true)
+            .with_schema_version("9.9".to_string())
+            .with_debug(true)
+            .with_show_line_numbers(true)
+            .with_show_line_numbers_nonblank(true)
+            .with_pretty_json(true);
 
         let merged = base.merge_with(override_config);
         assert_eq!(merged.max_lines, 2000);
         assert_eq!(merged.theme, "solarized");
-        assert!(merged.summary_mode);
+        assert_eq!(merged.summary_level, SummaryLevel::Detailed);
+        assert!(merged.streaming_json);
+        assert_eq!(merged.streaming_chunk_size, 42);
+        assert!(merged.enable_resume);
+        assert_eq!(merged.schema_version, "9.9");
+        assert!(merged.debug);
+        assert!(merged.show_line_numbers);
+        assert!(merged.show_line_numbers_nonblank);
+        assert!(merged.pretty_json);
         // Other values should remain default
         assert!(!merged.strip_ansi);
         assert!(merged.use_color);

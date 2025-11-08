@@ -80,7 +80,11 @@ proptest! {
 
         let file_path = file.path().to_str().expect("Failed to convert path");
         if let Ok(result) = process_file(file_path, &config) {
-            prop_assert!(result.total_bytes <= max_bytes + 100); // Allow some margin for line boundaries
+            let mut processed_bytes = 0;
+            for line in &result.lines {
+                processed_bytes += line.len() + 1; // account for newline removed by lines()
+            }
+            prop_assert!(processed_bytes <= max_bytes + 1);
         }
     }
 
