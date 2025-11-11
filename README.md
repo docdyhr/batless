@@ -257,6 +257,8 @@ batless --list-profiles
 
 ### Themes
 
+batless supports multiple color themes for syntax highlighting:
+
 ```bash
 # List available themes
 batless --list-themes
@@ -264,6 +266,29 @@ batless --list-themes
 # Use specific theme
 batless --theme="Solarized (dark)" file.py
 ```
+
+#### Available Themes
+
+batless currently includes 7 carefully curated themes:
+
+- **InspiredGitHub** - Clean, GitHub-inspired light theme
+- **Solarized (dark)** - Popular dark theme with excellent contrast
+- **Solarized (light)** - Light variant of the Solarized theme
+- **base16-eighties.dark** - Retro 80s-inspired dark theme
+- **base16-mocha.dark** - Warm, chocolate-toned dark theme
+- **base16-ocean.dark** - Cool, oceanic dark theme
+- **base16-ocean.light** - Light variant of the ocean theme
+
+Try different themes to find the one that works best for your workflow:
+
+```bash
+# Try each theme with your code
+batless --theme="InspiredGitHub" examples/theme-showcase.rs
+batless --theme="Solarized (dark)" examples/theme-showcase.rs
+batless --theme="base16-mocha.dark" examples/theme-showcase.rs
+```
+
+> **Note**: Theme examples are available in [docs/themes/](docs/themes/) and can be regenerated with `./scripts/generate-theme-showcase.sh`
 
 ### Language Detection
 
