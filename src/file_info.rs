@@ -10,8 +10,12 @@ use serde::{Deserialize, Serialize};
 pub struct FileInfo {
     /// The processed lines of the file
     pub lines: Vec<String>,
+    /// Original lines before any summary transformations
+    pub original_lines: Option<Vec<String>>,
     /// Total number of lines in the original file
     pub total_lines: usize,
+    /// Whether total_lines reflects the entire file
+    pub total_lines_exact: bool,
     /// Total number of bytes in the original file
     pub total_bytes: usize,
     /// Whether the file was truncated during processing
@@ -28,6 +32,8 @@ pub struct FileInfo {
     pub syntax_errors: Vec<String>,
     /// Extracted tokens (if requested)
     pub tokens: Option<Vec<String>>,
+    /// Total number of tokens extracted (including truncated samples)
+    pub token_total: Option<usize>,
     /// Summary lines (if in summary mode)
     pub summary_lines: Option<Vec<String>>,
 }
@@ -37,7 +43,9 @@ impl FileInfo {
     pub fn new() -> Self {
         Self {
             lines: Vec::new(),
+            original_lines: None,
             total_lines: 0,
+            total_lines_exact: true,
             total_bytes: 0,
             truncated: false,
             truncated_by_lines: false,
@@ -46,6 +54,7 @@ impl FileInfo {
             encoding: "UTF-8".to_string(),
             syntax_errors: Vec::new(),
             tokens: None,
+            token_total: None,
             summary_lines: None,
         }
     }
@@ -59,7 +68,9 @@ impl FileInfo {
     ) -> Self {
         Self {
             lines: Vec::new(),
+            original_lines: None,
             total_lines,
+            total_lines_exact: true,
             total_bytes,
             truncated: false,
             truncated_by_lines: false,
@@ -68,6 +79,7 @@ impl FileInfo {
             encoding,
             syntax_errors: Vec::new(),
             tokens: None,
+            token_total: None,
             summary_lines: None,
         }
     }
@@ -97,9 +109,27 @@ impl FileInfo {
         self
     }
 
+    /// Store the total number of tokens identified
+    pub fn with_token_total(mut self, total: Option<usize>) -> Self {
+        self.token_total = total;
+        self
+    }
+
     /// Set summary lines
     pub fn with_summary_lines(mut self, summary_lines: Option<Vec<String>>) -> Self {
         self.summary_lines = summary_lines;
+        self
+    }
+
+    /// Preserve original lines before summary transformations
+    pub fn with_original_lines(mut self, original: Option<Vec<String>>) -> Self {
+        self.original_lines = original;
+        self
+    }
+
+    /// Mark whether total_lines is exact
+    pub fn with_total_lines_exact(mut self, exact: bool) -> Self {
+        self.total_lines_exact = exact;
         self
     }
 
@@ -134,7 +164,17 @@ impl FileInfo {
 
     /// Get the number of tokens (if any)
     pub fn token_count(&self) -> usize {
-        self.tokens.as_ref().map_or(0, |t| t.len())
+        self.token_total
+            .or_else(|| self.tokens.as_ref().map(|t| t.len()))
+            .unwrap_or(0)
+    }
+
+    /// Check if the displayed token list was truncated
+    pub fn tokens_truncated(&self) -> bool {
+        matches!(
+            (&self.token_total, &self.tokens),
+            (Some(total), Some(tokens)) if *total > tokens.len()
+        )
     }
 
     /// Get the number of summary lines (if any)
@@ -167,6 +207,7 @@ impl FileInfo {
     pub fn get_stats_summary(&self) -> ProcessingStats {
         ProcessingStats {
             total_lines: self.total_lines,
+            total_lines_exact: self.total_lines_exact,
             processed_lines: self.processed_lines(),
             total_bytes: self.total_bytes,
             truncated: self.truncated,
@@ -176,6 +217,7 @@ impl FileInfo {
             language: self.language.clone(),
             encoding: self.encoding.clone(),
             token_count: self.token_count(),
+            tokens_truncated: self.tokens_truncated(),
             summary_line_count: self.summary_line_count(),
         }
     }
@@ -191,6 +233,7 @@ impl Default for FileInfo {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcessingStats {
     pub total_lines: usize,
+    pub total_lines_exact: bool,
     pub processed_lines: usize,
     pub total_bytes: usize,
     pub truncated: bool,
@@ -200,6 +243,7 @@ pub struct ProcessingStats {
     pub language: Option<String>,
     pub encoding: String,
     pub token_count: usize,
+    pub tokens_truncated: bool,
     pub summary_line_count: usize,
 }
 
@@ -211,7 +255,9 @@ mod tests {
     fn test_new_file_info() {
         let info = FileInfo::new();
         assert_eq!(info.lines.len(), 0);
+        assert!(info.original_lines.is_none());
         assert_eq!(info.total_lines, 0);
+        assert!(info.total_lines_exact);
         assert_eq!(info.total_bytes, 0);
         assert!(!info.truncated);
         assert!(!info.truncated_by_lines);
@@ -220,6 +266,7 @@ mod tests {
         assert_eq!(info.encoding, "UTF-8");
         assert_eq!(info.syntax_errors.len(), 0);
         assert_eq!(info.tokens, None);
+        assert!(info.token_total.is_none());
         assert_eq!(info.summary_lines, None);
     }
 
@@ -228,6 +275,7 @@ mod tests {
         let info =
             FileInfo::with_metadata(100, 1024, Some("rust".to_string()), "UTF-8".to_string());
         assert_eq!(info.total_lines, 100);
+        assert!(info.total_lines_exact);
         assert_eq!(info.total_bytes, 1024);
         assert_eq!(info.language, Some("rust".to_string()));
         assert_eq!(info.encoding, "UTF-8");
@@ -242,6 +290,8 @@ mod tests {
         let info = FileInfo::new()
             .with_lines(lines.clone())
             .with_truncation(true, true, false)
+            .with_original_lines(Some(lines.clone()))
+            .with_total_lines_exact(false)
             .with_tokens(Some(tokens.clone()))
             .with_summary_lines(Some(summary.clone()));
 
@@ -250,6 +300,7 @@ mod tests {
         assert!(info.truncated_by_lines);
         assert!(!info.truncated_by_bytes);
         assert_eq!(info.tokens, Some(tokens));
+        assert!(!info.total_lines_exact);
         assert_eq!(info.summary_lines, Some(summary));
     }
 
@@ -301,11 +352,13 @@ mod tests {
         assert_eq!(info.summary_line_count(), 0);
 
         info.tokens = Some(vec!["token".to_string()]);
+        info.token_total = Some(5);
         info.summary_lines = Some(vec!["summary".to_string()]);
 
         assert!(info.has_tokens());
+        assert!(info.tokens_truncated());
         assert!(info.has_summary());
-        assert_eq!(info.token_count(), 1);
+        assert_eq!(info.token_count(), 5);
         assert_eq!(info.summary_line_count(), 1);
     }
 
@@ -316,11 +369,14 @@ mod tests {
         info.lines = vec!["line".to_string(); 50];
         info.truncated = true;
         info.truncated_by_lines = true;
+        info.total_lines_exact = false;
         info.add_syntax_error("test error".to_string());
         info.tokens = Some(vec!["token1".to_string(), "token2".to_string()]);
+        info.token_total = Some(5);
 
         let stats = info.get_stats_summary();
         assert_eq!(stats.total_lines, 100);
+        assert!(!stats.total_lines_exact);
         assert_eq!(stats.processed_lines, 50);
         assert_eq!(stats.total_bytes, 2048);
         assert!(stats.truncated);
@@ -329,7 +385,8 @@ mod tests {
         assert_eq!(stats.error_count, 1);
         assert_eq!(stats.language, Some("rust".to_string()));
         assert_eq!(stats.encoding, "UTF-8");
-        assert_eq!(stats.token_count, 2);
+        assert_eq!(stats.token_count, 5);
+        assert!(stats.tokens_truncated);
         assert_eq!(stats.summary_line_count, 0);
     }
 }

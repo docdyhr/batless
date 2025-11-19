@@ -55,6 +55,7 @@ impl FileProcessor {
             language,
             encoding,
         )
+        .with_total_lines_exact(metadata.total_lines_exact)
         .with_lines(lines.clone())
         .with_truncation(
             metadata.truncated,
@@ -71,15 +72,23 @@ impl FileProcessor {
                 summary_level,
             );
             // In summary mode, replace the output lines with summary
-            file_info = file_info.with_summary_lines(Some(summary_lines.clone()));
+            file_info = file_info
+                .with_original_lines(Some(lines.clone()))
+                .with_summary_lines(Some(summary_lines.clone()));
             file_info.lines = summary_lines;
         }
 
         // Extract tokens if requested
         if config.include_tokens {
             let content = file_info.lines.join("\n");
-            let tokens = TokenExtractor::extract_tokens(&content, file_path);
-            file_info = file_info.with_tokens(Some(tokens));
+            let token_result = TokenExtractor::extract_tokens_with_limit(
+                &content,
+                file_path,
+                TokenExtractor::MAX_SAMPLE_SIZE,
+            );
+            file_info = file_info
+                .with_tokens(Some(token_result.tokens))
+                .with_token_total(Some(token_result.total_count));
         }
 
         Ok(file_info)
@@ -164,8 +173,14 @@ impl FileProcessor {
         // Extract tokens if requested
         if config.include_tokens {
             let content = file_info.lines.join("\n");
-            let tokens = TokenExtractor::extract_tokens(&content, "<stdin>");
-            file_info = file_info.with_tokens(Some(tokens));
+            let token_result = TokenExtractor::extract_tokens_with_limit(
+                &content,
+                "<stdin>",
+                TokenExtractor::MAX_SAMPLE_SIZE,
+            );
+            file_info = file_info
+                .with_tokens(Some(token_result.tokens))
+                .with_token_total(Some(token_result.total_count));
         }
 
         Ok(file_info)
@@ -232,49 +247,54 @@ impl FileProcessor {
             source: e,
         })?;
 
+        let metadata = file.metadata().map_err(|e| BatlessError::FileReadError {
+            path: file_path.to_string(),
+            source: e,
+        })?;
+        let total_file_bytes = metadata.len() as usize;
+
         let reader = BufReader::new(file);
         let mut lines = Vec::new();
-        let mut total_lines = 0;
-        let mut total_bytes = 0;
-        let mut truncated = false;
+        let mut bytes_seen = 0usize;
         let mut truncated_by_lines = false;
         let mut truncated_by_bytes = false;
-        let mut capturing = true;
 
         for line_result in reader.lines() {
+            if lines.len() >= config.max_lines {
+                truncated_by_lines = true;
+                break;
+            }
+
             let line = line_result.map_err(|e| BatlessError::FileReadError {
                 path: file_path.to_string(),
                 source: e,
             })?;
 
             let line_bytes = line.len() + 1; // +1 for newline
-            total_lines += 1;
-            total_bytes += line_bytes;
-
-            if capturing && lines.len() >= config.max_lines {
-                truncated = true;
-                truncated_by_lines = true;
-                capturing = false;
-            }
-
-            if capturing {
-                if let Some(max_bytes) = config.max_bytes {
-                    if total_bytes > max_bytes {
-                        truncated = true;
-                        truncated_by_bytes = true;
-                        capturing = false;
-                    }
+            if let Some(max_bytes) = config.max_bytes {
+                if bytes_seen + line_bytes > max_bytes {
+                    truncated_by_bytes = true;
+                    break;
                 }
             }
 
-            if capturing {
-                lines.push(line);
+            bytes_seen += line_bytes;
+            lines.push(line);
+        }
+
+        if truncated_by_lines {
+            if let Some(max_bytes) = config.max_bytes {
+                if total_file_bytes > max_bytes {
+                    truncated_by_bytes = true;
+                }
             }
         }
 
+        let truncated = truncated_by_lines || truncated_by_bytes;
         let metadata = FileMetadata {
-            total_lines,
-            total_bytes,
+            total_lines: lines.len(),
+            total_lines_exact: !truncated,
+            total_bytes: total_file_bytes,
             truncated,
             truncated_by_lines,
             truncated_by_bytes,
@@ -353,6 +373,7 @@ impl FileProcessor {
 #[derive(Debug, Clone)]
 struct FileMetadata {
     total_lines: usize,
+    total_lines_exact: bool,
     total_bytes: usize,
     truncated: bool,
     truncated_by_lines: bool,

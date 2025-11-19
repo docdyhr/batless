@@ -113,7 +113,10 @@ fn test_json_mode() {
     );
     assert!(json["lines"].is_array());
     assert!(json["total_lines"].is_number());
+    assert!(json["total_lines_exact"].is_boolean());
     assert!(json["total_bytes"].is_number());
+    assert!(json["token_count"].is_number());
+    assert!(json["tokens_truncated"].is_boolean());
 }
 
 #[test]
@@ -359,6 +362,77 @@ fn test_summary_flag() {
 }
 
 #[test]
+fn test_json_summary_retains_full_content() {
+    let content =
+        "import os\n\nclass Example:\n    def method(self):\n        pass\n\nSECRET = 42\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=json", "--summary"]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+
+    let lines = json["lines"].as_array().expect("lines array");
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.as_str() == Some("SECRET = 42")),
+        "Original content should remain intact"
+    );
+    let summary_lines = json["summary_lines"].as_array().expect("summary lines");
+    assert!(
+        summary_lines.len() <= lines.len(),
+        "Summary should not exceed full content"
+    );
+}
+
+#[test]
+fn test_total_lines_exact_flag() {
+    let content = "line1\nline2\nline3\nline4\nline5\n";
+    let file = create_test_file(content, ".txt");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=json",
+        "--max-lines=2",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+
+    assert_eq!(json["truncated_by_lines"], true);
+    assert_eq!(json["total_lines_exact"], false);
+}
+
+#[test]
+fn test_token_sampling_reports_truncation() {
+    let repeated_tokens: Vec<String> = (0..3_000).map(|i| format!("token{}", i)).collect();
+    let content = repeated_tokens.join(" ");
+    let file = create_test_file(&content, ".rs");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--mode=json",
+        "--include-tokens",
+    ]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+
+    let tokens = json["tokens"].as_array().expect("tokens array");
+    let token_count = json["token_count"].as_u64().expect("token_count");
+
+    assert!(
+        token_count as usize > tokens.len(),
+        "Reported count should exceed sampled tokens"
+    );
+    assert_eq!(json["tokens_truncated"], true);
+}
+
+#[test]
 fn test_include_tokens() {
     let content = "fn main() {\n    println!(\"Hello\");\n}\n";
     let file = create_test_file(content, ".rs");
@@ -401,6 +475,8 @@ fn test_enhanced_json_output() {
     assert!(json["processed_lines"].is_number());
     assert!(json["total_lines"].is_number());
     assert!(json["tokens"].is_array());
+    assert!(json["token_count"].is_number());
+    assert!(json["tokens_truncated"].is_boolean());
 }
 
 #[test]
@@ -676,8 +752,21 @@ fn test_schema_validation() {
     let schema: serde_json::Value = serde_json::from_str(&stdout).unwrap();
 
     assert!(schema["type"].as_str().unwrap() == "object");
-    assert!(schema["properties"].is_object());
-    assert!(schema["properties"]["file_info"].is_object());
+    let properties = schema["properties"]
+        .as_object()
+        .expect("properties should be an object");
+    assert!(
+        properties.contains_key("token_count"),
+        "schema should expose token_count"
+    );
+    assert!(
+        properties.contains_key("tokens_truncated"),
+        "schema should expose tokens_truncated"
+    );
+    assert!(
+        properties.contains_key("total_lines_exact"),
+        "schema should expose total_lines_exact"
+    );
 }
 
 #[test]

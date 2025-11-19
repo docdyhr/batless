@@ -2,8 +2,7 @@
 // This file demonstrates syntax highlighting across various themes
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{self, Read, Write};
+use std::io;
 
 /// Configuration struct for the application
 #[derive(Debug, Clone)]

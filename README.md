@@ -138,6 +138,8 @@ batless --version-json
 - 📏 **Smart limiting** by lines (`--max-lines`) and/or bytes (`--max-bytes`)
 - 💾 **Memory efficient** - true streaming, never loads full files
 - 🎯 **Predictable behavior** - same output in terminal or pipe
+- 🧠 **Dual-view summaries** - `lines` always retains the full file while `summary_lines` carries the condensed view
+- 🔢 **Token-aware JSON** - `token_count` reflects the full file even when the sampled `tokens` array is capped (~2K entries) and `tokens_truncated` tells you when sampling kicked in
 
 #### Built for Automation
 
@@ -223,6 +225,8 @@ batless --mode=json --max-lines=100 failing-test.rs > context.json
 # Machine-readable metadata
 batless --version-json
 ```
+
+> **JSON structure tips:** `lines` always contains the full file content (even when `--summary` is enabled), while `summary_lines` carries the condensed view. The payload now exposes `total_lines_exact`, `token_count`, and `tokens_truncated` so downstream tools can distinguish between fully processed files and sampled metadata.
 
 ### Pipeline Integration
 

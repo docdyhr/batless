@@ -72,11 +72,17 @@ impl OutputFormatter {
         config: &BatlessConfig,
     ) -> BatlessResult<String> {
         // Create backward-compatible JSON format while reporting both totals and processed counts
+        let line_source = file_info
+            .original_lines
+            .as_ref()
+            .unwrap_or(&file_info.lines);
+
         let mut json_data = json!({
             "file": file_path,
-            "lines": file_info.lines,
+            "lines": line_source,
             "processed_lines": file_info.processed_lines(),
             "total_lines": file_info.total_lines,
+            "total_lines_exact": file_info.total_lines_exact,
             "total_bytes": file_info.total_bytes,
             "truncated": file_info.truncated,
             "truncated_by_lines": file_info.truncated_by_lines,
@@ -91,6 +97,8 @@ impl OutputFormatter {
         if let Some(ref tokens) = file_info.tokens {
             json_data["tokens"] = json!(tokens);
         }
+        json_data["token_count"] = json!(file_info.token_count());
+        json_data["tokens_truncated"] = json!(file_info.tokens_truncated());
 
         if let Some(ref summary_lines) = file_info.summary_lines {
             json_data["summary_lines"] = json!(summary_lines);
@@ -114,7 +122,12 @@ impl OutputFormatter {
             file_info.language.as_deref().unwrap_or("Unknown")
         ));
         output.push(format!("Encoding: {}", file_info.encoding));
-        output.push(format!("Total Lines: {}", file_info.total_lines));
+        let total_lines_display = if file_info.total_lines_exact {
+            file_info.total_lines.to_string()
+        } else {
+            format!("{}+", file_info.total_lines)
+        };
+        output.push(format!("Total Lines: {total_lines_display}"));
         output.push(format!("Processed Lines: {}", file_info.processed_lines()));
 
         if file_info.truncated {
@@ -247,6 +260,7 @@ impl OutputFormatter {
         let metadata = json!({
             "file_path": file_path,
             "total_lines": file_info.total_lines,
+            "total_lines_exact": file_info.total_lines_exact,
             "total_bytes": file_info.total_bytes,
             "language": file_info.language,
             "encoding": file_info.encoding,
@@ -255,6 +269,7 @@ impl OutputFormatter {
             "has_syntax_errors": !file_info.syntax_errors.is_empty(),
             "error_count": file_info.syntax_errors.len(),
             "token_count": file_info.token_count(),
+            "tokens_truncated": file_info.tokens_truncated(),
             "summary_line_count": file_info.summary_line_count(),
             "processing_ratio": file_info.processing_ratio()
         });
@@ -277,24 +292,28 @@ File: {}
 Language: {}
 Encoding: {}
 Total Lines: {}
+Total Lines Exact: {}
 Processed Lines: {}
 Total Bytes: {}
 Processing Time: {}ms
 Truncated: {}
 Syntax Errors: {}
 Tokens: {}
+Tokens Truncated: {}
 Summary Lines: {}
 Processing Ratio: {:.2}%",
             file_path,
             stats.language.as_deref().unwrap_or("Unknown"),
             stats.encoding,
             stats.total_lines,
+            if stats.total_lines_exact { "Yes" } else { "No" },
             stats.processed_lines,
             stats.total_bytes,
             processing_time_ms,
             if stats.truncated { "Yes" } else { "No" },
             stats.error_count,
             stats.token_count,
+            if stats.tokens_truncated { "Yes" } else { "No" },
             stats.summary_line_count,
             file_info.processing_ratio() * 100.0
         )

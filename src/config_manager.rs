@@ -7,7 +7,7 @@ use crate::formatter::OutputMode;
 use crate::profile::CustomProfile;
 use crate::summary::SummaryLevel;
 use crate::tokens::AiModel;
-use clap::{Parser, ValueEnum};
+use clap::{CommandFactory, FromArgMatches, Parser, ValueEnum};
 use is_terminal::IsTerminal;
 use std::str::FromStr;
 
@@ -22,8 +22,8 @@ pub struct Args {
     pub language: Option<String>,
 
     /// Limit lines shown
-    #[arg(long, default_value = "10000")]
-    pub max_lines: usize,
+    #[arg(long)]
+    pub max_lines: Option<usize>,
 
     /// Limit bytes shown
     #[arg(long)]
@@ -37,9 +37,13 @@ pub struct Args {
     #[arg(long, value_enum, default_value = "auto")]
     pub color: ColorMode,
 
+    /// Tracks whether --color was explicitly provided
+    #[arg(skip)]
+    pub color_specified: bool,
+
     /// Theme for syntax highlighting
-    #[arg(long, default_value = "base16-ocean.dark")]
-    pub theme: String,
+    #[arg(long)]
+    pub theme: Option<String>,
 
     /// Strip ANSI escape codes from output
     #[arg(long)]
@@ -110,8 +114,8 @@ pub struct Args {
     pub streaming_json: bool,
 
     /// Chunk size for streaming output (in lines)
-    #[arg(long, default_value = "1000")]
-    pub streaming_chunk_size: usize,
+    #[arg(long)]
+    pub streaming_chunk_size: Option<usize>,
 
     /// Enable resume capability with checkpoint support
     #[arg(long)]
@@ -330,7 +334,16 @@ impl ConfigManager {
     /// Creates a new `ConfigManager` by parsing command-line arguments
     /// and loading configuration from files.
     pub fn new() -> BatlessResult<Self> {
-        let args = Args::parse();
+        let command = Args::command();
+        let matches = command.get_matches();
+        let mut args = Args::from_arg_matches(&matches).map_err(|e| {
+            BatlessError::config_error_with_help(
+                format!("Failed to parse CLI arguments: {e}"),
+                Some("Run `batless --help` for valid options".to_string()),
+            )
+        })?;
+        args.color_specified = matches.contains_id("color");
+
         let mut manager = Self {
             args,
             config: BatlessConfig::default(),
@@ -408,8 +421,8 @@ impl ConfigManager {
         // Build a new config from the current one with all CLI args applied
         let mut new_config = std::mem::take(&mut self.config);
 
-        if self.args.max_lines != 10000 {
-            new_config = new_config.with_max_lines(self.args.max_lines);
+        if let Some(max_lines) = self.args.max_lines {
+            new_config = new_config.with_max_lines(max_lines);
         }
         if self.args.max_bytes.is_some() {
             new_config = new_config.with_max_bytes(self.args.max_bytes);
@@ -417,17 +430,23 @@ impl ConfigManager {
         if let Some(ref language) = self.args.language {
             new_config = new_config.with_language(Some(language.clone()));
         }
-        if self.args.theme != "base16-ocean.dark" {
-            new_config = new_config.with_theme(self.args.theme.clone());
+        if let Some(ref theme) = self.args.theme {
+            new_config = new_config.with_theme(theme.clone());
         }
         if self.args.strip_ansi {
             new_config = new_config.with_strip_ansi(self.args.strip_ansi);
         }
 
-        let use_color = match self.args.color {
-            ColorMode::Always => true,
-            ColorMode::Never => false,
-            ColorMode::Auto => std::io::stdout().is_terminal(),
+        let use_color = if self.args.color_specified {
+            match self.args.color {
+                ColorMode::Always => true,
+                ColorMode::Never => false,
+                ColorMode::Auto => std::io::stdout().is_terminal(),
+            }
+        } else if new_config.use_color {
+            std::io::stdout().is_terminal()
+        } else {
+            false
         };
         new_config = new_config.with_use_color(use_color);
 
@@ -440,8 +459,8 @@ impl ConfigManager {
         if self.args.json_pretty {
             new_config = new_config.with_pretty_json(true);
         }
-        if self.args.streaming_chunk_size != 1000 {
-            new_config = new_config.with_streaming_chunk_size(self.args.streaming_chunk_size);
+        if let Some(chunk_size) = self.args.streaming_chunk_size {
+            new_config = new_config.with_streaming_chunk_size(chunk_size);
         }
         if self.args.enable_resume {
             new_config = new_config.with_enable_resume(self.args.enable_resume);

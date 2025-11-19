@@ -147,15 +147,20 @@ find . -name "*.py" -exec batless {} \;
   "summary_lines": ["import os", "def main():", ...],
   "tokens": ["import", "os", "def", "main", ...],
   "total_lines": 150,
+  "total_lines_exact": true,
   "total_bytes": 3420,
   "truncated": false,
   "truncated_by_lines": false,
   "truncated_by_bytes": false,
+  "token_count": 420,
+  "tokens_truncated": false,
   "encoding": "UTF-8",
   "syntax_errors": [],
   "mode": "json"
 }
 ```
+
+> `lines` always contains the full file contents. When `--summary` or `--summary-level` is enabled, the condensed view is emitted separately via `summary_lines`, so AI tools can combine both views without losing context.
 
 ## Error Handling
 

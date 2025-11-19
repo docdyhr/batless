@@ -102,8 +102,10 @@ pub struct ChunkMetadata {
     pub encoding: String,
     /// Total file size in bytes
     pub total_file_bytes: u64,
-    /// Total lines in file
+    /// Total lines observed so far (exact only on final chunk)
     pub total_file_lines: usize,
+    /// Whether total_file_lines represents the complete count
+    pub total_file_lines_exact: bool,
     /// Lines in this chunk
     pub chunk_lines: usize,
     /// Bytes in this chunk
@@ -206,13 +208,14 @@ impl StreamingProcessor {
                 },
                 "metadata": {
                     "type": "object",
-                    "required": ["file_path", "encoding", "total_file_bytes", "total_file_lines", "chunk_lines", "chunk_bytes", "start_line", "end_line"],
+                    "required": ["file_path", "encoding", "total_file_bytes", "total_file_lines", "total_file_lines_exact", "chunk_lines", "chunk_bytes", "start_line", "end_line"],
                     "properties": {
                         "file_path": { "type": "string" },
                         "language": { "type": ["string", "null"] },
                         "encoding": { "type": "string" },
                         "total_file_bytes": { "type": "integer", "minimum": 0 },
                         "total_file_lines": { "type": "integer", "minimum": 0 },
+                        "total_file_lines_exact": { "type": "boolean" },
                         "chunk_lines": { "type": "integer", "minimum": 0 },
                         "chunk_bytes": { "type": "integer", "minimum": 0 },
                         "start_line": { "type": "integer", "minimum": 0 },
@@ -276,7 +279,6 @@ struct FileMetadata {
     language: Option<String>,
     encoding: String,
     total_bytes: u64,
-    total_lines: usize,
 }
 
 impl StreamingProcessorIterator {
@@ -332,7 +334,6 @@ impl StreamingProcessorIterator {
             language: None, // Cannot detect language without file extension
             encoding: "UTF-8".to_string(),
             total_bytes: 0, // Unknown for stdin
-            total_lines: 0, // Unknown for stdin
         };
 
         Ok(StreamingProcessorIterator::Stdin {
@@ -363,17 +364,6 @@ impl StreamingProcessorIterator {
         // Detect encoding
         let encoding = FileProcessor::detect_encoding(file_path)?;
 
-        // Count total lines (this is expensive but needed for metadata)
-        let total_lines =
-            BufReader::new(
-                File::open(file_path).map_err(|e| BatlessError::FileReadError {
-                    path: file_path.to_string(),
-                    source: e,
-                })?,
-            )
-            .lines()
-            .count();
-
         // Detect language
         let language = LanguageDetector::detect_language_with_fallback(file_path);
 
@@ -382,7 +372,6 @@ impl StreamingProcessorIterator {
             language,
             encoding,
             total_bytes: metadata.len(),
-            total_lines,
         })
     }
 }
@@ -444,8 +433,10 @@ impl Iterator for StreamingProcessorIterator {
                 }
 
                 let end_line = *current_line - 1;
-                let is_final = *current_line >= file_metadata.total_lines
-                    || *bytes_processed >= file_metadata.total_bytes as usize;
+                let is_final = match reader.fill_buf() {
+                    Ok(buf) => buf.is_empty(),
+                    Err(_) => true,
+                };
 
                 if is_final {
                     *finished = true;
@@ -456,7 +447,8 @@ impl Iterator for StreamingProcessorIterator {
                     language: file_metadata.language.clone(),
                     encoding: file_metadata.encoding.clone(),
                     total_file_bytes: file_metadata.total_bytes,
-                    total_file_lines: file_metadata.total_lines,
+                    total_file_lines: *current_line,
+                    total_file_lines_exact: is_final,
                     chunk_lines: chunk_lines.len(),
                     chunk_bytes,
                     start_line,
@@ -551,6 +543,7 @@ impl Iterator for StreamingProcessorIterator {
                     encoding: stdin_metadata.encoding.clone(),
                     total_file_bytes: *bytes_processed as u64, // Use current bytes as estimate
                     total_file_lines: *current_line,           // Use current line count as estimate
+                    total_file_lines_exact: is_final,
                     chunk_lines: chunk_lines.len(),
                     chunk_bytes,
                     start_line,

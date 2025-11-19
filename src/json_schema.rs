@@ -234,6 +234,7 @@ impl JsonSchemaValidator {
                 },
                 "total_lines": { "type": "integer" },
                 "total_bytes": { "type": "integer" },
+                "total_lines_exact": { "type": "boolean" },
                 "truncated": { "type": "boolean" },
                 "truncated_by_lines": { "type": "boolean" },
                 "truncated_by_bytes": { "type": "boolean" },
@@ -275,6 +276,7 @@ impl JsonSchemaValidator {
                 "processed_lines": { "type": "integer" },
                 "total_lines": { "type": "integer" },
                 "total_bytes": { "type": "integer" },
+                "total_lines_exact": { "type": "boolean" },
                 "truncated": { "type": "boolean" },
                 "truncated_by_lines": { "type": "boolean" },
                 "truncated_by_bytes": { "type": "boolean" },
@@ -290,6 +292,8 @@ impl JsonSchemaValidator {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
                 },
+                "token_count": { "type": "integer" },
+                "tokens_truncated": { "type": "boolean" },
                 "summary_lines": {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
@@ -302,10 +306,14 @@ impl JsonSchemaValidator {
                 "processed_lines",
                 "total_lines",
                 "total_bytes",
+                "total_lines_exact",
                 "truncated",
+                "total_lines_exact",
                 "truncated_by_lines",
                 "truncated_by_bytes",
                 "encoding",
+                "token_count",
+                "tokens_truncated",
                 "syntax_errors",
                 "mode"
             ]
@@ -340,6 +348,7 @@ impl JsonSchemaValidator {
             "properties": {
                 "total_lines": { "type": "integer" },
                 "processed_lines": { "type": "integer" },
+                "total_lines_exact": { "type": "boolean" },
                 "total_bytes": { "type": "integer" },
                 "truncated": { "type": "boolean" },
                 "truncation_reason": {
@@ -352,11 +361,12 @@ impl JsonSchemaValidator {
                 },
                 "encoding": { "type": "string" },
                 "token_count": { "type": "integer" },
+                "tokens_truncated": { "type": "boolean" },
                 "summary_line_count": { "type": "integer" }
             },
             "required": [
-                "total_lines", "processed_lines", "total_bytes", "truncated",
-                "has_syntax_errors", "error_count", "encoding", "token_count", "summary_line_count"
+                "total_lines", "processed_lines", "total_lines_exact", "total_bytes", "truncated",
+                "has_syntax_errors", "error_count", "encoding", "token_count", "tokens_truncated", "summary_line_count"
             ]
         })
     }
@@ -504,6 +514,7 @@ mod tests {
             "lines": ["line1"],
             "processed_lines": 1,
             "total_lines": 1,
+            "total_lines_exact": true,
             "total_bytes": 10,
             "truncated": false,
             "truncated_by_lines": false,
@@ -511,6 +522,8 @@ mod tests {
             "language": "rust",
             "encoding": "UTF-8",
             "syntax_errors": [],
+            "token_count": 0,
+            "tokens_truncated": false,
             "tokens": null,
             "summary_lines": null,
             "mode": "json"

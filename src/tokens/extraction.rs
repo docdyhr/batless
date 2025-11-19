@@ -9,37 +9,56 @@ use std::collections::HashSet;
 /// Token extractor for source code
 pub struct TokenExtractor;
 
+/// Result of token extraction that includes sample and total count
+#[derive(Debug, Clone)]
+pub struct TokenExtractionResult {
+    pub tokens: Vec<String>,
+    pub total_count: usize,
+}
+
 impl TokenExtractor {
+    /// Maximum number of tokens to emit in JSON output
+    pub const MAX_SAMPLE_SIZE: usize = 2048;
+
     /// Extract tokens from content for AI processing
     pub fn extract_tokens(content: &str, file_path: &str) -> Vec<String> {
-        let mut tokens = Vec::new();
+        Self::extract_tokens_with_limit(content, file_path, usize::MAX).tokens
+    }
 
-        // Determine tokenization strategy based on file type
-        let strategy = Self::determine_tokenization_strategy(file_path);
+    /// Extract tokens with a maximum sample size while tracking total count
+    pub fn extract_tokens_with_limit(
+        content: &str,
+        file_path: &str,
+        max_tokens: usize,
+    ) -> TokenExtractionResult {
+        let mut accumulator = TokenAccumulator::new(max_tokens);
 
-        match strategy {
+        match Self::determine_tokenization_strategy(file_path) {
             TokenizationStrategy::Programming => {
-                tokens.extend(Self::extract_programming_tokens(content));
+                Self::collect_programming_tokens(content, &mut accumulator);
             }
             TokenizationStrategy::Markup => {
-                tokens.extend(Self::extract_markup_tokens(content));
+                Self::collect_markup_tokens(content, &mut accumulator);
             }
             TokenizationStrategy::Data => {
-                tokens.extend(Self::extract_data_tokens(content));
+                Self::collect_data_tokens(content, &mut accumulator);
             }
             TokenizationStrategy::Text => {
-                tokens.extend(Self::extract_text_tokens(content));
+                Self::collect_text_tokens(content, &mut accumulator);
             }
         }
 
-        // Post-process tokens
-        Self::post_process_tokens(tokens)
+        let total_count = accumulator.total_count();
+        let tokens = accumulator.finish();
+
+        TokenExtractionResult {
+            tokens,
+            total_count,
+        }
     }
 
     /// Extract tokens specifically for programming languages
-    fn extract_programming_tokens(content: &str) -> Vec<String> {
-        let mut tokens = Vec::new();
-
+    fn collect_programming_tokens(content: &str, acc: &mut TokenAccumulator) {
         for line in content.lines() {
             // Skip empty lines and comments
             let trimmed = line.trim();
@@ -48,16 +67,14 @@ impl TokenExtractor {
             }
 
             // Extract identifiers, keywords, and symbols
-            tokens.extend(Self::tokenize_programming_line(line));
+            for token in Self::tokenize_programming_line(line) {
+                acc.push(token);
+            }
         }
-
-        tokens
     }
 
     /// Extract tokens from markup languages (HTML, XML, Markdown)
-    fn extract_markup_tokens(content: &str) -> Vec<String> {
-        let mut tokens = Vec::new();
-
+    fn collect_markup_tokens(content: &str, acc: &mut TokenAccumulator) {
         for line in content.lines() {
             let trimmed = line.trim();
             if trimmed.is_empty() {
@@ -65,16 +82,14 @@ impl TokenExtractor {
             }
 
             // Extract tag names, attributes, and text content
-            tokens.extend(Self::tokenize_markup_line(line));
+            for token in Self::tokenize_markup_line(line) {
+                acc.push(token);
+            }
         }
-
-        tokens
     }
 
     /// Extract tokens from data files (JSON, YAML, TOML)
-    fn extract_data_tokens(content: &str) -> Vec<String> {
-        let mut tokens = Vec::new();
-
+    fn collect_data_tokens(content: &str, acc: &mut TokenAccumulator) {
         for line in content.lines() {
             let trimmed = line.trim();
             if trimmed.is_empty() || trimmed.starts_with("#") {
@@ -82,15 +97,17 @@ impl TokenExtractor {
             }
 
             // Extract keys, values, and structure
-            tokens.extend(Self::tokenize_data_line(line));
+            for token in Self::tokenize_data_line(line) {
+                acc.push(token);
+            }
         }
-
-        tokens
     }
 
     /// Extract tokens from plain text
-    fn extract_text_tokens(content: &str) -> Vec<String> {
-        content.split_whitespace().map(|s| s.to_string()).collect()
+    fn collect_text_tokens(content: &str, acc: &mut TokenAccumulator) {
+        for token in content.split_whitespace().map(|s| s.to_string()) {
+            acc.push(token);
+        }
     }
 
     /// Tokenize a single programming language line
@@ -282,29 +299,6 @@ impl TokenExtractor {
         TokenizationStrategy::Text
     }
 
-    /// Post-process tokens to clean and filter them
-    fn post_process_tokens(mut tokens: Vec<String>) -> Vec<String> {
-        // Remove empty tokens
-        tokens.retain(|t| !t.trim().is_empty());
-
-        // Filter out very short tokens (single characters) except important ones
-        tokens.retain(|t| t.len() > 1 || "(){}[]<>;,.:!?=+-*/&|^~%".contains(t));
-
-        // Remove duplicates while preserving order
-        let mut seen = HashSet::new();
-        tokens.retain(|t| seen.insert(t.clone()));
-
-        // Sort for consistency
-        tokens.sort();
-
-        // Limit token count to prevent overflow
-        if tokens.len() > 1000 {
-            tokens.truncate(1000);
-        }
-
-        tokens
-    }
-
     /// Extract keywords specific to programming languages
     pub fn extract_keywords(content: &str, language: Option<&str>) -> Vec<String> {
         let keywords: Vec<String> = match language {
@@ -356,6 +350,42 @@ impl TokenExtractor {
     }
 }
 
+/// Accumulates tokens while tracking the total count and limiting output size
+struct TokenAccumulator {
+    max_tokens: usize,
+    tokens: Vec<String>,
+    total_count: usize,
+}
+
+impl TokenAccumulator {
+    fn new(max_tokens: usize) -> Self {
+        Self {
+            max_tokens,
+            tokens: Vec::new(),
+            total_count: 0,
+        }
+    }
+
+    fn push(&mut self, token: String) {
+        if token.trim().is_empty() {
+            return;
+        }
+
+        self.total_count += 1;
+        if self.tokens.len() < self.max_tokens {
+            self.tokens.push(token);
+        }
+    }
+
+    fn finish(self) -> Vec<String> {
+        self.tokens
+    }
+
+    fn total_count(&self) -> usize {
+        self.total_count
+    }
+}
+
 /// Tokenization strategy based on file type
 #[derive(Debug, Clone, PartialEq)]
 enum TokenizationStrategy {
@@ -382,7 +412,8 @@ mod tests {
     #[test]
     fn test_extract_programming_tokens() {
         let content = "fn main() {\n    println!(\"Hello, world!\");\n}";
-        let tokens = TokenExtractor::extract_programming_tokens(content);
+        let tokens =
+            TokenExtractor::extract_tokens_with_limit(content, "example.rs", usize::MAX).tokens;
 
         assert!(tokens.contains(&"fn".to_string()));
         assert!(tokens.contains(&"main".to_string()));
@@ -394,7 +425,8 @@ mod tests {
     #[test]
     fn test_extract_markup_tokens() {
         let content = "<html><body><h1>Title</h1></body></html>";
-        let tokens = TokenExtractor::extract_markup_tokens(content);
+        let tokens =
+            TokenExtractor::extract_tokens_with_limit(content, "index.html", usize::MAX).tokens;
 
         assert!(tokens.contains(&"<html>".to_string()));
         assert!(tokens.contains(&"<body>".to_string()));
@@ -405,7 +437,8 @@ mod tests {
     #[test]
     fn test_extract_data_tokens() {
         let content = "\"name\": \"test\"\n\"value\": 42";
-        let tokens = TokenExtractor::extract_data_tokens(content);
+        let tokens =
+            TokenExtractor::extract_tokens_with_limit(content, "config.json", usize::MAX).tokens;
 
         assert!(tokens.contains(&"name".to_string()));
         assert!(tokens.contains(&"test".to_string()));
@@ -431,25 +464,6 @@ mod tests {
             TokenExtractor::determine_tokenization_strategy("test.txt"),
             TokenizationStrategy::Text
         );
-    }
-
-    #[test]
-    fn test_post_process_tokens() {
-        let tokens = vec![
-            "".to_string(),
-            "a".to_string(),
-            "test".to_string(),
-            "test".to_string(), // duplicate
-            "another".to_string(),
-            "(".to_string(), // important single char
-        ];
-
-        let processed = TokenExtractor::post_process_tokens(tokens);
-
-        assert!(!processed.contains(&String::new()));
-        assert!(!processed.contains(&"a".to_string()));
-        assert!(processed.contains(&"(".to_string()));
-        assert_eq!(processed.iter().filter(|&t| t == "test").count(), 1);
     }
 
     #[test]
@@ -482,7 +496,8 @@ mod tests {
     #[test]
     fn test_string_handling() {
         let content = r#"let message = "Hello, world!";"#;
-        let tokens = TokenExtractor::extract_programming_tokens(content);
+        let tokens =
+            TokenExtractor::extract_tokens_with_limit(content, "example.rs", usize::MAX).tokens;
 
         assert!(tokens.contains(&"let".to_string()));
         assert!(tokens.contains(&"message".to_string()));
@@ -492,7 +507,8 @@ mod tests {
     #[test]
     fn test_comment_filtering() {
         let content = "// This is a comment\nfn main() {}";
-        let tokens = TokenExtractor::extract_programming_tokens(content);
+        let tokens =
+            TokenExtractor::extract_tokens_with_limit(content, "example.rs", usize::MAX).tokens;
 
         assert!(tokens.contains(&"fn".to_string()));
         assert!(tokens.contains(&"main".to_string()));
