@@ -1,5 +1,5 @@
 
-# 📋 **Last Updated**: September 6, 2025
+# 📋 **Last Updated**: February 2026
 
 **Current Version**: v0.3.0 (Released – August 27, 2024)
 
@@ -139,6 +139,17 @@
 - [ ] Design AST processing pipeline
 - [ ] Plan performance optimization strategies
 - [ ] Evaluate new language support priorities
+
+---
+
+## 🛠️ Maintenance & Quality Backlog
+
+- [ ] Stabilize integration test runs in CI (consider `--test-threads 1` or lightweight retry for flake resilience)
+- [ ] Add automated docs/CLI drift validation (close out CLI mismatch follow-ups)
+- [ ] Introduce `cargo deny`/security audit stage to CI
+- [ ] Evaluate structured logging backend (deferred to v0.4.0)
+- [ ] Draft SLSA attestation plan (supply chain security)
+- [ ] Collect community feedback on JSON ergonomics and sampling signals (token_count/tokens_truncated adoption)
 
 ---
 
