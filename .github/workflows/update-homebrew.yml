@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Extract release information
         id: release-info
