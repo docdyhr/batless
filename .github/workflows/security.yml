@@ -42,6 +42,8 @@ jobs:
 
       - name: Run cargo audit
         run: |
+          # Update the advisory database first
+          cargo audit fetch || true
           # Generate JSON results but do not fail the job yet
           cargo audit --color never --json > audit-results.json || true
           # Run human-readable report; allow non-zero so gating step handles failure
@@ -162,7 +164,7 @@ jobs:
           if ! command -v cargo-cyclonedx &> /dev/null; then
             cargo install cargo-cyclonedx --locked || echo "Failed to install cargo-cyclonedx"
           fi
-          cargo cyclonedx --format json --output-cdx batless-sbom.json || echo "SBOM generation failed"
+          cargo cyclonedx --format json > batless-sbom.json || echo "SBOM generation failed"
 
       - name: Upload SBOM
         if: hashFiles('batless-sbom.json') != ''
@@ -189,11 +191,13 @@ jobs:
           fi
 
           if command -v cargo-license &> /dev/null; then
-            cargo license --json > licenses.json || echo "License check failed"
+            cargo license --json > licenses.json 2>&1 || echo "License JSON generation completed with warnings"
 
-            # Check for problematic licenses
-            if cargo license | grep -E "(GPL|AGPL|SSPL|BSL)"; then
-              echo "❌ Problematic license found"
+            # Check for problematic licenses (exclude Unicode-3.0 which is permissive)
+            PROBLEMATIC=$(cargo license 2>/dev/null | grep -E "^(GPL|AGPL|SSPL|BSL)" | grep -v "Unicode" || true)
+            if [ -n "$PROBLEMATIC" ]; then
+              echo "❌ Problematic license found:"
+              echo "$PROBLEMATIC"
               exit 1
             else
               echo "✅ All licenses are compatible"

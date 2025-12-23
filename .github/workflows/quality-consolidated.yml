@@ -33,23 +33,11 @@ jobs:
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2@0.14.0
 
-      - name: Prepare markdownlint config
-        run: |
-          if [ ! -f ".markdownlint.jsonc" ]; then
-            cat > .markdownlint.jsonc <<'JSON'
-          {
-            "default": true,
-            "MD013": { "line_length": 120 },
-            "MD033": false,
-            "MD041": false
-          }
-          JSON
-          fi
-
       - name: Run markdownlint
         continue-on-error: true
         run: |
-          markdownlint-cli2 "**/*.md" "#target" "#node_modules" || {
+          # Use the existing .markdownlint-cli2.jsonc config file
+          markdownlint-cli2 || {
             echo "::warning::Markdown linting found issues. Please review and fix when possible."
             echo "Note: This is currently non-blocking to allow gradual improvement"
           }

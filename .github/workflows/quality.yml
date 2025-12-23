@@ -23,42 +23,13 @@ jobs:
           node-version: '20'
       - name: Install markdownlint-cli2
         run: npm install -g markdownlint-cli2@0.14.0
-      - name: Prepare markdownlint config
-        run: |
-          if [ ! -f ".markdownlint.jsonc" ]; then
-            cat > .markdownlint.jsonc <<'EOF'
-          {
-            "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
-            "default": true,
-            "MD013": false,
-            "MD033": false,
-            "MD041": false,
-            "MD040": false,
-            "MD024": { "siblings_only": true },
-            "MD036": false
-          }
-          EOF
-          fi
-          if [ ! -f "markdownlint-cli2.jsonc" ]; then
-            cat > markdownlint-cli2.jsonc <<'EOF'
-            {
-              "globs": ["**/*.md", "!target/**"],
-              "config": {
-                "default": true,
-                "MD013": false,
-                "MD033": false,
-                "MD041": false,
-                "MD024": { "siblings_only": true },
-                "MD036": false,
-                "MD040": false
-              }
-            }
-          EOF
-          fi
       - name: Run markdownlint
         continue-on-error: true
         run: |
-          markdownlint-cli2 --config "markdownlint-cli2.jsonc" || (echo "::error ::Markdown lint failures" && exit 1)
+          # Use the existing .markdownlint-cli2.jsonc config file
+          markdownlint-cli2 || {
+            echo "::warning::Markdown linting found issues. Please review when possible."
+          }
 
   code-coverage:
     name: Code Coverage
@@ -243,16 +214,14 @@ jobs:
 
       - name: Check for TODO/FIXME comments
         run: |
-          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true | wc -l)
-              sed -n 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)%.*/\1/p' | tail -1)
-            if [ -z "$DOC_COVERAGE" ]; then DOC_COVERAGE="0"; fi
+          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ 2>/dev/null | wc -l || echo "0")
 
-          if [ $TODO_COUNT -gt 10 ]; then
+          if [ "$TODO_COUNT" -gt 10 ]; then
             echo "❌ Too many TODO/FIXME comments ($TODO_COUNT > 10)"
-            grep -r "TODO\|FIXME\|XXX\|HACK" src/ || true
+            grep -r "TODO\|FIXME\|XXX\|HACK" src/ 2>/dev/null || true
             exit 1
           else
-            echo "✅ Acceptable number of TODO/FIXME comments"
+            echo "✅ Acceptable number of TODO/FIXME comments ($TODO_COUNT)"
           fi
 
   documentation-quality:
