@@ -40,7 +40,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -70,7 +70,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -164,7 +164,7 @@ jobs:
         run: cargo install cargo-fuzz
 
       - name: Cache fuzz targets
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -319,7 +319,7 @@ jobs:
     needs: [unit-tests, property-based-testing, fuzz-testing, stress-testing]
     steps:
       - name: Download test artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           merge-multiple: true
 
