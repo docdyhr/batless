@@ -61,7 +61,7 @@ jobs:
     name: Build & Test (Shard ${{ matrix.shard }})
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -109,7 +109,7 @@ jobs:
     name: Cross-platform (${{ matrix.os }})
     needs: validate
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 12
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:

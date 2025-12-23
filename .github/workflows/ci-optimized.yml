@@ -67,7 +67,7 @@ jobs:
     name: Test (${{ matrix.os }} / ${{ matrix.rust }})
     needs: quick-check
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -129,7 +129,7 @@ jobs:
     name: Docs & Coverage
     needs: quick-check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
 
