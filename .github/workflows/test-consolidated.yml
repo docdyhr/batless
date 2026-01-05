@@ -24,6 +24,7 @@ jobs:
   test:
     name: Test (${{ matrix.os }}, ${{ matrix.rust }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -72,9 +73,10 @@ jobs:
   msrv:
     name: MSRV Compatibility
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
-        rust: [1.77.0, 1.80.0]
+        rust: [1.78.0, 1.80.0]
 
     steps:
       - name: Checkout code
@@ -92,6 +94,7 @@ jobs:
   cross-compile:
     name: Cross Compile (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       matrix:
         include:
@@ -125,6 +128,10 @@ jobs:
             target
           key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install musl-tools (Linux musl target)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
       - name: Build for target
         run: cargo build --target ${{ matrix.target }} --release
 
@@ -132,6 +139,7 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -165,6 +173,7 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
