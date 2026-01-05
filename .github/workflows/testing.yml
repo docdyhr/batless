@@ -18,6 +18,7 @@ jobs:
   unit-tests:
     name: Unit Tests
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -62,6 +63,7 @@ jobs:
   property-based-testing:
     name: Property-Based Testing
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -153,6 +155,7 @@ jobs:
   fuzz-testing:
     name: Fuzz Testing
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -220,6 +223,7 @@ jobs:
   stress-testing:
     name: Stress Testing
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -273,9 +277,10 @@ jobs:
   compatibility-testing:
     name: Compatibility Testing
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
-        rust: [1.77.0, 1.80.0, stable, beta]
+        rust: [1.78.0, 1.80.0, stable, beta]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -296,6 +301,7 @@ jobs:
   mutation-testing:
     name: Mutation Testing
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -315,6 +321,7 @@ jobs:
   test-report:
     name: Test Report
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: always()
     needs: [unit-tests, property-based-testing, fuzz-testing, stress-testing]
     steps:
