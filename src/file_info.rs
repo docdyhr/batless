@@ -24,6 +24,8 @@ pub struct FileInfo {
     pub truncated_by_lines: bool,
     /// Whether truncation was due to byte limit
     pub truncated_by_bytes: bool,
+    /// Whether truncation was due to context fitting
+    pub truncated_by_context: bool,
     /// Detected or specified language
     pub language: Option<String>,
     /// Detected encoding of the file
@@ -50,6 +52,7 @@ impl FileInfo {
             truncated: false,
             truncated_by_lines: false,
             truncated_by_bytes: false,
+            truncated_by_context: false,
             language: None,
             encoding: "UTF-8".to_string(),
             syntax_errors: Vec::new(),
@@ -75,6 +78,7 @@ impl FileInfo {
             truncated: false,
             truncated_by_lines: false,
             truncated_by_bytes: false,
+            truncated_by_context: false,
             language,
             encoding,
             syntax_errors: Vec::new(),
@@ -95,6 +99,13 @@ impl FileInfo {
         self.truncated = truncated;
         self.truncated_by_lines = by_lines;
         self.truncated_by_bytes = by_bytes;
+        self
+    }
+
+    /// Set context-based truncation
+    pub fn with_context_truncation(mut self, truncated: bool) -> Self {
+        self.truncated = truncated;
+        self.truncated_by_context = truncated;
         self
     }
 
@@ -195,6 +206,9 @@ impl FileInfo {
         if self.truncated_by_bytes {
             reasons.push("byte limit");
         }
+        if self.truncated_by_context {
+            reasons.push("context fitting");
+        }
 
         if reasons.is_empty() {
             Some("unknown reason".to_string())
@@ -262,6 +276,7 @@ mod tests {
         assert!(!info.truncated);
         assert!(!info.truncated_by_lines);
         assert!(!info.truncated_by_bytes);
+        assert!(!info.truncated_by_context);
         assert_eq!(info.language, None);
         assert_eq!(info.encoding, "UTF-8");
         assert_eq!(info.syntax_errors.len(), 0);
