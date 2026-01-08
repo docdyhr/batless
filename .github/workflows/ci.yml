@@ -160,6 +160,7 @@ jobs:
         run: sudo apt-get install -y musl-tools
 
       - name: Build binary
+        shell: bash
         env:
           TARGET_TRIPLE: ${{ matrix.target }}
         run: cargo build --release --target "$TARGET_TRIPLE"
