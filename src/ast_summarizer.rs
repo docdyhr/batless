@@ -24,6 +24,7 @@ impl AstSummarizer {
 
         match language {
             Some("Rust") => Self::summarize_rust(content, level),
+            Some("Python") => Self::summarize_python(content, level),
             // Fallback to empty for unsupported languages (caller should handle fallback to regex)
             _ => Vec::new(),
         }
@@ -78,6 +79,66 @@ impl AstSummarizer {
 
         let lines: Vec<&str> = content.lines().collect();
         // Use BTreeSet to automatically keep line numbers sorted and unique
+        let mut line_indices = std::collections::BTreeSet::new();
+
+        while let Some(m) = matches.next() {
+            for capture in m.captures {
+                let start_line = capture.node.start_position().row;
+                line_indices.insert(start_line);
+            }
+        }
+
+        let mut summary_lines = Vec::new();
+        for idx in line_indices {
+            if let Some(line) = lines.get(idx) {
+                summary_lines.push(line.to_string());
+            }
+        }
+
+        summary_lines
+    }
+
+    fn summarize_python(content: &str, level: SummaryLevel) -> Vec<String> {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_python::LANGUAGE.into())
+            .expect("Error loading Python grammar");
+
+        let tree = parser.parse(content, None).unwrap();
+        let root_node = tree.root_node();
+
+        let query_string = match level {
+            SummaryLevel::Minimal => {
+                "(function_definition name: (identifier) @name) @function
+                 (class_definition name: (identifier) @name) @class"
+            }
+            SummaryLevel::Standard => {
+                "(function_definition name: (identifier) @name) @function
+                 (class_definition name: (identifier) @name) @class
+                 (import_statement) @import
+                 (import_from_statement) @import_from
+                 (decorated_definition) @decorator"
+            }
+            SummaryLevel::Detailed => {
+                "(function_definition name: (identifier) @name) @function
+                 (class_definition name: (identifier) @name) @class
+                 (import_statement) @import
+                 (import_from_statement) @import_from
+                 (decorated_definition) @decorator
+                 (assignment left: (identifier) @name) @assignment
+                 (global_statement) @global
+                 (nonlocal_statement) @nonlocal"
+            }
+            SummaryLevel::None => return Vec::new(),
+        };
+
+        let query = Query::new(&tree_sitter_python::LANGUAGE.into(), query_string)
+            .expect("Error compiling query");
+
+        let mut cursor = QueryCursor::new();
+        let mut matches = cursor.matches(&query, root_node, content.as_bytes());
+
+        let lines: Vec<&str> = content.lines().collect();
         let mut line_indices = std::collections::BTreeSet::new();
 
         while let Some(m) = matches.next() {
