@@ -2,7 +2,7 @@ name: Release Management
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   release:
     types: [published]
   pull_request:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag to release (e.g., v1.0.0)'
+        description: "Tag to release (e.g., v1.0.0)"
         required: true
 
 permissions:
@@ -136,7 +136,15 @@ jobs:
         run: cargo login ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Publish to crates.io
-        run: cargo publish
+        run: |
+          cargo publish || {
+            if cargo search batless | grep -q "^batless = \"$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')\""; then
+              echo "Version already published to crates.io, skipping"
+              exit 0
+            else
+              exit 1
+            fi
+          }
 
   # Update Homebrew tap
   update-homebrew:

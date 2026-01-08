@@ -251,8 +251,10 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         let (truncated_content, was_truncated) =
             counter.truncate_to_fit(&file_info.lines.join("\n"), args.prompt_tokens);
         if was_truncated {
-            println!("📐 Context Fitting Applied");
-            file_info.with_lines(truncated_content.lines().map(String::from).collect())
+            eprintln!("📐 Context Fitting Applied");
+            file_info
+                .with_lines(truncated_content.lines().map(String::from).collect())
+                .with_context_truncation(true)
         } else {
             file_info
         }
@@ -261,7 +263,7 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     };
 
     if output_mode == OutputMode::Summary && final_file_info.summary_line_count() == 0 {
-        println!("// No summary-worthy code structures found");
+        eprintln!("// No summary-worthy code structures found");
         return Ok(());
     }
 

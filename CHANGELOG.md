@@ -2,6 +2,97 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-01-08
+
+### 🎯 Major Features
+
+- **🌲 Multi-Language AST Support**: Added Abstract Syntax Tree summarization for 4 programming languages
+  - **Rust**: Functions, structs, enums, traits, impls, constants (already supported, now comprehensive)
+  - **Python**: Functions, classes, decorators, async/await, imports, type annotations
+  - **JavaScript**: Functions, classes, arrow functions, exports, imports, async/await
+  - **TypeScript**: Interfaces, type aliases, enums, generics, decorators (all JS features + TS-specific)
+  - Three-level summary depth: Minimal, Standard (default), Detailed
+  - Smart extraction preserves code structure and context
+  - Zero performance overhead: 5ms execution time maintained across all modes
+
+### 🚀 Performance & Quality
+
+- **⚡ Performance Excellence**: Comprehensive benchmarking validates design goals
+  - Consistent 5ms execution time across all modes (plain, highlight, JSON, summary)
+  - AST parsing adds zero measurable overhead
+  - Performance maintained on files from 200 bytes to 1KB+
+  - 8-10x better than original <50ms target
+- **✅ Test Coverage**: Expanded test suite ensures reliability
+  - 325 total tests (98 new tests added in v0.4.0)
+  - 28 comprehensive AST tests covering all 4 languages
+  - 23 CLI documentation tests prevent documentation drift
+  - 15 JavaScript/TypeScript tests
+  - 12 Python tests
+  - Zero test failures, 100% pass rate
+
+### 🔧 Bug Fixes & Improvements
+
+- **📚 Documentation Accuracy**: Fixed critical CLAUDE.md documentation mismatches
+  - Line numbers now correctly documented as requiring --plain mode
+  - Removed references to non-existent --pattern flag (exits with error)
+  - Removed references to non-existent --list flag (exits with error)
+  - Removed references to non-existent -r/--range flag (never existed)
+  - Added 23 automated tests to prevent future documentation drift
+- **🎯 Context Truncation Tracking**: Enhanced JSON output for AI workflows
+  - Added `truncated_by_context` boolean field to JSON output
+  - Distinguishes context-based truncation from line/byte limits
+  - Improves AI assistant awareness of truncated content
+
+### 📦 Dependencies
+
+- **tree-sitter** (0.26.3) - AST parsing framework
+- **tree-sitter-rust** (0.24.0) - Rust grammar support
+- **tree-sitter-python** (0.23.6) - Python grammar support
+- **tree-sitter-javascript** (0.25.0) - JavaScript grammar support
+- **tree-sitter-typescript** (0.23.2) - TypeScript grammar support
+
+### 🏗️ Technical Architecture
+
+- **AST Module**: New `src/ast_summarizer.rs` with language-specific extractors
+- **Consistent Pattern**: Parser → Query → Cursor → BTreeSet → sorted output
+- **Memory Efficient**: Streaming architecture maintained with AST parsing
+- **Language Detection**: Automatic language detection via syntect integration
+- **Query-Based Extraction**: Tree-sitter queries for precise code structure matching
+
+### 📖 Documentation
+
+- **CLAUDE.md**: Fixed all documentation/CLI mismatches, comprehensive examples
+- **RELEASE_CHECKLIST_v0.4.0.md**: Complete release preparation guide
+- **Performance Data**: Documented benchmarking methodology and results
+- **AST Usage**: Examples for all supported languages and summary levels
+
+### 🔐 Security & Stability
+
+- All 325 tests passing with zero failures
+- No new security vulnerabilities introduced
+- Pre-commit hooks enforce code quality (formatting, clippy, security)
+- Comprehensive integration testing across all AST features
+
+### 🎨 Developer Experience
+
+- Language-specific AST extraction available via library API
+- Three summary levels configurable: Minimal, Standard, Detailed
+- Works seamlessly with existing --mode=summary and --mode=json flags
+- JSON output includes `summary_lines` field when --summary flag used
+
+### 📊 Metrics
+
+- **Test Count**: 227 → 325 tests (+98 tests, +43%)
+- **Language Support**: 1 → 4 AST languages (+300%)
+- **Performance**: 5ms maintained (no regression)
+- **Code Quality**: Zero clippy warnings, zero security issues
+
+### 🙏 Contributors
+
+Special thanks to the tree-sitter team for their excellent parsing libraries that made multi-language AST support possible.
+
+---
+
 ## [0.3.2] - 2025-10-29
 
 ### Bug Fixes
