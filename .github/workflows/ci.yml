@@ -84,7 +84,7 @@ jobs:
           fetch-depth: 1
       - uses: dtolnay/rust-toolchain@stable
       - name: Cache security tools
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cargo/bin
           key: ${{ runner.os }}-security-tools-v2
@@ -195,7 +195,7 @@ jobs:
           fi
 
       - name: Upload binary to release
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: release-binaries-${{ matrix.target }}
           path: batless-*-${{ matrix.target }}.*
