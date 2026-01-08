@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual CI trigger'
+        description: "Reason for manual CI trigger"
         required: false
-        default: 'Manual CI execution'
+        default: "Manual CI execution"
 
 # Concurrency controls to prevent redundant runs
 concurrency:
@@ -23,7 +23,6 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   CARGO_INCREMENTAL: 0
-  RUSTFLAGS: "-C target-cpu=native"
 
 jobs:
   # Quick validation checks - fail fast
