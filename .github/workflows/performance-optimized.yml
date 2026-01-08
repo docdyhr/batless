@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       test_reason:
-        description: 'Reason for performance testing'
+        description: "Reason for performance testing"
         required: false
-        default: 'Performance CI execution'
+        default: "Performance CI execution"
 
 # Aggressive concurrency to cancel outdated runs
 concurrency:
@@ -21,7 +21,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
-  RUSTFLAGS: "-C target-cpu=native -C link-arg=-s"
+  RUSTFLAGS: "-C link-arg=-s"
   CARGO_NET_RETRY: 10
   RUST_BACKTRACE: short
 
@@ -123,7 +123,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.os }}
-          save-if: false  # Only restore, don't save
+          save-if: false # Only restore, don't save
 
       - name: Fast build & test
         run: |
