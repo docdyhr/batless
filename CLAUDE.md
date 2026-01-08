@@ -67,14 +67,20 @@ batless --list-themes
 
 ### Line Numbers (Cat Compatibility)
 
-```bash
-# Show line numbers (like cat -n)
-batless -n file.py
-batless --number file.py
+**IMPORTANT**: Line numbers only work in plain mode (no syntax highlighting).
 
-# Number non-blank lines only (like cat -b)
-batless -b file.py
-batless --number-nonblank file.py
+```bash
+# Show line numbers (like cat -n) - REQUIRES --plain or --mode=plain
+batless -n --plain file.py
+batless --number --mode=plain file.py
+
+# Number non-blank lines only (like cat -b) - REQUIRES --plain or --mode=plain
+batless -b --plain file.py
+batless --number-nonblank --mode=plain file.py
+
+# WRONG: These will NOT show line numbers (syntax highlighting ignores line numbers)
+# batless -n file.py              # No line numbers shown
+# batless --number file.py         # No line numbers shown
 ```
 
 ### Pipeline & PAGER Usage
@@ -101,8 +107,9 @@ batless intentionally does NOT provide these features. Use the suggested alterna
 # WRONG: batless does not search
 # batless --pattern "TODO" src/
 
-# CORRECT: Use grep
+# CORRECT: Use grep or ripgrep
 grep -rn "TODO" src/
+rg "TODO" src/
 ```
 
 ### Line Range Selection
@@ -110,10 +117,11 @@ grep -rn "TODO" src/
 ```bash
 # WRONG: batless does not support arbitrary ranges
 # batless -r 10:50 file.py
+# batless --range 10:50 file.py
 
-# CORRECT: Use sed or head/tail
-sed -n '10,50p' file.py
-head -50 file.py | tail -41
+# CORRECT: Use sed, head/tail, or combine with batless
+sed -n '10,50p' file.py | batless --language=python
+head -50 file.py | tail -41 | batless --mode=plain
 ```
 
 ### File Globbing/Listing
@@ -125,6 +133,7 @@ head -50 file.py | tail -41
 # CORRECT: Use shell expansion or find
 batless *.py  # Shell expands the glob
 find . -name "*.py" -exec batless {} \;
+fd -e py -x batless {}
 ```
 
 ### Interactive Features
@@ -152,6 +161,7 @@ find . -name "*.py" -exec batless {} \;
   "truncated": false,
   "truncated_by_lines": false,
   "truncated_by_bytes": false,
+  "truncated_by_context": false,
   "token_count": 420,
   "tokens_truncated": false,
   "encoding": "UTF-8",
@@ -194,8 +204,8 @@ batless --max-bytes=1048576 huge-log.log  # 1MB limit
 # Combine with grep for error analysis
 grep -n "ERROR" application.log | head -100 | batless --language=log
 
-# Preview log file with line numbers for debugging
-batless -n --max-lines=500 server.log
+# Preview log file with line numbers for debugging (requires --plain)
+batless -n --plain --max-lines=500 server.log
 ```
 
 ### Extracting JSON for AI Processing
@@ -300,13 +310,20 @@ done
 
 # Analyze complexity by counting tokens
 for file in src/*.py; do
-  tokens=$(batless --mode=json --include-tokens "$file" | jq '.tokens | length')
+  tokens=$(batless --mode=json --include-tokens "$file" | jq '.token_count')
   echo "$file: $tokens tokens"
 done | sort -t: -k2 -n
 
-# Check for TODO comments across codebase
-find . -name "*.rs" -exec sh -c \
-  'batless -n "$1" | grep -i "TODO\|FIXME\|XXX"' _ {} \;
+# Check for TODO comments across codebase (use grep, not batless)
+find . -name "*.rs" -exec grep -Hn "TODO\|FIXME\|XXX" {} \;
+
+# Alternative: combine with batless for context
+find . -name "*.rs" | while read file; do
+  if grep -q "TODO\|FIXME\|XXX" "$file"; then
+    echo "=== $file ==="
+    batless --plain "$file" | grep -n "TODO\|FIXME\|XXX"
+  fi
+done
 ```
 
 ## Version Information
