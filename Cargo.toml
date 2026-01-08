@@ -54,6 +54,8 @@ chrono = { version = "0.4", features = ["serde"] }
 tree-sitter = "0.26.3"
 tree-sitter-rust = "0.24.0"
 tree-sitter-python = "0.23.6"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-typescript = "0.23.2"
 
 [dev-dependencies]
 tempfile = "3.21"
