@@ -27,6 +27,7 @@ impl Formatter for JsonFormatter {
             "truncated": file_info.truncated,
             "truncated_by_lines": file_info.truncated_by_lines,
             "truncated_by_bytes": file_info.truncated_by_bytes,
+            "truncated_by_context": file_info.truncated_by_context,
             "summary_lines": file_info.summary_lines,
             "syntax_errors": file_info.syntax_errors,
             "tokens": if config.include_tokens {

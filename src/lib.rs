@@ -3,6 +3,7 @@
 //! This library provides the core logic for syntax highlighting and file processing
 //! that can be used both by the CLI and in tests.
 
+pub mod ast_summarizer;
 pub mod config;
 pub mod config_manager;
 pub mod error;
