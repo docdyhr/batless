@@ -68,7 +68,7 @@ jobs:
           cargo llvm-cov clean --workspace
           cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
           cargo llvm-cov --all-features --workspace --html --output-dir coverage-html
-          cargo llvm-cov report --workspace
+          cargo llvm-cov report
 
       - name: Upload coverage to Codecov (non-blocking)
         uses: codecov/codecov-action@v5
@@ -83,7 +83,7 @@ jobs:
         run: |
           # Extract coverage percentage
           set +e
-          RAW=$(cargo llvm-cov report --workspace | awk '/TOTAL/ {print $0}')
+          RAW=$(cargo llvm-cov report | awk '/TOTAL/ {print $0}')
           # Try to parse a number like 83.45% from the TOTAL line
           COVERAGE=$(echo "$RAW" | sed -n 's/.*\([0-9][0-9]*\.[0-9][0-9]*\)%.*/\1/p')
           set -e
@@ -100,7 +100,7 @@ jobs:
           echo "" >> coverage-summary.md
           echo "## Detailed Report" >> coverage-summary.md
           echo '```' >> coverage-summary.md
-          cargo llvm-cov report --workspace >> coverage-summary.md
+          cargo llvm-cov report >> coverage-summary.md
           echo '```' >> coverage-summary.md
 
       - name: Upload coverage artifacts
