@@ -58,7 +58,7 @@ tree-sitter-javascript = "0.25.0"
 tree-sitter-typescript = "0.23.2"
 
 [dev-dependencies]
-tempfile = "3.21"
+tempfile = "3.24"
 serde_json = "1.0"
 
 # Enhanced testing dependencies
