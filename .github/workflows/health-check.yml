@@ -77,21 +77,37 @@ jobs:
           # Check Cargo.toml health
           echo "## Dependency Health" >> health-report.md
           DUPLICATES_OUTPUT=$(cargo tree --duplicates 2>/dev/null || echo "")
-          # Filter out harmless duplicates (different major versions of common utility crates)
-          # Only flag as problematic if there are duplicates that aren't just bitflags v1/v2
-          if echo "$DUPLICATES_OUTPUT" | grep -q "└──"; then
-            # Check if there are non-bitflags duplicates
-            NON_BITFLAGS_DUPLICATES=$(echo "$DUPLICATES_OUTPUT" | grep -E "^[a-zA-Z]" | grep -v "^bitflags v[12]\." || true)
-            if [ -n "$NON_BITFLAGS_DUPLICATES" ] && [ "$NON_BITFLAGS_DUPLICATES" != "" ]; then
-              echo "⚠️ Duplicate dependencies found:" >> health-report.md
+          # Check for actual version conflicts (different versions of the same crate)
+          # cargo tree --duplicates shows the same crate appearing in multiple paths,
+          # but we only care if there are DIFFERENT versions of the same crate
+          if [ -n "$DUPLICATES_OUTPUT" ]; then
+            # Extract unique crate name+version pairs (e.g., "memchr v2.7.6")
+            # Remove trailing (*) markers and any extra whitespace
+            CRATE_VERSIONS=$(echo "$DUPLICATES_OUTPUT" | grep -E "^[a-zA-Z]" | sed 's/ (\*)$//' | sed 's/[[:space:]]*$//' | sort -u)
+            # Get just the crate names (without version) from the unique pairs
+            CRATE_NAMES=$(echo "$CRATE_VERSIONS" | sed 's/ v[0-9].*//' | sort)
+            # Find crate names that appear more than once in the unique pairs
+            # This means the same crate has multiple DIFFERENT versions
+            ACTUAL_DUPLICATES=$(echo "$CRATE_NAMES" | uniq -d)
+
+            # Filter out known harmless duplicates (bitflags v1/v2 is common and acceptable)
+            CONCERNING_DUPLICATES=$(echo "$ACTUAL_DUPLICATES" | grep -v "^bitflags$" || true)
+
+            if [ -n "$CONCERNING_DUPLICATES" ] && [ "$CONCERNING_DUPLICATES" != "" ]; then
+              echo "⚠️ Multiple versions of the same dependency found:" >> health-report.md
               echo '```' >> health-report.md
-              echo "$DUPLICATES_OUTPUT" >> health-report.md
+              for crate in $CONCERNING_DUPLICATES; do
+                echo "--- $crate ---" >> health-report.md
+                echo "$CRATE_VERSIONS" | grep "^$crate v" >> health-report.md
+              done
               echo '```' >> health-report.md
               ISSUES_FOUND=$((ISSUES_FOUND + 1))
             else
-              echo "✅ No concerning duplicate dependencies" >> health-report.md
-              echo "" >> health-report.md
-              echo "**Note:** Some harmless version differences exist in utility crates (bitflags v1/v2), which is normal when mixing dependencies that haven't fully migrated to bitflags v2." >> health-report.md
+              echo "✅ No conflicting dependency versions" >> health-report.md
+              if [ -n "$DUPLICATES_OUTPUT" ]; then
+                echo "" >> health-report.md
+                echo "**Note:** Same dependency versions are used across multiple dependency paths, which is normal and expected." >> health-report.md
+              fi
             fi
           else
             echo "✅ No duplicate dependencies" >> health-report.md
