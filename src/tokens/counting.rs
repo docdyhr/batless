@@ -75,7 +75,7 @@ impl AiModel {
     }
 
     /// Get tokens per word ratio (approximate)
-    fn tokens_per_word(&self) -> f64 {
+    fn tokens_per_word(self) -> f64 {
         match self {
             Self::Gpt4 | Self::Gpt4Turbo | Self::Gpt35 => 1.3, // GPT models: ~1.3 tokens per word
             Self::Claude | Self::Claude35Sonnet => 1.2,        // Claude: slightly more efficient

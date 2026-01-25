@@ -174,11 +174,12 @@ jobs:
 
       - name: Extract version from PR
         id: version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
           if [[ $PR_TITLE =~ release[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+) ]]; then
             VERSION="${BASH_REMATCH[1]}"
-            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+            echo "version=v$VERSION" >> "$GITHUB_OUTPUT"
             echo "Found version: v$VERSION"
           else
             echo "No version found in PR title: $PR_TITLE"

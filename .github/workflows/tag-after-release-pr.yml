@@ -21,8 +21,9 @@ jobs:
 
       - name: Extract version from PR
         id: extract
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
           # Extract version from PR title (format: "Release X.Y.Z")
           VERSION=$(echo "$PR_TITLE" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 
@@ -32,8 +33,10 @@ jobs:
           fi
 
           TAG="v${VERSION}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          {
+            echo "version=${VERSION}"
+            echo "tag=${TAG}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Verify version in Cargo.toml
         run: |
@@ -57,10 +60,12 @@ jobs:
           # Push tag
           git push origin "${TAG}"
 
-          echo "## 🏷️ Tag Created Successfully" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag:** ${TAG}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${VERSION}" >> $GITHUB_STEP_SUMMARY
-          echo "- **PR:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The release workflow should now be triggered automatically by the new tag." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🏷️ Tag Created Successfully"
+            echo ""
+            echo "- **Tag:** ${TAG}"
+            echo "- **Version:** ${VERSION}"
+            echo "- **PR:** #${{ github.event.pull_request.number }}"
+            echo ""
+            echo "The release workflow should now be triggered automatically by the new tag."
+          } >> "$GITHUB_STEP_SUMMARY"

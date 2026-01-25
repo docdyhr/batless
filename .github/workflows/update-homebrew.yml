@@ -35,12 +35,14 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
           fi
 
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-          echo "## 🍺 Homebrew Tap Update" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${VERSION}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag:** ${TAG}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🍺 Homebrew Tap Update"
+            echo "- **Version:** ${VERSION}"
+            echo "- **Tag:** ${TAG}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Download and verify source tarball
         id: download
@@ -59,7 +61,7 @@ jobs:
               sleep 10
             fi
 
-            if [ $i -eq 3 ]; then
+            if [ "$i" -eq 3 ]; then
               echo "::error::Failed to download source tarball after 3 attempts"
               exit 1
             fi
@@ -74,12 +76,13 @@ jobs:
           # Calculate SHA256
           SHA256=$(sha256sum "batless-${VERSION}.tar.gz" | cut -d' ' -f1)
           echo "✅ Calculated SHA256: $SHA256"
-          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
 
       - name: Generate updated Homebrew formula
         id: formula
         run: |
           TAG="${{ steps.release-info.outputs.tag }}"
+          # shellcheck disable=SC2034  # VERSION is used in heredoc
           VERSION="${{ steps.release-info.outputs.version }}"
           SHA256="${{ steps.download.outputs.sha256 }}"
 
@@ -147,7 +150,7 @@ jobs:
           git config --global user.email "bot@batless.dev"
 
           # Clone the homebrew tap repository
-          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-batless.git homebrew-tap
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-batless.git" homebrew-tap
           cd homebrew-tap
 
           # Update the formula
@@ -156,7 +159,7 @@ jobs:
           # Check if there are any changes
           if git diff --quiet; then
             echo "✅ No changes needed - formula is already up to date"
-            echo "no_changes=true" >> $GITHUB_OUTPUT
+            echo "no_changes=true" >> "$GITHUB_OUTPUT"
           else
             echo "📝 Changes detected, updating formula..."
 
@@ -173,7 +176,7 @@ jobs:
 
             git push origin master
             echo "✅ Successfully updated Homebrew tap!"
-            echo "updated=true" >> $GITHUB_OUTPUT
+            echo "updated=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Verify formula syntax
@@ -204,30 +207,32 @@ jobs:
           VERSION="${{ steps.release-info.outputs.version }}"
           SHA256="${{ steps.download.outputs.sha256 }}"
 
-          echo "## 🎉 Homebrew Tap Update Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Updated Details:**" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${VERSION}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag:** ${TAG}" >> $GITHUB_STEP_SUMMARY
-          echo "- **SHA256:** \`${SHA256}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🍺 Installation Commands" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Add the tap (one-time setup)" >> $GITHUB_STEP_SUMMARY
-          echo "brew tap ${{ github.repository_owner }}/batless" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Install or upgrade batless" >> $GITHUB_STEP_SUMMARY
-          echo "brew install batless" >> $GITHUB_STEP_SUMMARY
-          echo "# or" >> $GITHUB_STEP_SUMMARY
-          echo "brew upgrade batless" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [Homebrew Tap Repository](https://github.com/${{ github.repository_owner }}/homebrew-batless)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Release ${TAG}](https://github.com/${{ github.repository }}/releases/tag/${TAG})" >> $GITHUB_STEP_SUMMARY
-          echo "- [Formula File](https://github.com/${{ github.repository_owner }}/homebrew-batless/blob/master/Formula/batless.rb)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Users can now install batless ${VERSION} via Homebrew!**" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🎉 Homebrew Tap Update Complete"
+            echo ""
+            echo "**Updated Details:**"
+            echo "- **Version:** ${VERSION}"
+            echo "- **Tag:** ${TAG}"
+            echo "- **SHA256:** \`${SHA256}\`"
+            echo ""
+            echo "### 🍺 Installation Commands"
+            echo "\`\`\`bash"
+            echo "# Add the tap (one-time setup)"
+            echo "brew tap ${{ github.repository_owner }}/batless"
+            echo ""
+            echo "# Install or upgrade batless"
+            echo "brew install batless"
+            echo "# or"
+            echo "brew upgrade batless"
+            echo "\`\`\`"
+            echo ""
+            echo "### 🔗 Links"
+            echo "- [Homebrew Tap Repository](https://github.com/${{ github.repository_owner }}/homebrew-batless)"
+            echo "- [Release ${TAG}](https://github.com/${{ github.repository }}/releases/tag/${TAG})"
+            echo "- [Formula File](https://github.com/${{ github.repository_owner }}/homebrew-batless/blob/master/Formula/batless.rb)"
+            echo ""
+            echo "✅ **Users can now install batless ${VERSION} via Homebrew!**"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Test installation (optional)
         if: runner.os == 'macOS'

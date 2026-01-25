@@ -91,17 +91,19 @@ jobs:
             echo "Coverage parse failed; defaulting to 80.0"
             COVERAGE=80.0
           fi
-          echo "COVERAGE_PERCENT=$COVERAGE" >> $GITHUB_ENV
+          echo "COVERAGE_PERCENT=$COVERAGE" >> "$GITHUB_ENV"
 
           # Generate summary
-          echo "# Coverage Report" > coverage-summary.md
-          echo "" >> coverage-summary.md
-          echo "**Overall Coverage: ${COVERAGE}%**" >> coverage-summary.md
-          echo "" >> coverage-summary.md
-          echo "## Detailed Report" >> coverage-summary.md
-          echo '```' >> coverage-summary.md
-          cargo llvm-cov report >> coverage-summary.md
-          echo '```' >> coverage-summary.md
+          {
+            echo "# Coverage Report"
+            echo ""
+            echo "**Overall Coverage: ${COVERAGE}%**"
+            echo ""
+            echo "## Detailed Report"
+            echo '```'
+            cargo llvm-cov report
+            echo '```'
+          } > coverage-summary.md
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v6
@@ -283,21 +285,22 @@ jobs:
 
       - name: Lines of code analysis
         run: |
-          echo "# Code Complexity Analysis" > complexity-report.md
-          echo "" >> complexity-report.md
-
-          echo "## Lines of Code" >> complexity-report.md
-          echo '```' >> complexity-report.md
-          tokei >> complexity-report.md
-          echo '```' >> complexity-report.md
-          echo "" >> complexity-report.md
+          {
+            echo "# Code Complexity Analysis"
+            echo ""
+            echo "## Lines of Code"
+            echo '```'
+            tokei
+            echo '```'
+            echo ""
+          } > complexity-report.md
 
           # Get total lines of Rust code
           RUST_LINES=$(tokei --output json | jq -r '.Rust.code // 0')
           echo "Total Rust SLOC: $RUST_LINES" >> complexity-report.md
 
           # Check if codebase is getting too large
-          if [ $RUST_LINES -gt 10000 ]; then
+          if [ "$RUST_LINES" -gt 10000 ]; then
             echo "⚠️ Codebase is getting large ($RUST_LINES SLOC)" >> complexity-report.md
           else
             echo "✅ Codebase size is manageable ($RUST_LINES SLOC)" >> complexity-report.md
@@ -306,25 +309,29 @@ jobs:
       - name: Function complexity check
         run: |
           # Check for overly complex functions (simple heuristic)
-          echo "" >> complexity-report.md
-          echo "## Function Complexity Warnings" >> complexity-report.md
+          {
+            echo ""
+            echo "## Function Complexity Warnings"
+          } >> complexity-report.md
 
-          COMPLEX_FUNCTIONS=$(grep -n "fn " src/**/*.rs | while read line; do
-            file=$(echo $line | cut -d: -f1)
-            line_num=$(echo $line | cut -d: -f2)
+          COMPLEX_FUNCTIONS=$(grep -n "fn " src/**/*.rs | while read -r line; do
+            file=$(echo "$line" | cut -d: -f1)
+            line_num=$(echo "$line" | cut -d: -f2)
 
             # Count lines in function (simple heuristic)
             func_lines=$(sed -n "${line_num},/^}/p" "$file" | wc -l)
-            if [ $func_lines -gt 50 ]; then
+            if [ "$func_lines" -gt 50 ]; then
               echo "$file:$line_num - Function has $func_lines lines"
             fi
           done)
 
           if [ -n "$COMPLEX_FUNCTIONS" ]; then
-            echo "⚠️ Functions with >50 lines:" >> complexity-report.md
-            echo '```' >> complexity-report.md
-            echo "$COMPLEX_FUNCTIONS" >> complexity-report.md
-            echo '```' >> complexity-report.md
+            {
+              echo "⚠️ Functions with >50 lines:"
+              echo '```'
+              echo "$COMPLEX_FUNCTIONS"
+              echo '```'
+            } >> complexity-report.md
           else
             echo "✅ No overly complex functions detected" >> complexity-report.md
           fi
@@ -360,10 +367,10 @@ jobs:
           set +e
           ./scripts/check_performance.sh
           CODE=$?
-          echo "exit_code=$CODE" >> $GITHUB_OUTPUT
+          echo "exit_code=$CODE" >> "$GITHUB_OUTPUT"
           # Normalize status for summary
-          if [ $CODE -eq 0 ]; then STATE=pass; elif [ $CODE -eq 50 ]; then STATE=warn; else STATE=fail; fi
-          echo "state=$STATE" >> $GITHUB_OUTPUT
+          if [ "$CODE" -eq 0 ]; then STATE=pass; elif [ "$CODE" -eq 50 ]; then STATE=warn; else STATE=fail; fi
+          echo "state=$STATE" >> "$GITHUB_OUTPUT"
           exit 0  # Never fail this job while continue-on-error in effect
       - name: Upload performance artifacts
         uses: actions/upload-artifact@v6
@@ -411,15 +418,17 @@ jobs:
           DOC_RESULT: ${{ needs.documentation-quality.result }}
           PERF_RESULT: ${{ needs.performance-regression.result }}
         run: |
-          echo "# Quality Gate Results" > quality-summary.md
-          echo "" >> quality-summary.md
-          echo "- Markdown Lint: $MD_RESULT" >> quality-summary.md
-          echo "- Code Coverage: $COV_RESULT" >> quality-summary.md
-          echo "- Code Quality: $QUAL_RESULT" >> quality-summary.md
-          echo "- Documentation: $DOC_RESULT" >> quality-summary.md
-          echo "- Complexity Analysis: $PERF_RESULT" >> quality-summary.md
-          echo "- Performance Regression: $PERF_RESULT" >> quality-summary.md
-          echo "" >> quality-summary.md
+          {
+            echo "# Quality Gate Results"
+            echo ""
+            echo "- Markdown Lint: $MD_RESULT"
+            echo "- Code Coverage: $COV_RESULT"
+            echo "- Code Quality: $QUAL_RESULT"
+            echo "- Documentation: $DOC_RESULT"
+            echo "- Complexity Analysis: $PERF_RESULT"
+            echo "- Performance Regression: $PERF_RESULT"
+            echo ""
+          } > quality-summary.md
 
           # Determine overall status
           if [[ "$MD_RESULT" == "success" && \
@@ -428,10 +437,10 @@ jobs:
                 "$DOC_RESULT" == "success" && \
                 "$PERF_RESULT" != "failure" ]]; then
             echo "🎉 All quality gates passed!" >> quality-summary.md
-            echo "QUALITY_STATUS=success" >> $GITHUB_ENV
+            echo "QUALITY_STATUS=success" >> "$GITHUB_ENV"
           else
             echo "❌ Some quality gates failed" >> quality-summary.md
-            echo "QUALITY_STATUS=failure" >> $GITHUB_ENV
+            echo "QUALITY_STATUS=failure" >> "$GITHUB_ENV"
           fi
 
       - name: Fail if quality gates don't pass (except soft-gated)

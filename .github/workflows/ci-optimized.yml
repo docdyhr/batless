@@ -222,4 +222,4 @@ jobs:
         if: success()
         run: |
           echo "Pipeline completed successfully!"
-          echo "Total time: ~$(( $SECONDS / 60 )) minutes"
+          echo "Total time: ~$(( SECONDS / 60 )) minutes"

@@ -337,13 +337,15 @@ jobs:
           FUZZ_RESULT: ${{ needs.fuzz-testing.result }}
           STRESS_RESULT: ${{ needs.stress-testing.result }}
         run: |
-          echo "# Test Summary" > test-report.md
-          echo "" >> test-report.md
-          echo "## Test Results" >> test-report.md
-          echo "- Unit Tests: $UNIT_RESULT" >> test-report.md
-          echo "- Property-Based Tests: $PROP_RESULT" >> test-report.md
-          echo "- Fuzz Tests: $FUZZ_RESULT" >> test-report.md
-          echo "- Stress Tests: $STRESS_RESULT" >> test-report.md
+          {
+            echo "# Test Summary"
+            echo ""
+            echo "## Test Results"
+            echo "- Unit Tests: $UNIT_RESULT"
+            echo "- Property-Based Tests: $PROP_RESULT"
+            echo "- Fuzz Tests: $FUZZ_RESULT"
+            echo "- Stress Tests: $STRESS_RESULT"
+          } > test-report.md
 
       - name: Comment PR with test results
         if: github.event_name == 'pull_request'

@@ -3,6 +3,26 @@
 //! This library provides the core logic for syntax highlighting and file processing
 //! that can be used both by the CLI and in tests.
 
+// Enable pedantic lints but allow specific noisy ones
+#![warn(clippy::pedantic)]
+// Allow these pedantic lints that are too noisy or not applicable
+#![allow(clippy::module_name_repetitions)] // Common pattern in Rust
+#![allow(clippy::struct_excessive_bools)] // Config structs legitimately need multiple bools
+#![allow(clippy::must_use_candidate)] // Too noisy for builder patterns
+#![allow(clippy::return_self_not_must_use)] // Builder pattern returns Self
+#![allow(clippy::missing_errors_doc)] // Will add docs incrementally
+#![allow(clippy::missing_panics_doc)] // Will add docs incrementally
+#![allow(clippy::doc_markdown)] // Too strict about backticks
+#![allow(clippy::too_many_lines)] // Some functions are legitimately long
+#![allow(clippy::cast_precision_loss)] // usize to f64 is fine for our use cases
+#![allow(clippy::cast_possible_truncation)] // We handle this explicitly
+#![allow(clippy::cast_sign_loss)] // We handle this explicitly
+#![allow(clippy::similar_names)] // Too strict
+#![allow(clippy::if_not_else)] // Style preference
+#![allow(clippy::unnecessary_wraps)] // Some Result returns are for API consistency
+#![allow(clippy::unused_self)] // Some methods need self for trait consistency
+#![allow(clippy::match_same_arms)] // Sometimes clearer to have explicit arms
+
 pub mod ast_summarizer;
 pub mod config;
 pub mod config_manager;
@@ -286,8 +306,7 @@ mod tests {
         // Accept both compact ("file":"test.rs") and pretty ("file": "test.rs") JSON spacing
         assert!(
             json.contains("\"file\": \"test.rs\"") || json.contains("\"file\":\"test.rs\""),
-            "JSON output did not contain expected file field: {}",
-            json
+            "JSON output did not contain expected file field: {json}"
         );
 
         // Test summary output

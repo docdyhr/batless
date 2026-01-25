@@ -89,7 +89,7 @@ pub fn create_default_processor() -> ConfigurableProcessor {
 }
 
 /// Factory function for creating processors with specific configurations
-pub fn create_processor_for_mode(mode: ProcessorMode) -> ConfigurableProcessor {
+pub fn create_processor_for_mode(mode: &ProcessorMode) -> ConfigurableProcessor {
     match mode {
         ProcessorMode::Fast => ConfigurableProcessor::new()
             .with_summary_extractor(Box::new(FastSummaryExtractor))
@@ -224,9 +224,9 @@ mod tests {
 
     #[test]
     fn test_processor_modes() {
-        let _fast_processor = create_processor_for_mode(ProcessorMode::Fast);
-        let _detailed_processor = create_processor_for_mode(ProcessorMode::Detailed);
-        let _testing_processor = create_processor_for_mode(ProcessorMode::Testing);
+        let _fast_processor = create_processor_for_mode(&ProcessorMode::Fast);
+        let _detailed_processor = create_processor_for_mode(&ProcessorMode::Detailed);
+        let _testing_processor = create_processor_for_mode(&ProcessorMode::Testing);
     }
 
     #[test]

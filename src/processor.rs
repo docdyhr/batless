@@ -41,8 +41,7 @@ impl FileProcessor {
         // Detect language (use config override if provided)
         let language = config
             .language
-            .as_ref()
-            .cloned()
+            .clone()
             .or_else(|| LanguageDetector::detect_language_with_fallback(file_path));
 
         // Read and process file content
@@ -68,7 +67,7 @@ impl FileProcessor {
         if summary_level.is_enabled() {
             let summary_lines = SummaryExtractor::extract_summary(
                 &lines,
-                file_info.language.as_ref(),
+                file_info.language.as_deref(),
                 summary_level,
             );
             // In summary mode, replace the output lines with summary
@@ -108,7 +107,7 @@ impl FileProcessor {
             })?;
 
         // Split into lines
-        let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+        let lines: Vec<String> = content.lines().map(str::to_owned).collect();
         let total_lines = lines.len();
         let total_bytes = content.len();
 
@@ -141,7 +140,7 @@ impl FileProcessor {
             };
 
         // Detect language from content (limited for stdin without filename)
-        let language = config.language.as_ref().cloned(); // Use configured language or none
+        let language = config.language.clone(); // Use configured language or none
 
         // Create FileInfo
         let mut file_info = FileInfo::with_metadata(
@@ -162,7 +161,7 @@ impl FileProcessor {
         if summary_level.is_enabled() {
             let summary_lines = SummaryExtractor::extract_summary(
                 &final_lines,
-                file_info.language.as_ref(),
+                file_info.language.as_deref(),
                 summary_level,
             );
             // In summary mode, replace the output lines with summary
@@ -339,6 +338,7 @@ impl FileProcessor {
     }
 
     /// Check if a file is likely to be binary
+    #[allow(clippy::naive_bytecount)]
     pub fn is_likely_binary(file_path: &str) -> BatlessResult<bool> {
         let mut file = File::open(file_path).map_err(|e| BatlessError::FileReadError {
             path: file_path.to_string(),

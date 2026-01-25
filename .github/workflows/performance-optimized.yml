@@ -39,7 +39,7 @@ jobs:
           fetch-depth: 1
 
       - id: cache-key
-        run: echo "key=${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}" >> $GITHUB_OUTPUT
+        run: echo "key=${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}" >> "$GITHUB_OUTPUT"
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -96,13 +96,15 @@ jobs:
       - name: Parallel build
         run: |
           # Use all available cores
-          export CARGO_BUILD_JOBS=$(nproc)
-          cargo build --release --jobs $CARGO_BUILD_JOBS
+          CARGO_BUILD_JOBS=$(nproc)
+          export CARGO_BUILD_JOBS
+          cargo build --release --jobs "$CARGO_BUILD_JOBS"
 
       - name: Run test shard
         run: |
-          export RUST_TEST_THREADS=$(nproc)
-          cargo test --release ${{ matrix.test_args }} -- --test-threads=$RUST_TEST_THREADS
+          RUST_TEST_THREADS=$(nproc)
+          export RUST_TEST_THREADS
+          cargo test --release ${{ matrix.test_args }} -- --test-threads="$RUST_TEST_THREADS"
 
   # Cross-platform testing (parallel)
   cross-platform:

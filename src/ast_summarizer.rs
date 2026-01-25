@@ -25,8 +25,8 @@ impl AstSummarizer {
         match language {
             Some("Rust") => Self::summarize_rust(content, level),
             Some("Python") => Self::summarize_python(content, level),
-            Some("JavaScript") | Some("JSX") => Self::summarize_javascript(content, level),
-            Some("TypeScript") | Some("TSX") => Self::summarize_typescript(content, level),
+            Some("JavaScript" | "JSX") => Self::summarize_javascript(content, level),
+            Some("TypeScript" | "TSX") => Self::summarize_typescript(content, level),
             // Fallback to empty for unsupported languages (caller should handle fallback to regex)
             _ => Vec::new(),
         }
@@ -92,8 +92,8 @@ impl AstSummarizer {
 
         let mut summary_lines = Vec::new();
         for idx in line_indices {
-            if let Some(line) = lines.get(idx) {
-                summary_lines.push(line.to_string());
+            if let Some(&line) = lines.get(idx) {
+                summary_lines.push(line.to_owned());
             }
         }
 
@@ -152,8 +152,8 @@ impl AstSummarizer {
 
         let mut summary_lines = Vec::new();
         for idx in line_indices {
-            if let Some(line) = lines.get(idx) {
-                summary_lines.push(line.to_string());
+            if let Some(&line) = lines.get(idx) {
+                summary_lines.push(line.to_owned());
             }
         }
 
@@ -214,8 +214,8 @@ impl AstSummarizer {
 
         let mut summary_lines = Vec::new();
         for idx in line_indices {
-            if let Some(line) = lines.get(idx) {
-                summary_lines.push(line.to_string());
+            if let Some(&line) = lines.get(idx) {
+                summary_lines.push(line.to_owned());
             }
         }
 
@@ -285,8 +285,8 @@ impl AstSummarizer {
 
         let mut summary_lines = Vec::new();
         for idx in line_indices {
-            if let Some(line) = lines.get(idx) {
-                summary_lines.push(line.to_string());
+            if let Some(&line) = lines.get(idx) {
+                summary_lines.push(line.to_owned());
             }
         }
 

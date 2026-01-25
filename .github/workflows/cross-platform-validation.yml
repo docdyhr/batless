@@ -278,24 +278,30 @@ jobs:
     steps:
       - name: Generate cross-platform report
         run: |
-          echo "# Cross-Platform Validation Report" > report.md
-          echo "" >> report.md
-          echo "## Summary" >> report.md
-          echo "- Cross-Compile Targets: ${{ needs.cross-compile-targets.result }}" >> report.md
-          echo "- Platform-Specific Tests: ${{ needs.platform-specific-tests.result }}" >> report.md
-          echo "- Integration Validation: ${{ needs.integration-validation.result }}" >> report.md
-          echo "" >> report.md
+          {
+            echo "# Cross-Platform Validation Report"
+            echo ""
+            echo "## Summary"
+            echo "- Cross-Compile Targets: ${{ needs.cross-compile-targets.result }}"
+            echo "- Platform-Specific Tests: ${{ needs.platform-specific-tests.result }}"
+            echo "- Integration Validation: ${{ needs.integration-validation.result }}"
+            echo ""
+          } > report.md
 
           if [[ "${{ needs.cross-compile-targets.result }}" == "success" ]] && \
              [[ "${{ needs.platform-specific-tests.result }}" == "success" ]] && \
              [[ "${{ needs.integration-validation.result }}" == "success" ]]; then
-            echo "✅ **All cross-platform tests passed!**" >> report.md
-            echo "" >> report.md
-            echo "The application successfully builds and runs on all target platforms." >> report.md
+            {
+              echo "✅ **All cross-platform tests passed!**"
+              echo ""
+              echo "The application successfully builds and runs on all target platforms."
+            } >> report.md
           else
-            echo "❌ **Some cross-platform tests failed.**" >> report.md
-            echo "" >> report.md
-            echo "Please review the failed jobs and address platform-specific issues." >> report.md
+            {
+              echo "❌ **Some cross-platform tests failed.**"
+              echo ""
+              echo "Please review the failed jobs and address platform-specific issues."
+            } >> report.md
           fi
 
           cat report.md

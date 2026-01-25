@@ -74,11 +74,11 @@ jobs:
         id: dyn
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
-            echo "platforms=linux/amd64" >> $GITHUB_OUTPUT
-            echo "push=false" >> $GITHUB_OUTPUT
+            echo "platforms=linux/amd64" >> "$GITHUB_OUTPUT"
+            echo "push=false" >> "$GITHUB_OUTPUT"
           else
-            echo "platforms=linux/amd64,linux/arm64" >> $GITHUB_OUTPUT
-            echo "push=true" >> $GITHUB_OUTPUT
+            echo "platforms=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
+            echo "push=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push Docker image
@@ -107,15 +107,17 @@ jobs:
           IMAGE_FULL: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          echo "## 🐳 Docker Images Published" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Images:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "$TAGS" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Usage:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "docker pull ${IMAGE_FULL}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "docker run --rm -v \$(pwd):/workspace ${IMAGE_FULL}:latest /workspace/src/main.rs" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🐳 Docker Images Published"
+            echo ""
+            echo "### Images:"
+            echo "\`\`\`"
+            echo "$TAGS"
+            echo "\`\`\`"
+            echo ""
+            echo "### Usage:"
+            echo "\`\`\`bash"
+            echo "docker pull ${IMAGE_FULL}:latest"
+            echo "docker run --rm -v \$(pwd):/workspace ${IMAGE_FULL}:latest /workspace/src/main.rs"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"

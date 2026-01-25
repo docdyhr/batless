@@ -176,7 +176,7 @@ impl FileInfo {
     /// Get the number of tokens (if any)
     pub fn token_count(&self) -> usize {
         self.token_total
-            .or_else(|| self.tokens.as_ref().map(|t| t.len()))
+            .or_else(|| self.tokens.as_ref().map(Vec::len))
             .unwrap_or(0)
     }
 
@@ -190,7 +190,7 @@ impl FileInfo {
 
     /// Get the number of summary lines (if any)
     pub fn summary_line_count(&self) -> usize {
-        self.summary_lines.as_ref().map_or(0, |s| s.len())
+        self.summary_lines.as_ref().map_or(0, Vec::len)
     }
 
     /// Get truncation reason as a human-readable string
@@ -320,6 +320,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_processing_ratio() {
         let mut info = FileInfo::new();
         info.total_lines = 100;

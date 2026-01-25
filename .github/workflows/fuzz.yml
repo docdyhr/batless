@@ -65,10 +65,13 @@ jobs:
           fi
           if [ -d fuzz/artifacts ]; then
             if ls fuzz/artifacts/* 1> /dev/null 2>&1; then
-              echo "" >> fuzz-summary.md
-              echo "### Artifacts" >> fuzz-summary.md
-              echo '\nThe following artifacts were generated:' >> fuzz-summary.md
-              ls -1 fuzz/artifacts/ >> fuzz-summary.md || true
+              {
+                echo ""
+                echo "### Artifacts"
+                echo ""
+                echo "The following artifacts were generated:"
+                ls -1 fuzz/artifacts/ || true
+              } >> fuzz-summary.md
             fi
           fi
           cat fuzz-summary.md

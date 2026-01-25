@@ -62,7 +62,7 @@ impl TokenExtractor {
         for line in content.lines() {
             // Skip empty lines and comments
             let trimmed = line.trim();
-            if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with("#") {
+            if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with('#') {
                 continue;
             }
 
@@ -92,7 +92,7 @@ impl TokenExtractor {
     fn collect_data_tokens(content: &str, acc: &mut TokenAccumulator) {
         for line in content.lines() {
             let trimmed = line.trim();
-            if trimmed.is_empty() || trimmed.starts_with("#") {
+            if trimmed.is_empty() || trimmed.starts_with('#') {
                 continue;
             }
 
@@ -105,7 +105,10 @@ impl TokenExtractor {
 
     /// Extract tokens from plain text
     fn collect_text_tokens(content: &str, acc: &mut TokenAccumulator) {
-        for token in content.split_whitespace().map(|s| s.to_string()) {
+        for token in content
+            .split_whitespace()
+            .map(std::string::ToString::to_string)
+        {
             acc.push(token);
         }
     }
@@ -243,6 +246,7 @@ impl TokenExtractor {
     }
 
     /// Determine the appropriate tokenization strategy
+    #[allow(clippy::case_sensitive_file_extension_comparisons)]
     fn determine_tokenization_strategy(file_path: &str) -> TokenizationStrategy {
         let path_lower = file_path.to_lowercase();
 
@@ -311,14 +315,14 @@ impl TokenExtractor {
                 "def", "class", "import", "from", "as", "if", "elif", "else", "for", "while",
                 "try", "except", "finally", "with", "lambda", "return", "yield", "async", "await",
             ],
-            Some("JavaScript") | Some("TypeScript") => vec![
+            Some("JavaScript" | "TypeScript") => vec![
                 "function", "class", "const", "let", "var", "if", "else", "for", "while", "try",
                 "catch", "finally", "return", "async", "await", "import", "export",
             ],
             _ => vec![],
         }
         .into_iter()
-        .map(|s| s.to_string())
+        .map(std::string::ToString::to_string)
         .collect();
 
         let mut found_keywords = Vec::new();
@@ -337,15 +341,23 @@ impl TokenExtractor {
         let avg_token_length = if tokens.is_empty() {
             0.0
         } else {
-            tokens.iter().map(|t| t.len()).sum::<usize>() as f64 / tokens.len() as f64
+            tokens.iter().map(std::string::String::len).sum::<usize>() as f64 / tokens.len() as f64
         };
 
         TokenStats {
             total_tokens: tokens.len(),
             unique_tokens,
             avg_token_length,
-            longest_token: tokens.iter().map(|t| t.len()).max().unwrap_or(0),
-            shortest_token: tokens.iter().map(|t| t.len()).min().unwrap_or(0),
+            longest_token: tokens
+                .iter()
+                .map(std::string::String::len)
+                .max()
+                .unwrap_or(0),
+            shortest_token: tokens
+                .iter()
+                .map(std::string::String::len)
+                .min()
+                .unwrap_or(0),
         }
     }
 }

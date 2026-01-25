@@ -29,7 +29,7 @@ impl SyntaxHighlighter {
         }
 
         let theme = Self::get_theme(&config.theme)?;
-        let syntax = Self::get_syntax(file_path, &config.language)?;
+        let syntax = Self::get_syntax(file_path, config.language.as_deref())?;
 
         Self::highlight_with_syntax_and_theme(content, syntax, theme)
     }
@@ -71,7 +71,7 @@ impl SyntaxHighlighter {
     /// Get syntax reference from file path and optional language override
     fn get_syntax(
         file_path: &str,
-        language_override: &Option<String>,
+        language_override: Option<&str>,
     ) -> BatlessResult<&'static SyntaxReference> {
         let syntax_set = get_syntax_set();
 
@@ -85,7 +85,7 @@ impl SyntaxHighlighter {
                 .or_else(|| syntax_set.find_syntax_by_extension(lang))
                 .ok_or_else(|| {
                     BatlessError::language_not_found_with_suggestions(
-                        lang.to_string(),
+                        lang.to_owned(),
                         &LanguageDetector::list_languages(),
                     )
                 });
@@ -199,7 +199,7 @@ impl SyntaxHighlighter {
         config: &BatlessConfig,
     ) -> BatlessResult<HighlightLines<'static>> {
         let theme = Self::get_theme(&config.theme)?;
-        let syntax = Self::get_syntax(file_path, &config.language)?;
+        let syntax = Self::get_syntax(file_path, config.language.as_deref())?;
 
         Ok(HighlightLines::new(syntax, theme))
     }

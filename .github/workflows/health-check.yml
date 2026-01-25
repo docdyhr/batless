@@ -132,13 +132,13 @@ jobs:
           echo "## Summary" >> health-report.md
           if [ "$ISSUES_FOUND" -eq 0 ]; then
             echo "🎉 Repository is healthy! No issues found." >> health-report.md
-            echo "HEALTH_STATUS=healthy" >> $GITHUB_ENV
+            echo "HEALTH_STATUS=healthy" >> "$GITHUB_ENV"
           else
             echo "⚠️ Found $ISSUES_FOUND potential issues that may need attention." >> health-report.md
-            echo "HEALTH_STATUS=issues_found" >> $GITHUB_ENV
+            echo "HEALTH_STATUS=issues_found" >> "$GITHUB_ENV"
           fi
 
-          echo "ISSUES_COUNT=$ISSUES_FOUND" >> $GITHUB_ENV
+          echo "ISSUES_COUNT=$ISSUES_FOUND" >> "$GITHUB_ENV"
 
       - name: Upload health report
         uses: actions/upload-artifact@v6
@@ -183,13 +183,15 @@ jobs:
 
       - name: Health check summary
         run: |
-          echo "## 🏥 Repository Health Check Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ${{ env.HEALTH_STATUS }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Issues Found:** ${{ env.ISSUES_COUNT }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ env.HEALTH_STATUS }}" = "issues_found" ]; then
-            echo "⚠️ Some issues were detected. Check the health report artifact for details." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ Repository is healthy!" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "## 🏥 Repository Health Check Complete"
+            echo ""
+            echo "**Status:** ${{ env.HEALTH_STATUS }}"
+            echo "**Issues Found:** ${{ env.ISSUES_COUNT }}"
+            echo ""
+            if [ "${{ env.HEALTH_STATUS }}" = "issues_found" ]; then
+              echo "⚠️ Some issues were detected. Check the health report artifact for details."
+            else
+              echo "✅ Repository is healthy!"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

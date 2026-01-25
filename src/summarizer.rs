@@ -13,7 +13,7 @@ impl SummaryExtractor {
     /// Extract a summary of important code structures from the given lines
     pub fn extract_summary(
         lines: &[String],
-        language: Option<&String>,
+        language: Option<&str>,
         level: SummaryLevel,
     ) -> Vec<String> {
         if !level.is_enabled() {
@@ -44,12 +44,12 @@ impl SummaryExtractor {
             }
 
             // Skip other comments
-            if trimmed.starts_with("//") || trimmed.starts_with("#") {
+            if trimmed.starts_with("//") || trimmed.starts_with('#') {
                 continue;
             }
 
             // Check if this line contains summary-worthy content
-            if trimmed.starts_with("//") || trimmed.starts_with("#") {
+            if trimmed.starts_with("//") || trimmed.starts_with('#') {
                 if matches!(level, SummaryLevel::Detailed) {
                     let pattern_key = Self::extract_pattern_key(trimmed);
                     if seen_patterns.insert(pattern_key) {
@@ -59,7 +59,7 @@ impl SummaryExtractor {
                 continue;
             }
 
-            if Self::is_summary_worthy(trimmed, &language, level) {
+            if Self::is_summary_worthy(trimmed, language, level) {
                 // Avoid duplicate patterns in summary
                 let pattern_key = Self::extract_pattern_key(trimmed);
                 if !seen_patterns.contains(&pattern_key) {
@@ -82,15 +82,15 @@ impl SummaryExtractor {
     }
 
     /// Check if a line contains summary-worthy code structures
-    fn is_summary_worthy(line: &str, language: &Option<&String>, level: SummaryLevel) -> bool {
+    fn is_summary_worthy(line: &str, language: Option<&str>, level: SummaryLevel) -> bool {
         let trimmed = line.trim();
 
         // Skip empty lines and basic comments
-        if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with("#") {
+        if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with('#') {
             return false;
         }
 
-        let language_match = match language.map(|s| s.as_str()) {
+        let language_match = match language {
             Some("Python") => Self::is_python_summary_worthy(trimmed),
             Some("Rust") => Self::is_rust_summary_worthy(trimmed),
             Some("JavaScript" | "TypeScript") => Self::is_js_ts_summary_worthy(trimmed),
@@ -126,7 +126,7 @@ impl SummaryExtractor {
             || line.starts_with("class ")
             || line.starts_with("import ")
             || line.starts_with("from ")
-            || line.starts_with("@")  // decorators
+            || line.starts_with('@')  // decorators
             || line.starts_with("async def ")
             || line.starts_with("if __name__ == ")
     }
@@ -135,7 +135,7 @@ impl SummaryExtractor {
     fn is_rust_summary_worthy(line: &str) -> bool {
         // Function definitions
         ((line.starts_with("fn ") || line.starts_with("pub fn ") || line.starts_with("async fn "))
-            && line.contains("{"))
+            && line.contains('{'))
         // Struct/enum/trait definitions
         || (line.starts_with("struct ") || line.starts_with("pub struct "))
         || (line.starts_with("enum ") || line.starts_with("pub enum "))
@@ -188,7 +188,7 @@ impl SummaryExtractor {
             || line.starts_with("class ")
             || line.starts_with("namespace ")
             || line.starts_with("template ")
-            || (line.contains("(") && line.contains(")") && line.contains("{"))  // function definitions
+            || (line.contains('(') && line.contains(')') && line.contains('{'))  // function definitions
             || line.starts_with("extern ")
             || line.starts_with("static ")
     }
@@ -323,16 +323,16 @@ impl SummaryExtractor {
             || line.starts_with("-record(")
             || line.starts_with("-type(")
             || line.starts_with("-spec(")
-            || (line.contains("(") && line.contains("->")) // function definitions
+            || (line.contains('(') && line.contains("->")) // function definitions
     }
 
     /// Generic patterns for unknown languages
     fn is_generic_summary_worthy(line: &str) -> bool {
         // Function-like patterns
-        (line.starts_with("def ") && line.contains(":"))
-            || (line.starts_with("class ") && line.contains(":"))
-            || (line.starts_with("function ") && line.contains("{"))
-            || ((line.starts_with("fn ") || line.starts_with("pub fn ")) && line.contains("{"))
+        (line.starts_with("def ") && line.contains(':'))
+            || (line.starts_with("class ") && line.contains(':'))
+            || (line.starts_with("function ") && line.contains('{'))
+            || ((line.starts_with("fn ") || line.starts_with("pub fn ")) && line.contains('{'))
             || (line.starts_with("struct ") || line.starts_with("pub struct "))
             || (line.starts_with("enum ") || line.starts_with("pub enum "))
             // Import-like patterns
@@ -351,7 +351,6 @@ impl SummaryExtractor {
 
     /// Core structures used for minimal summaries
     fn is_core_structure(line: &str) -> bool {
-        let lower = line.trim_start().to_lowercase();
         const CORE_PREFIXES: &[&str] = &[
             "fn ",
             "pub fn ",
@@ -374,6 +373,7 @@ impl SummaryExtractor {
             "type ",
         ];
 
+        let lower = line.trim_start().to_lowercase();
         CORE_PREFIXES.iter().any(|prefix| lower.starts_with(prefix))
     }
 
@@ -390,7 +390,7 @@ impl SummaryExtractor {
             || lower.starts_with("var ")
             || lower.starts_with("val ")
             || lower.starts_with("#[")
-            || lower.starts_with("@")
+            || lower.starts_with('@')
             || lower.starts_with("///")
             || lower.starts_with("//!")
             || lower.starts_with("/**")
@@ -453,12 +453,11 @@ impl SummaryExtraction for SummaryExtractor {
         language: Option<&str>,
         level: SummaryLevel,
     ) -> Vec<String> {
-        Self::extract_summary(lines, language.map(|s| s.to_string()).as_ref(), level)
+        Self::extract_summary(lines, language, level)
     }
 
     fn is_summary_worthy(&self, line: &str, language: Option<&str>, level: SummaryLevel) -> bool {
-        let lang_string = language.map(|s| s.to_string());
-        Self::is_summary_worthy(line, &lang_string.as_ref(), level)
+        Self::is_summary_worthy(line, language, level)
     }
 }
 
@@ -485,11 +484,8 @@ mod tests {
             "import os".to_string(),
         ];
 
-        let summary = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Python".to_string()),
-            SummaryLevel::Standard,
-        );
+        let summary =
+            SummaryExtractor::extract_summary(&lines, Some("Python"), SummaryLevel::Standard);
         assert_eq!(summary.len(), 3); // def, class, import
         assert!(summary.contains(&"def main():".to_string()));
         assert!(summary.contains(&"class MyClass:".to_string()));
@@ -508,11 +504,8 @@ mod tests {
             "use std::collections::HashMap;".to_string(),
         ];
 
-        let summary = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Rust".to_string()),
-            SummaryLevel::Standard,
-        );
+        let summary =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Standard);
         assert_eq!(summary.len(), 3); // fn, struct, use
         assert!(summary.contains(&"fn main() {".to_string()));
         assert!(summary.contains(&"struct Point {".to_string()));
@@ -531,11 +524,8 @@ mod tests {
             "export default MyClass;".to_string(),
         ];
 
-        let summary = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"JavaScript".to_string()),
-            SummaryLevel::Standard,
-        );
+        let summary =
+            SummaryExtractor::extract_summary(&lines, Some("JavaScript"), SummaryLevel::Standard);
         assert_eq!(summary.len(), 3); // function, class, export
         assert!(summary.contains(&"function hello() {".to_string()));
         assert!(summary.contains(&"class MyClass {".to_string()));
@@ -545,11 +535,8 @@ mod tests {
     #[test]
     fn test_empty_input() {
         let lines = vec![];
-        let summary = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Python".to_string()),
-            SummaryLevel::Standard,
-        );
+        let summary =
+            SummaryExtractor::extract_summary(&lines, Some("Python"), SummaryLevel::Standard);
         assert!(summary.is_empty());
     }
 
@@ -564,11 +551,8 @@ mod tests {
             "/// This is an important doc comment".to_string(),
         ];
 
-        let summary = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Rust".to_string()),
-            SummaryLevel::Standard,
-        );
+        let summary =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Standard);
         assert_eq!(summary.len(), 2); // fn and doc comment
         assert!(summary.contains(&"fn main() {".to_string()));
         assert!(summary.contains(&"/// This is an important doc comment".to_string()));
@@ -582,16 +566,14 @@ mod tests {
             "fn test3() {".to_string(),
         ];
 
-        let summary = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Rust".to_string()),
-            SummaryLevel::Standard,
-        );
+        let summary =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Standard);
         // Should include all since they have different names
         assert_eq!(summary.len(), 3);
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn test_summary_stats() {
         let original = vec!["line1".to_string(); 100];
         let summary = vec!["line1".to_string(); 20];
@@ -626,22 +608,16 @@ mod tests {
             "use crate::utils;".to_string(),
         ];
 
-        let minimal = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Rust".to_string()),
-            SummaryLevel::Minimal,
-        );
+        let minimal =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Minimal);
         assert!(minimal.contains(&"fn main() {}".to_string()));
         assert!(
             !minimal.iter().any(|line| line.contains("let config")),
             "Minimal summaries should skip fine-grained assignments"
         );
 
-        let detailed = SummaryExtractor::extract_summary(
-            &lines,
-            Some(&"Rust".to_string()),
-            SummaryLevel::Detailed,
-        );
+        let detailed =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Detailed);
         assert!(detailed.iter().any(|line| line.contains("let config")));
         assert!(detailed
             .iter()

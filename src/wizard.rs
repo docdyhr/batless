@@ -295,7 +295,7 @@ impl ConfigurationWizard {
 
         let input = input.trim();
         if input.is_empty() {
-            Ok(default.map(|s| s.to_string()))
+            Ok(default.map(std::string::ToString::to_string))
         } else {
             Ok(Some(input.to_string()))
         }
@@ -404,10 +404,9 @@ impl ConfigurationWizard {
             } else if let Ok(num) = input.parse::<usize>() {
                 if num >= min && num <= max {
                     return Ok(num);
-                } else {
-                    println!("❌ Number must be between {min} and {max}");
-                    continue;
                 }
+                println!("❌ Number must be between {min} and {max}");
+                continue;
             }
 
             println!("❌ Please enter a valid number between {min} and {max}");
@@ -579,8 +578,7 @@ impl ConfigurationWizard {
                 "   Settings: {} lines max, {} mode",
                 profile
                     .max_lines
-                    .map(|n| n.to_string())
-                    .unwrap_or_else(|| "unlimited".to_string()),
+                    .map_or_else(|| "unlimited".to_string(), |n| n.to_string()),
                 profile.output_mode.as_deref().unwrap_or("default")
             );
 
@@ -648,8 +646,7 @@ impl ConfigurationWizard {
                 "Max lines (0 for unlimited) [{}]",
                 profile
                     .max_lines
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(|| "0".to_string())
+                    .map_or_else(|| "0".to_string(), |v| v.to_string())
             ),
             profile.max_lines,
             0,
@@ -666,8 +663,7 @@ impl ConfigurationWizard {
                 "Max bytes (MB) [{}]",
                 profile
                     .max_bytes
-                    .map(|b| (b / (1024 * 1024)).to_string())
-                    .unwrap_or_else(|| "None".to_string())
+                    .map_or_else(|| "None".to_string(), |b| (b / (1024 * 1024)).to_string())
             ),
             profile.max_bytes.map(|b| b / (1024 * 1024)),
             1,
@@ -691,8 +687,7 @@ impl ConfigurationWizard {
                 "Use color? [{}]",
                 profile
                     .use_color
-                    .map(|b| b.to_string())
-                    .unwrap_or_else(|| "auto".to_string())
+                    .map_or_else(|| "auto".to_string(), |b| b.to_string())
             ),
             profile.use_color,
         )?;
@@ -701,8 +696,7 @@ impl ConfigurationWizard {
                 "Strip ANSI? [{}]",
                 profile
                     .strip_ansi
-                    .map(|b| b.to_string())
-                    .unwrap_or_else(|| "auto".to_string())
+                    .map_or_else(|| "auto".to_string(), |b| b.to_string())
             ),
             profile.strip_ansi,
         )?;
@@ -718,8 +712,7 @@ impl ConfigurationWizard {
                 "Include tokens? [{}]",
                 profile
                     .include_tokens
-                    .map(|b| b.to_string())
-                    .unwrap_or_else(|| "auto".to_string())
+                    .map_or_else(|| "auto".to_string(), |b| b.to_string())
             ),
             profile.include_tokens,
         )?;
@@ -729,10 +722,12 @@ impl ConfigurationWizard {
                 profile
                     .summary_level
                     .as_ref()
-                    .map(|s| s.as_str())
-                    .unwrap_or("none")
+                    .map_or("none", super::summary::SummaryLevel::as_str)
             ),
-            profile.summary_level.as_ref().map(|s| s.as_str()),
+            profile
+                .summary_level
+                .as_ref()
+                .map(super::summary::SummaryLevel::as_str),
         )?
         .map(|s| SummaryLevel::parse(&s).unwrap());
         profile.output_mode = Self::prompt_optional_string(
@@ -747,8 +742,7 @@ impl ConfigurationWizard {
                 "Streaming JSON? [{}]",
                 profile
                     .streaming_json
-                    .map(|b| b.to_string())
-                    .unwrap_or_else(|| "auto".to_string())
+                    .map_or_else(|| "auto".to_string(), |b| b.to_string())
             ),
             profile.streaming_json,
         )?;
@@ -757,8 +751,7 @@ impl ConfigurationWizard {
                 "Streaming chunk size [{}]",
                 profile
                     .streaming_chunk_size
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(|| "1000".to_string())
+                    .map_or_else(|| "1000".to_string(), |v| v.to_string())
             ),
             profile.streaming_chunk_size,
             100,
@@ -769,8 +762,7 @@ impl ConfigurationWizard {
                 "Enable resume? [{}]",
                 profile
                     .enable_resume
-                    .map(|b| b.to_string())
-                    .unwrap_or_else(|| "auto".to_string())
+                    .map_or_else(|| "auto".to_string(), |b| b.to_string())
             ),
             profile.enable_resume,
         )?;
@@ -792,7 +784,7 @@ mod tests {
     #[test]
     fn test_wizard_module_exists() {
         // Basic test to ensure the module compiles and types are accessible
-        let _wizard = ConfigurationWizard;
+        let _ = ConfigurationWizard;
     }
 
     // Note: Interactive tests are difficult to unit test

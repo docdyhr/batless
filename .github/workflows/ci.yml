@@ -188,10 +188,10 @@ jobs:
 
           if [[ "$OS_NAME" == "windows-latest" ]]; then
             7z a "${archive_name}.zip" "$archive_name"
-            echo "ASSET=${archive_name}.zip" >> $GITHUB_ENV
+            echo "ASSET=${archive_name}.zip" >> "$GITHUB_ENV"
           else
             tar czf "${archive_name}.tar.gz" "$archive_name"
-            echo "ASSET=${archive_name}.tar.gz" >> $GITHUB_ENV
+            echo "ASSET=${archive_name}.tar.gz" >> "$GITHUB_ENV"
           fi
 
       - name: Upload binary to release

@@ -691,7 +691,7 @@ mod tests {
 
     #[test]
     fn test_validation_empty_theme() {
-        let config = BatlessConfig::default().with_theme("".to_string());
+        let config = BatlessConfig::default().with_theme(String::new());
         assert!(config.validate().is_err());
     }
 
@@ -883,7 +883,7 @@ max_lines = "not_a_number"
 
     #[test]
     fn test_validation_empty_language() {
-        let config = BatlessConfig::default().with_language(Some("".to_string()));
+        let config = BatlessConfig::default().with_language(Some(String::new()));
         let result = config.validate();
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("cannot be empty"));

@@ -296,7 +296,7 @@ mod tests {
         let mut profile = CustomProfile::new("valid-name".to_string(), None);
         assert!(profile.validate().is_ok());
 
-        profile.name = "".to_string();
+        profile.name = String::new();
         assert!(profile.validate().is_err());
 
         profile.name = "a".repeat(60);

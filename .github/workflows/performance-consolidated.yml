@@ -209,7 +209,7 @@ jobs:
             echo 'comment<<EOF'
             cat benchmark_results.md
             echo 'EOF'
-          } >> $GITHUB_OUTPUT
+          } >> "$GITHUB_OUTPUT"
 
       - name: Performance regression check
         if: github.event_name == 'pull_request'
@@ -231,7 +231,7 @@ jobs:
 
           # Save current benchmark results as new baseline
           cp benchmark_results.md .github/performance/baseline.md
-          echo "updated=true" >> $GITHUB_OUTPUT
+          echo "updated=true" >> "$GITHUB_OUTPUT"
 
           # If we have git changes, commit them
           if ! git diff --quiet .github/performance/; then

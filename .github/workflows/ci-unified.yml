@@ -30,7 +30,7 @@ jobs:
         run: |
           for file in .github/workflows/*.yml; do
             echo "Checking $file..."
-            python -c "import yaml; yaml.safe_load(open('$file'))" || exit 1
+            python -c "import yaml; yaml.safe_load(open(\"$file\"))" || exit 1
           done
 
       - name: Check for large files
@@ -218,7 +218,7 @@ jobs:
               './target/release/batless benchmark_files/medium.rs --mode=summary' \
               --export-markdown benchmark-results.md
 
-            cat benchmark-results.md >> $GITHUB_STEP_SUMMARY
+            cat benchmark-results.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
   # Final status check
@@ -226,7 +226,7 @@ jobs:
     name: CI Status Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [build, coverage, security]
+    needs: [quick-check, build, coverage, security, benchmark]
     if: always()
     steps:
       - name: Check CI Status
@@ -245,12 +245,14 @@ jobs:
       - name: Create status summary
         if: always()
         run: |
-          echo "## CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Quick Check | ${{ needs.quick-check.result || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Build & Test | ${{ needs.build.result || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Coverage | ${{ needs.coverage.result || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security | ${{ needs.security.result || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Benchmark | ${{ needs.benchmark.result || 'N/A' }} |" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## CI/CD Pipeline Summary"
+            echo ""
+            echo "| Job | Status |"
+            echo "|-----|--------|"
+            echo "| Quick Check | ${{ needs.quick-check.result || 'N/A' }} |"
+            echo "| Build & Test | ${{ needs.build.result || 'N/A' }} |"
+            echo "| Coverage | ${{ needs.coverage.result || 'N/A' }} |"
+            echo "| Security | ${{ needs.security.result || 'N/A' }} |"
+            echo "| Benchmark | ${{ needs.benchmark.result || 'N/A' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

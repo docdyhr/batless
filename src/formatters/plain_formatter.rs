@@ -81,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_line_numbering() {
-        let lines = vec!["line 1".to_string(), "".to_string(), "line 3".to_string()];
+        let lines = vec!["line 1".to_string(), String::new(), "line 3".to_string()];
 
         let numbered = add_line_numbers(&lines, false);
         assert_eq!(numbered.len(), 3);
