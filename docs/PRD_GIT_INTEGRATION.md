@@ -56,7 +56,7 @@ From [`bat` Git integration](https://github.com/sharkdp/bat#git-integration), wh
 |-------------------------------|-----------------------------------------------------------------------------|
 | `--diff`                      | Show Git diff inline for files in a Git repo                                |
 | `--blame`                     | Show Git blame information per line (author, timestamp, hash)              |
-| Gutter indicators             | `+`, `-`, and `|` shown in gutter for additions, deletions, unchanged lines|
+| Gutter indicators             | `+`, `-`, and `\|` shown in gutter for additions, deletions, unchanged lines|
 | Color scheme                  | Git-like: green (add), red (remove), blue (modify)                         |
 | Fallback for non-repo files   | Graceful fallback when file is not under Git control                       |
 | `--no-git`                    | Disable Git integration explicitly                                         |

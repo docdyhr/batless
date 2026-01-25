@@ -3,9 +3,18 @@ default: true
 MD024:
   siblings_only: true
 
-MD013: false
-MD033: false
-MD022: true
 MD004:
   style: dash
+
+MD013: false
+MD022: false
+MD026: false
+MD029: false
+MD031: false
+MD032: false
+MD033: false
 MD034: false
+MD036: false
+MD040: false
+MD041: false
+MD060: false
