@@ -212,7 +212,14 @@ impl FileProcessor {
             Ok("UTF-8".to_string())
         } else {
             // Try to detect other common encodings
-            Ok(Self::detect_alternative_encoding(&buffer).unwrap_or_else(|| "Unknown".to_string()))
+            match Self::detect_alternative_encoding(&buffer) {
+                Some(encoding) => Ok(encoding),
+                None => {
+                    // Return Unknown but log the issue - this is a soft failure
+                    // that allows processing to continue with best-effort decoding
+                    Ok("Unknown".to_string())
+                }
+            }
         }
     }
 
@@ -313,9 +320,20 @@ impl FileProcessor {
         }
 
         if !path.is_file() {
-            return Err(BatlessError::ProcessingError(format!(
-                "Path '{file_path}' is not a regular file"
-            )));
+            let file_type = if path.is_dir() {
+                "directory"
+            } else if path.is_symlink() {
+                "symbolic link"
+            } else {
+                "non-regular file"
+            };
+            return Err(BatlessError::processing_error_with_help(
+                Some(file_path.to_string()),
+                format!("Path is a {file_type}, not a regular file"),
+                format!(
+                    "Use 'ls -la {file_path}' to inspect the path, or provide a regular file path"
+                ),
+            ));
         }
 
         // Try to open the file to check read permissions

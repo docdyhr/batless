@@ -46,7 +46,13 @@ impl SyntaxHighlighter {
         for line in LinesWithEndings::from(content) {
             let ranges: Vec<(Style, &str)> = highlighter
                 .highlight_line(line, get_syntax_set())
-                .map_err(|e| BatlessError::HighlightError(e.to_string()))?;
+                .map_err(|e| {
+                    BatlessError::highlight_error_with_source(
+                        "failed to highlight line",
+                        "line highlighting",
+                        e,
+                    )
+                })?;
 
             let escaped = as_24_bit_terminal_escaped(&ranges[..], false);
             result.push_str(&escaped);
@@ -95,7 +101,7 @@ impl SyntaxHighlighter {
         let path = Path::new(file_path);
         Ok(syntax_set
             .find_syntax_for_file(path)
-            .map_err(|e| BatlessError::LanguageDetectionError(e.to_string()))?
+            .map_err(|e| BatlessError::language_detection_error(file_path, e.to_string()))?
             .unwrap_or_else(|| syntax_set.find_syntax_plain_text()))
     }
 
@@ -188,7 +194,13 @@ impl SyntaxHighlighter {
     pub fn highlight_line(line: &str, highlighter: &mut HighlightLines) -> BatlessResult<String> {
         let ranges: Vec<(Style, &str)> = highlighter
             .highlight_line(line, get_syntax_set())
-            .map_err(|e| BatlessError::HighlightError(e.to_string()))?;
+            .map_err(|e| {
+                BatlessError::highlight_error_with_source(
+                    "failed to highlight line",
+                    "streaming line highlight",
+                    e,
+                )
+            })?;
 
         Ok(as_24_bit_terminal_escaped(&ranges[..], false))
     }

@@ -72,7 +72,11 @@ pub enum BatlessError {
     },
 
     /// Syntax highlighting errors
-    HighlightError(String),
+    HighlightError {
+        message: String,
+        operation: String,
+        source_error: Option<String>,
+    },
     ThemeNotFound {
         theme: String,
         suggestions: Vec<String>,
@@ -81,14 +85,21 @@ pub enum BatlessError {
         language: String,
         suggestions: Vec<String>,
     },
-    LanguageDetectionError(String),
+    LanguageDetectionError {
+        path: String,
+        details: String,
+    },
 
     /// Processing errors
     EncodingError {
         path: String,
         details: String,
     },
-    ProcessingError(String),
+    ProcessingError {
+        message: String,
+        path: Option<String>,
+        help: Option<String>,
+    },
     ConfigurationError {
         message: String,
         help: Option<String>,
@@ -130,12 +141,20 @@ impl fmt::Display for BatlessError {
                     error_code.as_str()
                 )
             }
-            BatlessError::HighlightError(msg) => {
+            BatlessError::HighlightError {
+                message,
+                operation,
+                source_error,
+            } => {
                 write!(
                     f,
-                    "[{}] Syntax highlighting failed: {msg}",
+                    "[{}] Syntax highlighting failed during {operation}: {message}",
                     error_code.as_str()
-                )
+                )?;
+                if let Some(source) = source_error {
+                    write!(f, "\n\nUnderlying error: {source}")?;
+                }
+                Ok(())
             }
             BatlessError::ThemeNotFound { theme, suggestions } => {
                 write!(f, "[{}] Theme '{theme}' not found", error_code.as_str())?;
@@ -164,10 +183,10 @@ impl fmt::Display for BatlessError {
                 }
                 write!(f, "\n\nUse --list-languages to see all available languages")
             }
-            BatlessError::LanguageDetectionError(msg) => {
+            BatlessError::LanguageDetectionError { path, details } => {
                 write!(
                     f,
-                    "[{}] Language detection failed: {msg}",
+                    "[{}] Language detection failed for '{path}': {details}",
                     error_code.as_str()
                 )
             }
@@ -178,8 +197,24 @@ impl fmt::Display for BatlessError {
                     error_code.as_str()
                 )
             }
-            BatlessError::ProcessingError(msg) => {
-                write!(f, "[{}] Processing error: {msg}", error_code.as_str())
+            BatlessError::ProcessingError {
+                message,
+                path,
+                help,
+            } => {
+                if let Some(p) = path {
+                    write!(
+                        f,
+                        "[{}] Processing error for '{p}': {message}",
+                        error_code.as_str()
+                    )?;
+                } else {
+                    write!(f, "[{}] Processing error: {message}", error_code.as_str())?;
+                }
+                if let Some(h) = help {
+                    write!(f, "\n\nHelp: {h}")?;
+                }
+                Ok(())
             }
             BatlessError::ConfigurationError { message, help } => {
                 write!(
@@ -227,12 +262,12 @@ impl BatlessError {
             BatlessError::FileNotFound { .. } => ErrorCode::FileNotFound,
             BatlessError::FileReadError { .. } => ErrorCode::FileReadError,
             BatlessError::PermissionDenied { .. } => ErrorCode::PermissionDenied,
-            BatlessError::HighlightError(_) => ErrorCode::HighlightError,
+            BatlessError::HighlightError { .. } => ErrorCode::HighlightError,
             BatlessError::ThemeNotFound { .. } => ErrorCode::ThemeNotFound,
             BatlessError::LanguageNotFound { .. } => ErrorCode::LanguageNotFound,
-            BatlessError::LanguageDetectionError(_) => ErrorCode::LanguageDetectionError,
+            BatlessError::LanguageDetectionError { .. } => ErrorCode::LanguageDetectionError,
             BatlessError::EncodingError { .. } => ErrorCode::EncodingError,
-            BatlessError::ProcessingError(_) => ErrorCode::ProcessingError,
+            BatlessError::ProcessingError { .. } => ErrorCode::ProcessingError,
             BatlessError::ConfigurationError { .. } => ErrorCode::ConfigurationError,
             BatlessError::JsonSerializationError(_) => ErrorCode::JsonSerializationError,
             BatlessError::OutputError(_) => ErrorCode::OutputError,
@@ -277,6 +312,90 @@ impl BatlessError {
     /// Create a ConfigurationError with helpful suggestions
     pub fn config_error_with_help(message: String, help: Option<String>) -> Self {
         BatlessError::ConfigurationError { message, help }
+    }
+
+    /// Create a HighlightError with context about what operation failed
+    pub fn highlight_error(message: impl Into<String>, operation: impl Into<String>) -> Self {
+        BatlessError::HighlightError {
+            message: message.into(),
+            operation: operation.into(),
+            source_error: None,
+        }
+    }
+
+    /// Create a HighlightError with source error information
+    pub fn highlight_error_with_source(
+        message: impl Into<String>,
+        operation: impl Into<String>,
+        source: impl std::fmt::Display,
+    ) -> Self {
+        BatlessError::HighlightError {
+            message: message.into(),
+            operation: operation.into(),
+            source_error: Some(source.to_string()),
+        }
+    }
+
+    /// Create a LanguageDetectionError with file path context
+    pub fn language_detection_error(path: impl Into<String>, details: impl Into<String>) -> Self {
+        BatlessError::LanguageDetectionError {
+            path: path.into(),
+            details: details.into(),
+        }
+    }
+
+    /// Create a ProcessingError with context
+    pub fn processing_error(message: impl Into<String>) -> Self {
+        BatlessError::ProcessingError {
+            message: message.into(),
+            path: None,
+            help: None,
+        }
+    }
+
+    /// Create a ProcessingError with file path context
+    pub fn processing_error_for_path(path: impl Into<String>, message: impl Into<String>) -> Self {
+        BatlessError::ProcessingError {
+            message: message.into(),
+            path: Some(path.into()),
+            help: None,
+        }
+    }
+
+    /// Create a ProcessingError with full context
+    pub fn processing_error_with_help(
+        path: Option<String>,
+        message: impl Into<String>,
+        help: impl Into<String>,
+    ) -> Self {
+        BatlessError::ProcessingError {
+            message: message.into(),
+            path,
+            help: Some(help.into()),
+        }
+    }
+
+    /// Create an EncodingError for a file
+    pub fn encoding_error(path: impl Into<String>, details: impl Into<String>) -> Self {
+        BatlessError::EncodingError {
+            path: path.into(),
+            details: details.into(),
+        }
+    }
+
+    /// Create appropriate error from an IO error with file context
+    ///
+    /// This examines the IO error kind to return the most specific error type:
+    /// - NotFound -> FileNotFound with suggestions
+    /// - PermissionDenied -> PermissionDenied with help
+    /// - Other -> FileReadError with source
+    pub fn from_io_error(err: std::io::Error, path: impl Into<String>) -> Self {
+        let path = path.into();
+        match err.kind() {
+            std::io::ErrorKind::NotFound => Self::file_not_found_with_suggestions(path),
+            std::io::ErrorKind::PermissionDenied => Self::permission_denied_with_help(path),
+            _ => BatlessError::FileReadError { path, source: err },
+        }
     }
 
     /// Suggest similar files in the current directory
@@ -510,5 +629,95 @@ mod tests {
         let display = error.to_string();
         assert!(display.contains("[E202]"));
         assert!(display.contains("Theme 'invalid' not found"));
+    }
+
+    #[test]
+    fn test_highlight_error_helpers() {
+        // Test simple highlight error
+        let error = BatlessError::highlight_error("failed to parse", "syntax parsing");
+        let display = error.to_string();
+        assert!(display.contains("[E201]"));
+        assert!(display.contains("syntax parsing"));
+        assert!(display.contains("failed to parse"));
+
+        // Test highlight error with source
+        let error = BatlessError::highlight_error_with_source(
+            "failed to highlight",
+            "line highlighting",
+            "underlying syntect error",
+        );
+        let display = error.to_string();
+        assert!(display.contains("line highlighting"));
+        assert!(display.contains("Underlying error: underlying syntect error"));
+    }
+
+    #[test]
+    fn test_language_detection_error_helper() {
+        let error =
+            BatlessError::language_detection_error("/path/to/file.xyz", "unknown extension");
+        let display = error.to_string();
+        assert!(display.contains("[E204]"));
+        assert!(display.contains("/path/to/file.xyz"));
+        assert!(display.contains("unknown extension"));
+    }
+
+    #[test]
+    fn test_processing_error_helpers() {
+        // Simple processing error
+        let error = BatlessError::processing_error("something went wrong");
+        let display = error.to_string();
+        assert!(display.contains("[E301]"));
+        assert!(display.contains("something went wrong"));
+        assert!(!display.contains("Help:"));
+
+        // Processing error with path
+        let error = BatlessError::processing_error_for_path("/some/path", "invalid format");
+        let display = error.to_string();
+        assert!(display.contains("/some/path"));
+        assert!(display.contains("invalid format"));
+
+        // Processing error with full context
+        let error = BatlessError::processing_error_with_help(
+            Some("/path/to/dir".to_string()),
+            "Path is a directory",
+            "Use a regular file instead",
+        );
+        let display = error.to_string();
+        assert!(display.contains("/path/to/dir"));
+        assert!(display.contains("Path is a directory"));
+        assert!(display.contains("Help: Use a regular file instead"));
+    }
+
+    #[test]
+    fn test_encoding_error_helper() {
+        let error = BatlessError::encoding_error(
+            "/path/to/binary.dat",
+            "invalid UTF-8 sequence at byte 42",
+        );
+        let display = error.to_string();
+        assert!(display.contains("[E104]"));
+        assert!(display.contains("/path/to/binary.dat"));
+        assert!(display.contains("invalid UTF-8 sequence"));
+    }
+
+    #[test]
+    fn test_from_io_error_helper() {
+        // NotFound should produce FileNotFound
+        let io_error = std::io::Error::new(std::io::ErrorKind::NotFound, "not found");
+        let error = BatlessError::from_io_error(io_error, "/missing/file.txt");
+        assert!(matches!(error, BatlessError::FileNotFound { .. }));
+        assert_eq!(error.error_code(), ErrorCode::FileNotFound);
+
+        // PermissionDenied should produce PermissionDenied
+        let io_error = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "access denied");
+        let error = BatlessError::from_io_error(io_error, "/protected/file.txt");
+        assert!(matches!(error, BatlessError::PermissionDenied { .. }));
+        assert_eq!(error.error_code(), ErrorCode::PermissionDenied);
+
+        // Other errors should produce FileReadError
+        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "disk error");
+        let error = BatlessError::from_io_error(io_error, "/some/file.txt");
+        assert!(matches!(error, BatlessError::FileReadError { .. }));
+        assert_eq!(error.error_code(), ErrorCode::FileReadError);
     }
 }
