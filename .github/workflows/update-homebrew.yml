@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to update (e.g., 0.1.5)'
+        description: "Version to update (e.g., 0.1.5)"
         required: true
         type: string
       tag:
-        description: 'Git tag (e.g., v0.1.5)'
+        description: "Git tag (e.g., v0.1.5)"
         required: true
         type: string
 
@@ -234,17 +234,5 @@ jobs:
             echo "✅ **Users can now install batless ${VERSION} via Homebrew!**"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Test installation (optional)
-        if: runner.os == 'macOS'
-        continue-on-error: true
-        run: |
-          # Only run on macOS runners when available
-          echo "🧪 Testing Homebrew installation..."
-
-          # Add the tap and install
-          brew tap ${{ github.repository_owner }}/batless
-          brew install batless --verbose
-
-          # Test the installation
-          batless --version
-          echo "✅ Homebrew installation test passed"
+      # Note: Homebrew installation test removed - this job runs on ubuntu-latest
+      # where brew is not available. Test manually or add a separate macOS job.

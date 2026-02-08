@@ -1,17 +1,21 @@
 name: Performance Optimized CI
 
+# PR/push triggers disabled to avoid overlap with ci-optimized.yml
+# Use workflow_dispatch for manual performance-focused CI runs
 on:
-  # Ultra-fast performance CI for development workflow
-  pull_request:
-    types: [opened, synchronize, reopened]
-  push:
-    branches: [develop]
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  # push:
+  #   branches: [develop]
   workflow_dispatch:
     inputs:
       test_reason:
         description: "Reason for performance testing"
         required: false
         default: "Performance CI execution"
+
+permissions:
+  contents: read
 
 # Aggressive concurrency to cancel outdated runs
 concurrency:
@@ -149,21 +153,14 @@ jobs:
         with:
           save-if: false
 
-      - name: Parallel checks
-        run: |
-          # Run multiple checks in parallel
-          cargo clippy --no-deps -- -W clippy::all &
-          clippy_pid=$!
+      - name: Run clippy
+        run: cargo clippy --no-deps -- -W clippy::all
 
-          cargo check --all-features &
-          check_pid=$!
+      - name: Check all features
+        run: cargo check --all-features
 
-          # Documentation check
-          cargo doc --no-deps --all-features &
-          doc_pid=$!
-
-          # Wait for all
-          wait $clippy_pid $check_pid $doc_pid
+      - name: Documentation check
+        run: cargo doc --no-deps --all-features
 
   # Minimal security check
   security-quick:
@@ -178,9 +175,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Quick audit
-        run: |
-          # Only check for critical vulnerabilities
-          cargo audit --deny warnings --ignore RUSTSEC-2020-0071 || true
+        run: cargo audit
 
   # Final aggregation
   ci-complete:

@@ -715,7 +715,7 @@ mod tests {
         assert_eq!(error.error_code(), ErrorCode::PermissionDenied);
 
         // Other errors should produce FileReadError
-        let io_error = std::io::Error::new(std::io::ErrorKind::Other, "disk error");
+        let io_error = std::io::Error::other("disk error");
         let error = BatlessError::from_io_error(io_error, "/some/file.txt");
         assert!(matches!(error, BatlessError::FileReadError { .. }));
         assert_eq!(error.error_code(), ErrorCode::FileReadError);

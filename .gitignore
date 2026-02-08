@@ -107,3 +107,6 @@ pipeline_failure.log
 test_output.log
 failing_tests.txt
 docker_build.log
+
+# Claude Code MCP config (local)
+.mcp.json

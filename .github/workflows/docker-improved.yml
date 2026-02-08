@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "Reason for manual trigger"
         required: false
-        default: 'Manual testing'
+        default: "Manual testing"
 
 env:
   REGISTRY: ghcr.io
@@ -96,10 +96,12 @@ jobs:
           provenance: false
 
       - name: Test Docker image (amd64)
-        if: always()
+        if: success() && steps.dyn.outputs.push == 'false'
         run: |
-          docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --version
-          echo "fn main() { println!(\"Hello\"); }" | docker run --rm -i ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --language=rust
+          # Use the first tag from metadata (available locally after build)
+          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -1)
+          docker run --rm "${IMAGE_TAG}" --version
+          echo "fn main() { println!(\"Hello\"); }" | docker run --rm -i "${IMAGE_TAG}" --language=rust
 
       - name: Generate artifact summary
         if: github.event_name != 'pull_request'

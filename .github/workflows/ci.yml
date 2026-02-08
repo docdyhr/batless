@@ -1,13 +1,18 @@
 name: CI/CD
 
+# DEPRECATED: This workflow is replaced by ci-optimized.yml
+# Keeping only for release builds
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  # push:
+  #   branches: [main, develop]
+  # pull_request:
+  #   branches: [main]
   release:
     types: [published]
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 # Concurrency control to prevent redundant runs
 concurrency:

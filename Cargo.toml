@@ -51,11 +51,12 @@ encoding_rs = "0.8"
 toml = "0.9"
 dirs = "5.0"
 chrono = { version = "0.4", features = ["serde"] }
-tree-sitter = "0.26.3"
-tree-sitter-rust = "0.24.0"
-tree-sitter-python = "0.25.0"
-tree-sitter-javascript = "0.25.0"
-tree-sitter-typescript = "0.23.2"
+# Tree-sitter for AST parsing
+tree-sitter = "0.26"
+tree-sitter-rust = "0.24"
+tree-sitter-python = "0.25"
+tree-sitter-javascript = "0.25"
+tree-sitter-typescript = "0.23"
 
 [dev-dependencies]
 tempfile = "3.24"

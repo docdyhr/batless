@@ -14,6 +14,12 @@ on:
         required: false
         default: "Manual CI execution"
 
+# Explicit permissions for security best practices
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+
 # Concurrency controls to prevent redundant runs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

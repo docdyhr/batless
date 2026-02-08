@@ -1,10 +1,13 @@
 name: Tag After Release PR Merge
 
+# DEPRECATED: This functionality is duplicated in release-consolidated.yml (tag-after-merge job).
+# Disabled to prevent conflicting tag creation. Use workflow_dispatch for manual tagging.
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - main
+  # pull_request:
+  #   types: [closed]
+  #   branches:
+  #     - main
+  workflow_dispatch:
 
 permissions:
   contents: write

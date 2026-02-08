@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       update_baseline:
-        description: 'Update performance baseline'
+        description: "Update performance baseline"
         required: false
         type: boolean
         default: false
@@ -233,14 +233,13 @@ jobs:
           cp benchmark_results.md .github/performance/baseline.md
           echo "updated=true" >> "$GITHUB_OUTPUT"
 
-          # If we have git changes, commit them
-          if ! git diff --quiet .github/performance/; then
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add .github/performance/
-            git commit -m "Update performance baseline [skip ci]"
-            git push
-          fi
+      - name: Upload baseline artifact
+        if: steps.baseline.outputs.updated == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: performance-baseline
+          path: .github/performance/baseline.md
+          retention-days: 90
 
   comment-pr:
     name: Comment on PR
@@ -250,13 +249,15 @@ jobs:
     steps:
       - name: Comment PR
         uses: actions/github-script@v8
+        env:
+          PR_COMMENT: ${{ needs.benchmark.outputs.pr-comment }}
         with:
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `${{ needs.benchmark.outputs.pr-comment }}`
+              body: process.env.PR_COMMENT
             })
 
   create-issue:

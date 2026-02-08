@@ -130,22 +130,17 @@ jobs:
   semgrep:
     name: Semgrep Security Scan
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
       - name: Run Semgrep
-        uses: semgrep/semgrep-action@v1
         continue-on-error: true
-        with:
-          config: >-
-            p/security-audit
-            p/rust
-            p/secrets
-          generateSarif: true
-          sarif: semgrep.sarif
-          auditOn: push,pull_request
-          timeout: 600
+        run: |
+          semgrep scan --config p/security-audit --config p/rust --config p/secrets \
+            --sarif --output semgrep.sarif . || true
 
       - name: Upload SARIF file
         if: always() && hashFiles('semgrep.sarif') != ''

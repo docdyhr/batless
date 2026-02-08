@@ -3,10 +3,13 @@ name: Changelog Generation
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'cliff.toml'
-      - '.github/workflows/changelog.yml'
+      - "cliff.toml"
+      - ".github/workflows/changelog.yml"
+
+permissions:
+  contents: read
 
 jobs:
   generate:

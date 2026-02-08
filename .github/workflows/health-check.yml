@@ -3,7 +3,7 @@ name: Repository Health Check
 on:
   schedule:
     # Run daily at 6 AM UTC
-    - cron: '0 6 * * *'
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -46,13 +46,20 @@ jobs:
           fi
           echo "" >> health-report.md
 
-          # Check for outdated workflows
+          # Check for outdated workflows (using git log, not filesystem mtime)
           echo "## Workflow File Ages" >> health-report.md
-          OLD_WORKFLOWS=$(find .github/workflows -name "*.yml" -mtime +90)
+          OLD_WORKFLOWS=""
+          NINETY_DAYS_AGO=$(date -u -d '90 days ago' '+%Y-%m-%d' 2>/dev/null || date -u -v-90d '+%Y-%m-%d')
+          for wf in .github/workflows/*.yml; do
+            LAST_MODIFIED=$(git log -1 --format='%ai' -- "$wf" 2>/dev/null | cut -d' ' -f1)
+            if [ -n "$LAST_MODIFIED" ] && [ "$LAST_MODIFIED" \< "$NINETY_DAYS_AGO" ]; then
+              OLD_WORKFLOWS="${OLD_WORKFLOWS}${wf} (last modified: ${LAST_MODIFIED})\n"
+            fi
+          done
           if [ -n "$OLD_WORKFLOWS" ]; then
             echo "⚠️ Workflows not updated in 90+ days:" >> health-report.md
             echo '```' >> health-report.md
-            echo "$OLD_WORKFLOWS" >> health-report.md
+            echo -e "$OLD_WORKFLOWS" >> health-report.md
             echo '```' >> health-report.md
             ISSUES_FOUND=$((ISSUES_FOUND + 1))
           else

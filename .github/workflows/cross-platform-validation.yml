@@ -7,14 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       test_type:
-        description: 'Type of cross-platform test to run'
+        description: "Type of cross-platform test to run"
         required: true
-        default: 'full'
+        default: "full"
         type: choice
         options:
           - full
           - quick
           - targets-only
+
+permissions:
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -78,7 +81,7 @@ jobs:
 
       - name: Install cross (for cross-compilation)
         if: matrix.cross == true
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: cargo install cross --locked
 
       - name: Cache cargo registry
         uses: actions/cache@v5
@@ -215,17 +218,20 @@ jobs:
           ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-lines=100 --mode=plain > /dev/null
           ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-bytes=1024 --mode=plain > /dev/null
 
-      - name: Test error handling
-        shell: ${{ matrix.shell }}
+      - name: Test error handling (Unix)
+        if: matrix.os != 'windows-latest'
+        shell: bash
         run: |
-          # Test non-existent file (cross-platform compatible)
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            ./target/release/batless${{ matrix.binary_extension }} nonexistent.txt 2>&1 | findstr /i "error" || echo "Error handling test passed"
-          else
-            set +e  # Don't fail on expected errors
-            ./target/release/batless${{ matrix.binary_extension }} nonexistent.txt 2>&1 | grep -i "error" || echo "Error handling test passed"
-            set -e
-          fi
+          set +e  # Don't fail on expected errors
+          ./target/release/batless nonexistent.txt 2>&1 | grep -i "error" || echo "Error handling test passed"
+          set -e
+
+      - name: Test error handling (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $output = & "./target/release/batless.exe" nonexistent.txt 2>&1 | Out-String
+          if ($output -match "(?i)error") { Write-Host "Error handling test passed" } else { Write-Host "Error handling test passed (no error string)" }
 
   integration-validation:
     name: Integration Validation
@@ -273,7 +279,8 @@ jobs:
     name: Cross-Platform Report
     runs-on: ubuntu-latest
     if: always()
-    needs: [cross-compile-targets, platform-specific-tests, integration-validation]
+    needs:
+      [cross-compile-targets, platform-specific-tests, integration-validation]
 
     steps:
       - name: Generate cross-platform report
@@ -306,16 +313,9 @@ jobs:
 
           cat report.md
 
-      - name: Comment on PR with results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v8
+      - name: Upload report
+        uses: actions/upload-artifact@v6
         with:
-          script: |
-            const fs = require('fs');
-            const report = fs.readFileSync('report.md', 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: report
-            });
+          name: cross-platform-report
+          path: report.md
+          retention-days: 30

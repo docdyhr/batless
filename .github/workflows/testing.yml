@@ -1,12 +1,12 @@
 name: Enhanced Testing
 
+# DEPRECATED: Redundant with test-consolidated.yml which runs at the same schedule.
+# Keeping for manual dispatch only to avoid duplicate weekly runs.
 on:
-  # Replaced by CI/CD Optimized workflow - keeping for scheduled runs only
   # pull_request:
   #   branches: [main]
-  schedule:
-    # Run comprehensive tests weekly
-    - cron: "0 3 * * 1"
+  # schedule:
+  #   - cron: "0 3 * * 1"
   workflow_dispatch:
 
 permissions:
