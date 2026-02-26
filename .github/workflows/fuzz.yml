@@ -4,8 +4,13 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 3 * * *'
+    # Run fuzz tests weekly on Saturdays at 03:00 UTC
+    - cron: '0 3 * * 6'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -6,8 +6,8 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Run security scans daily at 02:00 UTC
-    - cron: "0 2 * * *"
+    # Run security scans weekly on Sundays at 02:00 UTC
+    - cron: "0 2 * * 0"
   workflow_dispatch: # Allow manual triggers
 
 permissions:
