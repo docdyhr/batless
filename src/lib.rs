@@ -26,6 +26,7 @@
 pub mod ast_summarizer;
 pub mod config;
 pub mod config_manager;
+pub mod config_validation;
 pub mod error;
 pub mod file_info;
 pub mod formatter;
