@@ -6,13 +6,11 @@ use std::process::Command;
 use tempfile::NamedTempFile;
 
 fn batless_command() -> Command {
-    Command::new("cargo")
+    Command::new(env!("CARGO_BIN_EXE_batless"))
 }
 
 fn run_batless_args(args: &[&str]) -> std::process::Output {
     batless_command()
-        .arg("run")
-        .arg("--")
         .args(args)
         .output()
         .expect("Failed to execute batless")

@@ -38,7 +38,9 @@ impl AstSummarizer {
             .set_language(&tree_sitter_rust::LANGUAGE.into())
             .expect("Error loading Rust grammar");
 
-        let tree = parser.parse(content, None).unwrap();
+        let Some(tree) = parser.parse(content, None) else {
+            return Vec::new();
+        };
         let root_node = tree.root_node();
 
         let query_string = match level {
@@ -106,7 +108,9 @@ impl AstSummarizer {
             .set_language(&tree_sitter_python::LANGUAGE.into())
             .expect("Error loading Python grammar");
 
-        let tree = parser.parse(content, None).unwrap();
+        let Some(tree) = parser.parse(content, None) else {
+            return Vec::new();
+        };
         let root_node = tree.root_node();
 
         let query_string = match level {
@@ -166,7 +170,9 @@ impl AstSummarizer {
             .set_language(&tree_sitter_javascript::LANGUAGE.into())
             .expect("Error loading JavaScript grammar");
 
-        let tree = parser.parse(content, None).unwrap();
+        let Some(tree) = parser.parse(content, None) else {
+            return Vec::new();
+        };
         let root_node = tree.root_node();
 
         let query_string = match level {
@@ -228,7 +234,9 @@ impl AstSummarizer {
             .set_language(&tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into())
             .expect("Error loading TypeScript grammar");
 
-        let tree = parser.parse(content, None).unwrap();
+        let Some(tree) = parser.parse(content, None) else {
+            return Vec::new();
+        };
         let root_node = tree.root_node();
 
         let query_string = match level {
@@ -291,5 +299,142 @@ impl AstSummarizer {
         }
 
         summary_lines
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_input_all_languages() {
+        for lang in &["Rust", "Python", "JavaScript", "TypeScript"] {
+            let result = AstSummarizer::extract_summary("", Some(lang), SummaryLevel::Standard);
+            assert!(
+                result.is_empty(),
+                "Empty input should produce empty summary for {lang}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_unsupported_language_returns_empty() {
+        let result =
+            AstSummarizer::extract_summary("some code", Some("Haskell"), SummaryLevel::Standard);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_none_language_returns_empty() {
+        let result = AstSummarizer::extract_summary("fn main() {}", None, SummaryLevel::Standard);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_none_level_returns_empty() {
+        let result =
+            AstSummarizer::extract_summary("fn main() {}", Some("Rust"), SummaryLevel::None);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_binary_content_does_not_panic() {
+        let binary = "\x00\x01\x02binary\x00data\x7f";
+        for lang in &["Rust", "Python", "JavaScript", "TypeScript"] {
+            // Should not panic, just return empty or partial results
+            let _ = AstSummarizer::extract_summary(binary, Some(lang), SummaryLevel::Standard);
+        }
+    }
+
+    #[test]
+    fn test_malformed_rust_does_not_panic() {
+        let bad = "fn {{ struct {{ impl {";
+        let result = AstSummarizer::extract_summary(bad, Some("Rust"), SummaryLevel::Standard);
+        // May return partial results or empty; should not panic
+        let _ = result;
+    }
+
+    #[test]
+    fn test_malformed_python_does_not_panic() {
+        let bad = "def def class (((";
+        let _ = AstSummarizer::extract_summary(bad, Some("Python"), SummaryLevel::Standard);
+    }
+
+    #[test]
+    fn test_rust_minimal_level() {
+        let code = "use std::io;\nfn main() {}\nstruct S {}\nenum E {}\ntrait T {}\nmod m {}";
+        let result = AstSummarizer::extract_summary(code, Some("Rust"), SummaryLevel::Minimal);
+        assert!(result.iter().any(|l| l.contains("fn main")));
+        assert!(result.iter().any(|l| l.contains("struct S")));
+        assert!(result.iter().any(|l| l.contains("enum E")));
+        // Minimal should NOT include trait or mod
+        assert!(!result.iter().any(|l| l.contains("trait T")));
+        assert!(!result.iter().any(|l| l.contains("mod m")));
+    }
+
+    #[test]
+    fn test_rust_detailed_includes_use_and_const() {
+        let code = "use std::io;\nconst X: i32 = 1;\nstatic Y: i32 = 2;\nfn f() {}";
+        let result = AstSummarizer::extract_summary(code, Some("Rust"), SummaryLevel::Detailed);
+        assert!(result.iter().any(|l| l.contains("use std::io")));
+        assert!(result.iter().any(|l| l.contains("const X")));
+        assert!(result.iter().any(|l| l.contains("static Y")));
+    }
+
+    #[test]
+    fn test_python_minimal_level() {
+        let code = "import os\ndef foo():\n    pass\nclass Bar:\n    pass";
+        let result = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Minimal);
+        assert!(result.iter().any(|l| l.contains("def foo")));
+        assert!(result.iter().any(|l| l.contains("class Bar")));
+        // Minimal should NOT include imports
+        assert!(!result.iter().any(|l| l.contains("import os")));
+    }
+
+    #[test]
+    fn test_javascript_detects_classes_and_functions() {
+        let code = "function hello() {}\nclass World {}\nconst x = () => {};";
+        let result =
+            AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
+        assert!(result.iter().any(|l| l.contains("function hello")));
+        assert!(result.iter().any(|l| l.contains("class World")));
+    }
+
+    #[test]
+    fn test_typescript_detects_interfaces() {
+        let code = "interface User { name: string; }\nfunction greet(u: User) {}";
+        let result =
+            AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
+        assert!(result.iter().any(|l| l.contains("interface User")));
+        assert!(result.iter().any(|l| l.contains("function greet")));
+    }
+
+    #[test]
+    fn test_jsx_uses_javascript_parser() {
+        let code = "function App() { return <div/>; }";
+        let result = AstSummarizer::extract_summary(code, Some("JSX"), SummaryLevel::Standard);
+        assert!(result.iter().any(|l| l.contains("function App")));
+    }
+
+    #[test]
+    fn test_tsx_uses_typescript_parser() {
+        // TSX is routed through the TypeScript parser, so pure TS syntax works
+        let code = "function App(): string { return 'hello'; }";
+        let result = AstSummarizer::extract_summary(code, Some("TSX"), SummaryLevel::Standard);
+        assert!(result.iter().any(|l| l.contains("function App")));
+    }
+
+    #[test]
+    fn test_very_long_single_line() {
+        let code = format!("fn {}() {{}}", "a".repeat(10_000));
+        let result = AstSummarizer::extract_summary(&code, Some("Rust"), SummaryLevel::Standard);
+        assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn test_whitespace_only_input() {
+        let result =
+            AstSummarizer::extract_summary("   \n\n\t\t\n  ", Some("Rust"), SummaryLevel::Standard);
+        assert!(result.is_empty());
     }
 }

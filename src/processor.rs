@@ -204,7 +204,7 @@ impl FileProcessor {
         })?;
 
         // Read a sample to detect encoding
-        let file_size = file.metadata()?.len() as usize;
+        let file_size = usize::try_from(file.metadata()?.len()).unwrap_or(usize::MAX);
         let sample_size = 1024.min(file_size);
         let mut buffer = vec![0; sample_size];
 
@@ -268,7 +268,7 @@ impl FileProcessor {
             path: file_path.to_string(),
             source: e,
         })?;
-        let total_file_bytes = metadata.len() as usize;
+        let total_file_bytes = usize::try_from(metadata.len()).unwrap_or(usize::MAX);
 
         let reader = BufReader::new(file);
         let mut lines = Vec::new();

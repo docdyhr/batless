@@ -451,17 +451,23 @@ impl BatlessError {
 
     /// Suggest similar strings from a list
     fn suggest_similar_strings(target: &str, candidates: &[String]) -> Vec<String> {
-        let mut suggestions: Vec<_> = candidates
+        let mut scored: Vec<_> = candidates
             .iter()
-            .filter(|candidate| Self::is_similar(target, candidate))
-            .cloned()
+            .filter_map(|candidate| {
+                if Self::is_similar(target, candidate) {
+                    Some((
+                        Self::levenshtein_distance(target, candidate),
+                        candidate.clone(),
+                    ))
+                } else {
+                    None
+                }
+            })
             .collect();
 
-        suggestions.sort_by(|a, b| {
-            Self::levenshtein_distance(target, a).cmp(&Self::levenshtein_distance(target, b))
-        });
-        suggestions.truncate(3);
-        suggestions
+        scored.sort_by_key(|(dist, _)| *dist);
+        scored.truncate(3);
+        scored.into_iter().map(|(_, s)| s).collect()
     }
 
     /// Check if two strings are similar enough to suggest
@@ -483,25 +489,26 @@ impl BatlessError {
         let a_len = a_chars.len();
         let b_len = b_chars.len();
 
-        let mut matrix = vec![vec![0; b_len + 1]; a_len + 1];
+        if a_len == 0 {
+            return b_len;
+        }
+        if b_len == 0 {
+            return a_len;
+        }
 
-        for (i, row) in matrix.iter_mut().enumerate().take(a_len + 1) {
-            row[0] = i;
-        }
-        for (j, item) in matrix[0].iter_mut().enumerate().take(b_len + 1) {
-            *item = j;
-        }
+        let mut prev: Vec<usize> = (0..=b_len).collect();
+        let mut curr = vec![0; b_len + 1];
 
         for i in 1..=a_len {
+            curr[0] = i;
             for j in 1..=b_len {
                 let cost = usize::from(a_chars[i - 1] != b_chars[j - 1]);
-                matrix[i][j] = (matrix[i - 1][j] + 1)
-                    .min(matrix[i][j - 1] + 1)
-                    .min(matrix[i - 1][j - 1] + cost);
+                curr[j] = (prev[j] + 1).min(curr[j - 1] + 1).min(prev[j - 1] + cost);
             }
+            std::mem::swap(&mut prev, &mut curr);
         }
 
-        matrix[a_len][b_len]
+        prev[b_len]
     }
 }
 

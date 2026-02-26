@@ -353,6 +353,37 @@ impl ConfigManager {
         Ok(manager)
     }
 
+    /// Creates a `ConfigManager` from a vector of argument strings.
+    /// Useful for testing and programmatic usage.
+    pub fn from_args_vec<I, T>(args: I) -> BatlessResult<Self>
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<std::ffi::OsString> + Clone,
+    {
+        let command = Args::command();
+        let matches = command.try_get_matches_from(args).map_err(|e| {
+            BatlessError::config_error_with_help(
+                format!("Failed to parse arguments: {e}"),
+                Some("Run `batless --help` for valid options".to_string()),
+            )
+        })?;
+        let mut parsed_args = Args::from_arg_matches(&matches).map_err(|e| {
+            BatlessError::config_error_with_help(
+                format!("Failed to parse arguments: {e}"),
+                Some("Run `batless --help` for valid options".to_string()),
+            )
+        })?;
+        parsed_args.color_specified = matches.contains_id("color");
+
+        let mut manager = Self {
+            args: parsed_args,
+            config: BatlessConfig::default(),
+            output_mode: OutputMode::Highlight,
+        };
+        manager.load_and_apply_config()?;
+        Ok(manager)
+    }
+
     /// Returns a reference to the parsed command-line arguments.
     pub fn args(&self) -> &Args {
         &self.args
@@ -516,5 +547,283 @@ impl ConfigManager {
         }
         crate::ThemeManager::validate_theme(&self.config.theme)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_manager(args: &[&str]) -> ConfigManager {
+        let mut full_args = vec!["batless"];
+        full_args.extend_from_slice(args);
+        ConfigManager::from_args_vec(full_args).unwrap()
+    }
+
+    #[test]
+    fn test_default_output_mode() {
+        let mgr = make_manager(&["Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Highlight);
+    }
+
+    #[test]
+    fn test_plain_mode_flag() {
+        let mgr = make_manager(&["--plain", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Plain);
+        assert!(!mgr.config().use_color);
+    }
+
+    #[test]
+    fn test_json_mode() {
+        let mgr = make_manager(&["--mode=json", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Json);
+    }
+
+    #[test]
+    fn test_summary_mode() {
+        let mgr = make_manager(&["--mode=summary", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Summary);
+    }
+
+    #[test]
+    fn test_max_lines_applied() {
+        let mgr = make_manager(&["--max-lines=42", "Cargo.toml"]);
+        assert_eq!(mgr.config().max_lines, 42);
+    }
+
+    #[test]
+    fn test_max_bytes_applied() {
+        let mgr = make_manager(&["--max-bytes=1024", "--max-lines=10", "Cargo.toml"]);
+        assert_eq!(mgr.config().max_bytes, Some(1024));
+    }
+
+    #[test]
+    fn test_language_override() {
+        let mgr = make_manager(&["--language=python", "Cargo.toml"]);
+        assert_eq!(mgr.config().language, Some("python".to_string()));
+    }
+
+    #[test]
+    fn test_include_tokens() {
+        let mgr = make_manager(&["--include-tokens", "Cargo.toml"]);
+        assert!(mgr.config().include_tokens);
+    }
+
+    #[test]
+    fn test_strip_ansi() {
+        let mgr = make_manager(&["--strip-ansi", "Cargo.toml"]);
+        assert!(mgr.config().strip_ansi);
+    }
+
+    #[test]
+    fn test_line_numbers_flag() {
+        let mgr = make_manager(&["-n", "--plain", "Cargo.toml"]);
+        assert!(mgr.config().show_line_numbers);
+    }
+
+    #[test]
+    fn test_number_nonblank_flag() {
+        let mgr = make_manager(&["-b", "--plain", "Cargo.toml"]);
+        assert!(mgr.config().show_line_numbers_nonblank);
+    }
+
+    #[test]
+    fn test_debug_flag() {
+        let mgr = make_manager(&["--debug", "Cargo.toml"]);
+        assert!(mgr.config().debug);
+    }
+
+    #[test]
+    fn test_summary_flag_enables_summary() {
+        let mgr = make_manager(&["--summary", "Cargo.toml"]);
+        assert!(mgr.config().summary_level.is_enabled());
+    }
+
+    #[test]
+    fn test_summary_level_override() {
+        let mgr = make_manager(&["--summary-level=minimal", "Cargo.toml"]);
+        assert_eq!(mgr.config().summary_level, SummaryLevel::Minimal);
+    }
+
+    #[test]
+    fn test_summary_level_detailed() {
+        let mgr = make_manager(&["--summary-level=detailed", "Cargo.toml"]);
+        assert_eq!(mgr.config().summary_level, SummaryLevel::Detailed);
+    }
+
+    #[test]
+    fn test_profile_claude() {
+        let mgr = make_manager(&["--profile=claude", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Summary);
+        assert_eq!(mgr.config().max_lines, 4000);
+        assert!(!mgr.config().use_color);
+    }
+
+    #[test]
+    fn test_profile_copilot() {
+        let mgr = make_manager(&["--profile=copilot", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Json);
+        assert_eq!(mgr.config().max_lines, 2000);
+        assert!(mgr.config().include_tokens);
+    }
+
+    #[test]
+    fn test_profile_chatgpt() {
+        let mgr = make_manager(&["--profile=chatgpt", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Json);
+        assert_eq!(mgr.config().max_lines, 3000);
+    }
+
+    #[test]
+    fn test_profile_assistant() {
+        let mgr = make_manager(&["--profile=assistant", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Summary);
+        assert_eq!(mgr.config().max_lines, 5000);
+    }
+
+    #[test]
+    fn test_color_never() {
+        let mgr = make_manager(&["--color=never", "Cargo.toml"]);
+        assert!(!mgr.config().use_color);
+    }
+
+    #[test]
+    fn test_json_pretty() {
+        let mgr = make_manager(&["--json-pretty", "--mode=json", "Cargo.toml"]);
+        assert!(mgr.config().pretty_json);
+    }
+
+    #[test]
+    fn test_streaming_json() {
+        let mgr = make_manager(&["--streaming-json", "Cargo.toml"]);
+        assert!(mgr.config().streaming_json);
+    }
+
+    #[test]
+    fn test_streaming_chunk_size() {
+        let mgr = make_manager(&["--streaming-chunk-size=500", "Cargo.toml"]);
+        assert_eq!(mgr.config().streaming_chunk_size, 500);
+    }
+
+    #[test]
+    fn test_enable_resume() {
+        let mgr = make_manager(&["--enable-resume", "Cargo.toml"]);
+        assert!(mgr.config().enable_resume);
+    }
+
+    #[test]
+    fn test_file_path_from_arg() {
+        let mgr = make_manager(&["Cargo.toml"]);
+        assert_eq!(mgr.file_path().unwrap(), "Cargo.toml");
+    }
+
+    #[test]
+    fn test_file_path_missing_errors() {
+        let mgr = make_manager(&["--mode=plain"]);
+        // In test context stdin is not a terminal, so it returns "-" for stdin
+        let result = mgr.file_path();
+        assert!(result.is_ok()); // stdin is not a terminal in tests
+    }
+
+    #[test]
+    fn test_invalid_language_rejected() {
+        let result = ConfigManager::from_args_vec([
+            "batless",
+            "--language=nonexistent_lang_xyz",
+            "Cargo.toml",
+        ]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_output_mode_from_str() {
+        assert_eq!(OutputMode::from_str("plain").unwrap(), OutputMode::Plain);
+        assert_eq!(
+            OutputMode::from_str("highlight").unwrap(),
+            OutputMode::Highlight
+        );
+        assert_eq!(OutputMode::from_str("json").unwrap(), OutputMode::Json);
+        assert_eq!(
+            OutputMode::from_str("summary").unwrap(),
+            OutputMode::Summary
+        );
+        assert!(OutputMode::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn test_cli_output_mode_conversion() {
+        assert_eq!(OutputMode::from(CliOutputMode::Plain), OutputMode::Plain);
+        assert_eq!(
+            OutputMode::from(CliOutputMode::Highlight),
+            OutputMode::Highlight
+        );
+        assert_eq!(OutputMode::from(CliOutputMode::Json), OutputMode::Json);
+        assert_eq!(
+            OutputMode::from(CliOutputMode::Summary),
+            OutputMode::Summary
+        );
+    }
+
+    #[test]
+    fn test_cli_summary_level_conversion() {
+        assert_eq!(
+            SummaryLevel::from(CliSummaryLevel::None),
+            SummaryLevel::None
+        );
+        assert_eq!(
+            SummaryLevel::from(CliSummaryLevel::Minimal),
+            SummaryLevel::Minimal
+        );
+        assert_eq!(
+            SummaryLevel::from(CliSummaryLevel::Standard),
+            SummaryLevel::Standard
+        );
+        assert_eq!(
+            SummaryLevel::from(CliSummaryLevel::Detailed),
+            SummaryLevel::Detailed
+        );
+    }
+
+    #[test]
+    fn test_cli_ai_model_conversion() {
+        assert_eq!(AiModel::from(CliAiModel::Gpt4), AiModel::Gpt4);
+        assert_eq!(AiModel::from(CliAiModel::Claude), AiModel::Claude);
+        assert_eq!(AiModel::from(CliAiModel::Generic), AiModel::Generic);
+    }
+
+    #[test]
+    fn test_ai_profile_output_modes() {
+        assert_eq!(AiProfile::Claude.get_output_mode(), OutputMode::Summary);
+        assert_eq!(AiProfile::Copilot.get_output_mode(), OutputMode::Json);
+        assert_eq!(AiProfile::Chatgpt.get_output_mode(), OutputMode::Json);
+        assert_eq!(AiProfile::Assistant.get_output_mode(), OutputMode::Summary);
+    }
+
+    #[test]
+    fn test_plain_flag_overrides_mode() {
+        // --plain should override --mode=json
+        let mgr = make_manager(&["--mode=json", "--plain", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Plain);
+    }
+
+    #[test]
+    fn test_multiple_flags_combined() {
+        let mgr = make_manager(&[
+            "--max-lines=100",
+            "--max-bytes=5000",
+            "--include-tokens",
+            "--mode=json",
+            "Cargo.toml",
+        ]);
+        assert_eq!(mgr.config().max_lines, 100);
+        assert_eq!(mgr.config().max_bytes, Some(5000));
+        assert!(mgr.config().include_tokens);
+        assert_eq!(mgr.output_mode(), OutputMode::Json);
+    }
+
+    #[test]
+    fn test_from_args_vec_invalid_args() {
+        let result = ConfigManager::from_args_vec(["batless", "--nonexistent-flag"]);
+        assert!(result.is_err());
     }
 }

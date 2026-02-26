@@ -15,9 +15,7 @@ fn create_test_file(content: &str, extension: &str) -> NamedTempFile {
 }
 
 fn run_batless(args: &[&str]) -> std::process::Output {
-    Command::new("cargo")
-        .arg("run")
-        .arg("--")
+    Command::new(env!("CARGO_BIN_EXE_batless"))
         .args(args)
         .output()
         .expect("Failed to execute batless")

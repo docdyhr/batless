@@ -425,7 +425,7 @@ impl ConfigurationWizard {
             print!(" [{default_val}]");
         }
         print!(" ({min}-{max}, or skip): ");
-        io::stdout().flush().unwrap();
+        let _ = io::stdout().flush();
 
         let mut input = String::new();
         io::stdin().read_line(&mut input).map_err(|e| {
@@ -567,7 +567,8 @@ impl ConfigurationWizard {
             println!(
                 "🔹 {} ({})",
                 profile.name,
-                path.file_name().unwrap().to_string_lossy()
+                path.file_name()
+                    .map_or_else(|| path.to_string_lossy(), |n| n.to_string_lossy())
             );
 
             if let Some(ref description) = profile.description {
@@ -615,7 +616,13 @@ impl ConfigurationWizard {
         let choice = Self::prompt_number("Enter your choice", None, 1, profiles.len())?;
         let (path, _) = &profiles[choice - 1];
 
-        Self::edit_profile_by_path(path.to_str().unwrap())
+        let path_str = path.to_str().ok_or_else(|| {
+            BatlessError::config_error_with_help(
+                "Profile path contains invalid UTF-8".to_string(),
+                Some("Rename the profile file to use ASCII characters".to_string()),
+            )
+        })?;
+        Self::edit_profile_by_path(path_str)
     }
 
     /// Interactive profile editor for existing profiles
@@ -729,7 +736,7 @@ impl ConfigurationWizard {
                 .as_ref()
                 .map(super::summary::SummaryLevel::as_str),
         )?
-        .map(|s| SummaryLevel::parse(&s).unwrap());
+        .and_then(|s| SummaryLevel::parse(&s).ok());
         profile.output_mode = Self::prompt_optional_string(
             &format!(
                 "Output mode [{}]",
