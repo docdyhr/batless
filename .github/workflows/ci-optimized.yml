@@ -17,7 +17,6 @@ on:
 # Explicit permissions for security best practices
 permissions:
   contents: read
-  checks: write
   pull-requests: read
 
 # Concurrency controls to prevent redundant runs
