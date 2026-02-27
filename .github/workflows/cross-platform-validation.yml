@@ -138,16 +138,10 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
-            shell: bash
-            path_separator: ":"
             binary_extension: ""
           - os: windows-latest
-            shell: pwsh
-            path_separator: ";"
             binary_extension: ".exe"
           - os: macos-latest
-            shell: bash
-            path_separator: ":"
             binary_extension: ""
 
     steps:
@@ -161,7 +155,7 @@ jobs:
         run: cargo build --release
 
       - name: Test file path handling
-        shell: ${{ matrix.shell }}
+        shell: bash
         run: |
           # Create test files with platform-specific paths
           mkdir -p "test dir/sub dir"
@@ -201,7 +195,7 @@ jobs:
           Remove-Item -Recurse -Force $configDir
 
       - name: Test Unicode and encoding handling
-        shell: ${{ matrix.shell }}
+        shell: bash
         run: |
           # Create files with various encodings
           echo "Hello, 世界! 🦀" > unicode_test.txt
@@ -210,7 +204,7 @@ jobs:
           ./target/release/batless${{ matrix.binary_extension }} unicode_test.txt --mode=plain --max-lines=1
 
       - name: Test large file handling
-        shell: ${{ matrix.shell }}
+        shell: bash
         run: |
           # Create a moderately large file (cross-platform compatible)
           python3 -c "for i in range(1000): print(f'line {i+1} with some content')" > large_test.txt
