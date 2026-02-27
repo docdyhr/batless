@@ -16,6 +16,10 @@ on:
           - quick
           - targets-only
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -100,7 +104,7 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       - name: Run tests (native only)
-        if: matrix.cross == false && inputs.test_type != 'targets-only'
+        if: matrix.cross == false && (inputs.test_type || 'full') != 'targets-only'
         run: cargo test --target ${{ matrix.target }} --verbose
 
       - name: Verify binary functionality (native)
@@ -127,7 +131,7 @@ jobs:
   platform-specific-tests:
     name: Platform-Specific Tests
     runs-on: ${{ matrix.os }}
-    if: inputs.test_type != 'targets-only'
+    if: (inputs.test_type || 'full') != 'targets-only'
     strategy:
       fail-fast: false
       matrix:
@@ -233,7 +237,7 @@ jobs:
   integration-validation:
     name: Integration Validation
     runs-on: ubuntu-latest
-    if: inputs.test_type == 'full'
+    if: (inputs.test_type || 'full') == 'full'
     needs: [cross-compile-targets]
 
     steps:
