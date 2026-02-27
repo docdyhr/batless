@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-02-27
+
+### Bug Fixes
+
+- **Panic elimination**: Replaced 4 `unwrap()` calls in `ast_summarizer.rs` with proper error handling, preventing panics on malformed AST queries
+- **Panic elimination**: Replaced 4 `unwrap()` calls in `wizard.rs` with safe alternatives
+- **Cast safety**: Fixed `u64` to `usize` cast in `processor.rs` with saturating conversion to prevent truncation on 32-bit platforms
+- **Test reliability**: Changed integration tests to use `env!("CARGO_BIN_EXE_batless")` instead of `cargo run`, fixing intermittent macOS CI failures
+
+### Improvements
+
+- **AST summarizer wired into pipeline**: The tree-sitter `AstSummarizer` is now fully integrated into the summary mode processing pipeline, replacing the regex-based fallback when tree-sitter grammars are available
+- **Error handling**: Improved error types with more specific variants and contextual help messages
+- **Levenshtein optimization**: Switched from full-matrix to two-row algorithm for fuzzy matching in error suggestions, reducing memory from O(n*m) to O(m)
+- **Config refactor**: Extracted validation logic from `config.rs` (1,120 lines) into dedicated `config_validation.rs` (376 lines) for better separation of concerns
+
+### CI/CD
+
+- Removed 8 deprecated workflows, consolidating from 19 to 11 workflows
+- Reduced scheduled workflow frequency (security: daily to weekly, health-check/fuzz: daily to weekly)
+- Added concurrency controls to prevent redundant parallel runs
+- Fixed cross-platform-validation workflow parse errors caused by `matrix.shell` in non-triggered workflow validation
+
+### Dependencies
+
+- Updated 66+ compatible dependencies including:
+  - clap 4.5.58 → 4.5.60, tree-sitter 0.26.5 → 0.26.6
+  - regex 1.12.2 → 1.12.3, libc 0.2.177 → 0.2.182
+  - proptest 1.9.0 → 1.10.0, tempfile 3.24.0 → 3.26.0
+
+### Testing
+
+- **386 total tests** (up from 325 in v0.4.0, +61 tests)
+  - 35 new tests for `config_manager.rs`
+  - 16 new tests for `ast_summarizer.rs`
+  - 18 validation tests in new `config_validation.rs`
+- Zero clippy warnings, zero test failures
+
+---
+
 ## [0.4.0] - 2026-01-08
 
 ### 🎯 Major Features
