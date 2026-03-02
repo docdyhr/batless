@@ -189,12 +189,14 @@ pub enum Shell {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum AiProfile {
-    /// Optimized for Claude's context window (4K lines, summary mode)
+    /// Optimized for Anthropic Claude (4K lines, summary mode)
     Claude,
     /// Focused on code suggestions for GitHub Copilot (2K lines, tokens included)
     Copilot,
     /// OpenAI ChatGPT optimizations (3K lines, JSON output)
     Chatgpt,
+    /// Google Gemini optimizations (8K lines, JSON output, leverages large context)
+    Gemini,
     /// General AI assistant profile (5K lines, balanced output)
     Assistant,
 }
@@ -217,6 +219,11 @@ impl AiProfile {
                 .with_include_tokens(true)
                 .with_summary_level(SummaryLevel::None)
                 .with_use_color(false),
+            AiProfile::Gemini => config
+                .with_max_lines(8000)
+                .with_include_tokens(true)
+                .with_summary_level(SummaryLevel::None)
+                .with_use_color(false),
             AiProfile::Assistant => config
                 .with_max_lines(5000)
                 .with_include_tokens(false)
@@ -230,6 +237,7 @@ impl AiProfile {
             AiProfile::Claude => OutputMode::Summary,
             AiProfile::Copilot => OutputMode::Json,
             AiProfile::Chatgpt => OutputMode::Json,
+            AiProfile::Gemini => OutputMode::Json,
             AiProfile::Assistant => OutputMode::Summary,
         }
     }
@@ -301,10 +309,14 @@ pub enum CliAiModel {
     Gpt4Turbo,
     /// OpenAI GPT-3.5 family
     Gpt35,
-    /// Anthropic Claude family
+    /// Anthropic Claude family (Claude 4.x series)
     Claude,
-    /// Anthropic Claude-3.5 Sonnet with enhanced capabilities
-    Claude35Sonnet,
+    /// Anthropic Claude Sonnet (Claude 4.x Sonnet)
+    ClaudeSonnet,
+    /// Google Gemini 1.5 Pro (1M context)
+    Gemini,
+    /// Google Gemini 2.0 Flash (1M context)
+    GeminiFlash,
     /// Generic model estimation
     Generic,
 }
@@ -316,7 +328,9 @@ impl From<CliAiModel> for AiModel {
             CliAiModel::Gpt4Turbo => AiModel::Gpt4Turbo,
             CliAiModel::Gpt35 => AiModel::Gpt35,
             CliAiModel::Claude => AiModel::Claude,
-            CliAiModel::Claude35Sonnet => AiModel::Claude35Sonnet,
+            CliAiModel::ClaudeSonnet => AiModel::ClaudeSonnet,
+            CliAiModel::Gemini => AiModel::Gemini,
+            CliAiModel::GeminiFlash => AiModel::GeminiFlash,
             CliAiModel::Generic => AiModel::Generic,
         }
     }
@@ -675,6 +689,15 @@ mod tests {
     }
 
     #[test]
+    fn test_profile_gemini() {
+        let mgr = make_manager(&["--profile=gemini", "Cargo.toml"]);
+        assert_eq!(mgr.output_mode(), OutputMode::Json);
+        assert_eq!(mgr.config().max_lines, 8000);
+        assert!(mgr.config().include_tokens);
+        assert!(!mgr.config().use_color);
+    }
+
+    #[test]
     fn test_profile_assistant() {
         let mgr = make_manager(&["--profile=assistant", "Cargo.toml"]);
         assert_eq!(mgr.output_mode(), OutputMode::Summary);
@@ -788,6 +811,12 @@ mod tests {
     fn test_cli_ai_model_conversion() {
         assert_eq!(AiModel::from(CliAiModel::Gpt4), AiModel::Gpt4);
         assert_eq!(AiModel::from(CliAiModel::Claude), AiModel::Claude);
+        assert_eq!(
+            AiModel::from(CliAiModel::ClaudeSonnet),
+            AiModel::ClaudeSonnet
+        );
+        assert_eq!(AiModel::from(CliAiModel::Gemini), AiModel::Gemini);
+        assert_eq!(AiModel::from(CliAiModel::GeminiFlash), AiModel::GeminiFlash);
         assert_eq!(AiModel::from(CliAiModel::Generic), AiModel::Generic);
     }
 
@@ -796,6 +825,7 @@ mod tests {
         assert_eq!(AiProfile::Claude.get_output_mode(), OutputMode::Summary);
         assert_eq!(AiProfile::Copilot.get_output_mode(), OutputMode::Json);
         assert_eq!(AiProfile::Chatgpt.get_output_mode(), OutputMode::Json);
+        assert_eq!(AiProfile::Gemini.get_output_mode(), OutputMode::Json);
         assert_eq!(AiProfile::Assistant.get_output_mode(), OutputMode::Summary);
     }
 

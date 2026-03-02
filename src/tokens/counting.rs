@@ -14,10 +14,14 @@ pub enum AiModel {
     Gpt4Turbo,
     /// OpenAI GPT-3.5 family
     Gpt35,
-    /// Anthropic Claude-3 family
+    /// Anthropic Claude family (Claude 4.x series, 200K context)
     Claude,
-    /// Anthropic Claude-3.5 Sonnet with enhanced capabilities
-    Claude35Sonnet,
+    /// Anthropic Claude Sonnet (Claude 4.x Sonnet, 200K context)
+    ClaudeSonnet,
+    /// Google Gemini 1.5 Pro (1M context)
+    Gemini,
+    /// Google Gemini 2.0 Flash (1M context)
+    GeminiFlash,
     /// Generic model using simple word-based estimation
     Generic,
 }
@@ -29,10 +33,11 @@ impl AiModel {
             "gpt4" | "gpt-4" => Ok(Self::Gpt4),
             "gpt4-turbo" | "gpt-4-turbo" | "gpt4turbo" => Ok(Self::Gpt4Turbo),
             "gpt35" | "gpt-3.5" | "gpt-3.5-turbo" => Ok(Self::Gpt35),
-            "claude" | "claude-3" => Ok(Self::Claude),
-            "claude-3.5" | "claude-3.5-sonnet" | "claude35" | "claude35sonnet" => {
-                Ok(Self::Claude35Sonnet)
-            }
+            "claude" | "claude-4" | "claude-3" => Ok(Self::Claude),
+            "claude-sonnet" | "claude-4-sonnet" | "claude-3.5" | "claude-3.5-sonnet"
+            | "claude35" | "claude35sonnet" => Ok(Self::ClaudeSonnet),
+            "gemini" | "gemini-1.5" | "gemini-1.5-pro" | "gemini-pro" => Ok(Self::Gemini),
+            "gemini-flash" | "gemini-2.0-flash" | "gemini-2" => Ok(Self::GeminiFlash),
             "generic" => Ok(Self::Generic),
             _ => Err(format!("Unknown AI model: {s}")),
         }
@@ -45,7 +50,9 @@ impl AiModel {
             Self::Gpt4Turbo,
             Self::Gpt35,
             Self::Claude,
-            Self::Claude35Sonnet,
+            Self::ClaudeSonnet,
+            Self::Gemini,
+            Self::GeminiFlash,
             Self::Generic,
         ]
     }
@@ -57,7 +64,9 @@ impl AiModel {
             Self::Gpt4Turbo => "gpt-4-turbo",
             Self::Gpt35 => "gpt-3.5",
             Self::Claude => "claude",
-            Self::Claude35Sonnet => "claude-3.5-sonnet",
+            Self::ClaudeSonnet => "claude-sonnet",
+            Self::Gemini => "gemini-1.5-pro",
+            Self::GeminiFlash => "gemini-2.0-flash",
             Self::Generic => "generic",
         }
     }
@@ -65,12 +74,14 @@ impl AiModel {
     /// Get approximate context window size for this model
     pub const fn context_window(&self) -> usize {
         match self {
-            Self::Gpt4 => 128_000,           // GPT-4 Turbo
-            Self::Gpt4Turbo => 128_000,      // GPT-4 Turbo (same as GPT-4)
-            Self::Gpt35 => 16_384,           // GPT-3.5 Turbo
-            Self::Claude => 200_000,         // Claude-3
-            Self::Claude35Sonnet => 200_000, // Claude-3.5 Sonnet (same as Claude-3)
-            Self::Generic => 8_192,          // Conservative default
+            Self::Gpt4 => 128_000,          // GPT-4 Turbo
+            Self::Gpt4Turbo => 128_000,     // GPT-4 Turbo (same as GPT-4)
+            Self::Gpt35 => 16_384,          // GPT-3.5 Turbo
+            Self::Claude => 200_000,        // Claude 4.x family
+            Self::ClaudeSonnet => 200_000,  // Claude Sonnet (same context window)
+            Self::Gemini => 1_000_000,      // Gemini 1.5 Pro
+            Self::GeminiFlash => 1_000_000, // Gemini 2.0 Flash
+            Self::Generic => 8_192,         // Conservative default
         }
     }
 
@@ -78,7 +89,8 @@ impl AiModel {
     fn tokens_per_word(self) -> f64 {
         match self {
             Self::Gpt4 | Self::Gpt4Turbo | Self::Gpt35 => 1.3, // GPT models: ~1.3 tokens per word
-            Self::Claude | Self::Claude35Sonnet => 1.2,        // Claude: slightly more efficient
+            Self::Claude | Self::ClaudeSonnet => 1.2,          // Claude: slightly more efficient
+            Self::Gemini | Self::GeminiFlash => 1.3,           // Gemini: SentencePiece tokenizer
             Self::Generic => 1.5,                              // Conservative estimate
         }
     }
@@ -313,7 +325,8 @@ impl TokenCounter {
             AiModel::Gpt4 | AiModel::Gpt4Turbo | AiModel::Gpt35 => {
                 self.estimate_gpt_tokens(text, words)
             }
-            AiModel::Claude | AiModel::Claude35Sonnet => self.estimate_claude_tokens(text, words),
+            AiModel::Claude | AiModel::ClaudeSonnet => self.estimate_claude_tokens(text, words),
+            AiModel::Gemini | AiModel::GeminiFlash => self.estimate_gemini_tokens(text, words),
             AiModel::Generic => self.estimate_generic_tokens(words),
         }
     }
@@ -340,6 +353,24 @@ impl TokenCounter {
         let code_bonus = if self.looks_like_code(text) { 0.9 } else { 1.0 };
 
         (base_tokens as f64 * code_bonus) as usize
+    }
+
+    /// Gemini-style token estimation (SentencePiece tokenizer)
+    fn estimate_gemini_tokens(&self, text: &str, words: usize) -> usize {
+        let base_tokens = (words as f64 * self.model.tokens_per_word()) as usize;
+
+        // Gemini uses SentencePiece; code gets slightly more tokens than natural language
+        let code_penalty = if self.looks_like_code(text) {
+            1.15
+        } else {
+            1.0
+        };
+
+        // Account for whitespace/structural tokens
+        let newlines = text.matches('\n').count();
+        let special_tokens = newlines / 3;
+
+        ((base_tokens as f64 * code_penalty) as usize) + special_tokens
     }
 
     /// Generic token estimation
@@ -399,7 +430,8 @@ impl TokenCounter {
 pub fn get_token_counter_for_profile(profile: &str) -> TokenCounter {
     let model = match profile.to_lowercase().as_str() {
         "claude" => AiModel::Claude,
-        "copilot" | "chatgpt" => AiModel::Gpt4, // Most likely to use GPT-4
+        "copilot" | "chatgpt" => AiModel::Gpt4,
+        "gemini" => AiModel::Gemini,
         "assistant" => AiModel::Generic,
         _ => AiModel::Generic,
     };
@@ -545,17 +577,43 @@ mod tests {
         assert_eq!(gpt4_turbo.model().context_window(), 128_000);
         assert_eq!(gpt4_turbo.model().as_str(), "gpt-4-turbo");
 
-        // Test Claude-3.5 Sonnet
-        let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
-        assert_eq!(claude35.model(), AiModel::Claude35Sonnet);
-        assert_eq!(claude35.model().context_window(), 200_000);
-        assert_eq!(claude35.model().as_str(), "claude-3.5-sonnet");
+        // Test Claude Sonnet
+        let claude_sonnet = TokenCounter::new(AiModel::ClaudeSonnet);
+        assert_eq!(claude_sonnet.model(), AiModel::ClaudeSonnet);
+        assert_eq!(claude_sonnet.model().context_window(), 200_000);
+        assert_eq!(claude_sonnet.model().as_str(), "claude-sonnet");
+
+        // Test Gemini 1.5 Pro
+        let gemini = TokenCounter::new(AiModel::Gemini);
+        assert_eq!(gemini.model(), AiModel::Gemini);
+        assert_eq!(gemini.model().context_window(), 1_000_000);
+        assert_eq!(gemini.model().as_str(), "gemini-1.5-pro");
+
+        // Test Gemini 2.0 Flash
+        let gemini_flash = TokenCounter::new(AiModel::GeminiFlash);
+        assert_eq!(gemini_flash.model(), AiModel::GeminiFlash);
+        assert_eq!(gemini_flash.model().context_window(), 1_000_000);
+        assert_eq!(gemini_flash.model().as_str(), "gemini-2.0-flash");
 
         // Test parsing
         assert_eq!(AiModel::parse("gpt-4-turbo").unwrap(), AiModel::Gpt4Turbo);
         assert_eq!(
             AiModel::parse("claude-3.5-sonnet").unwrap(),
-            AiModel::Claude35Sonnet
+            AiModel::ClaudeSonnet
+        );
+        assert_eq!(
+            AiModel::parse("claude-sonnet").unwrap(),
+            AiModel::ClaudeSonnet
+        );
+        assert_eq!(AiModel::parse("gemini").unwrap(), AiModel::Gemini);
+        assert_eq!(AiModel::parse("gemini-1.5-pro").unwrap(), AiModel::Gemini);
+        assert_eq!(
+            AiModel::parse("gemini-flash").unwrap(),
+            AiModel::GeminiFlash
+        );
+        assert_eq!(
+            AiModel::parse("gemini-2.0-flash").unwrap(),
+            AiModel::GeminiFlash
         );
     }
 
@@ -569,11 +627,23 @@ mod tests {
         assert!(gpt4_turbo_count.tokens > 0);
         assert_eq!(gpt4_turbo_count.model, AiModel::Gpt4Turbo);
 
-        // Test Claude-3.5 Sonnet token counting
-        let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
-        let claude35_count = claude35.count_tokens(test_text);
-        assert!(claude35_count.tokens > 0);
-        assert_eq!(claude35_count.model, AiModel::Claude35Sonnet);
+        // Test Claude Sonnet token counting
+        let claude_sonnet = TokenCounter::new(AiModel::ClaudeSonnet);
+        let claude_sonnet_count = claude_sonnet.count_tokens(test_text);
+        assert!(claude_sonnet_count.tokens > 0);
+        assert_eq!(claude_sonnet_count.model, AiModel::ClaudeSonnet);
+
+        // Test Gemini token counting
+        let gemini = TokenCounter::new(AiModel::Gemini);
+        let gemini_count = gemini.count_tokens(test_text);
+        assert!(gemini_count.tokens > 0);
+        assert_eq!(gemini_count.model, AiModel::Gemini);
+
+        // Test Gemini Flash token counting
+        let gemini_flash = TokenCounter::new(AiModel::GeminiFlash);
+        let gemini_flash_count = gemini_flash.count_tokens(test_text);
+        assert!(gemini_flash_count.tokens > 0);
+        assert_eq!(gemini_flash_count.model, AiModel::GeminiFlash);
 
         // Compare with original models - should use similar estimation patterns
         let gpt4 = TokenCounter::new(AiModel::Gpt4);
@@ -585,8 +655,11 @@ mod tests {
         // GPT-4 Turbo should estimate similarly to GPT-4
         assert_eq!(gpt4_turbo_count.tokens, gpt4_count.tokens);
 
-        // Claude-3.5 Sonnet should estimate similarly to Claude
-        assert_eq!(claude35_count.tokens, claude_count.tokens);
+        // Claude Sonnet should estimate similarly to Claude
+        assert_eq!(claude_sonnet_count.tokens, claude_count.tokens);
+
+        // Gemini Flash should estimate similarly to Gemini
+        assert_eq!(gemini_flash_count.tokens, gemini_count.tokens);
     }
 
     #[test]
@@ -601,15 +674,26 @@ mod tests {
         assert!(max_length > 0);
         assert!(max_length < 128_000 * 10); // Sanity check
 
-        // Test Claude-3.5 Sonnet context fitting
-        let claude35 = TokenCounter::new(AiModel::Claude35Sonnet);
-        assert!(claude35.fits_with_prompt(&test_text, 500));
+        // Test Claude Sonnet context fitting
+        let claude_sonnet = TokenCounter::new(AiModel::ClaudeSonnet);
+        assert!(claude_sonnet.fits_with_prompt(&test_text, 500));
 
-        let max_length_claude = claude35.max_content_length(1000);
+        let max_length_claude = claude_sonnet.max_content_length(1000);
         assert!(max_length_claude > 0);
         assert!(max_length_claude < 200_000 * 10); // Sanity check
 
         // Claude should have larger max content length due to bigger context window
         assert!(max_length_claude > max_length);
+
+        // Test Gemini context fitting
+        let gemini = TokenCounter::new(AiModel::Gemini);
+        assert!(gemini.fits_with_prompt(&test_text, 500));
+
+        let max_length_gemini = gemini.max_content_length(1000);
+        assert!(max_length_gemini > 0);
+        assert!(max_length_gemini < 1_000_000 * 10); // Sanity check
+
+        // Gemini should have larger max content length due to 1M context window
+        assert!(max_length_gemini > max_length_claude);
     }
 }
