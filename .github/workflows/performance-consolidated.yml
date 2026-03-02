@@ -235,7 +235,7 @@ jobs:
 
       - name: Upload baseline artifact
         if: steps.baseline.outputs.updated == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: performance-baseline
           path: .github/performance/baseline.md
