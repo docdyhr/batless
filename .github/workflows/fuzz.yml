@@ -42,7 +42,7 @@ jobs:
 
       - name: Archive fuzz artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-artifacts
           path: fuzz/artifacts/
@@ -54,7 +54,7 @@ jobs:
     if: always()
     steps:
       - name: Download fuzz artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: fuzz-artifacts
           path: fuzz/artifacts/

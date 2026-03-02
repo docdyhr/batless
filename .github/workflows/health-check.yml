@@ -152,7 +152,7 @@ jobs:
           echo "ISSUES_COUNT=$ISSUES_FOUND" >> "$GITHUB_ENV"
 
       - name: Upload health report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: health-report
           path: health-report.md
