@@ -211,7 +211,7 @@ jobs:
 
           # Test with various limits
           ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-lines=100 --mode=plain > /dev/null
-          ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-bytes=1024 --mode=plain > /dev/null
+          ./target/release/batless${{ matrix.binary_extension }} large_test.txt --max-lines=100 --max-bytes=1024 --mode=plain > /dev/null
 
       - name: Test error handling (Unix)
         if: matrix.os != 'windows-latest'
