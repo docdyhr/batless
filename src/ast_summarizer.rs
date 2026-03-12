@@ -20,7 +20,17 @@ impl AstSummarizer {
     /// Parse content with a timeout to prevent hangs on pathological inputs.
     /// Returns `None` if parsing fails or times out.
     fn parse_with_timeout(parser: &mut Parser, content: &str) -> Option<tree_sitter::Tree> {
-        let deadline = Instant::now() + PARSE_TIMEOUT;
+        Self::parse_with_deadline(parser, content, PARSE_TIMEOUT)
+    }
+
+    /// Parse content with a configurable timeout duration.
+    /// Returns `None` if parsing fails or the deadline is exceeded.
+    fn parse_with_deadline(
+        parser: &mut Parser,
+        content: &str,
+        timeout: Duration,
+    ) -> Option<tree_sitter::Tree> {
+        let deadline = Instant::now() + timeout;
         let bytes = content.as_bytes();
         let len = bytes.len();
         let mut progress = |_: &_| {
@@ -336,6 +346,8 @@ impl AstSummarizer {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
     use super::*;
 
     #[test]
@@ -530,5 +542,25 @@ mod tests {
                 "parse_with_timeout should succeed for {name}"
             );
         }
+    }
+
+    #[test]
+    fn test_parse_with_zero_timeout_aborts() {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_rust::LANGUAGE.into())
+            .unwrap();
+        // Generate a large input so tree-sitter invokes the progress callback
+        // before finishing. A zero-duration deadline is already in the past,
+        // so the callback should return Break and cancel parsing.
+        let mut large_input = String::new();
+        for i in 0..1000 {
+            writeln!(large_input, "fn func_{i}(x: i32) -> i32 {{ x + {i} }}").unwrap();
+        }
+        let tree = AstSummarizer::parse_with_deadline(&mut parser, &large_input, Duration::ZERO);
+        assert!(
+            tree.is_none(),
+            "Zero timeout should abort parsing and return None"
+        );
     }
 }
