@@ -743,9 +743,12 @@ mod tests {
     #[test]
     fn test_file_path_missing_errors() {
         let mgr = make_manager(&["--mode=plain"]);
-        // In test context stdin is not a terminal, so it returns "-" for stdin
         let result = mgr.file_path();
-        assert!(result.is_ok()); // stdin is not a terminal in tests
+        if std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+            assert!(result.is_err());
+        } else {
+            assert!(result.is_ok());
+        }
     }
 
     #[test]

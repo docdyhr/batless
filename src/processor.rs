@@ -105,50 +105,44 @@ impl FileProcessor {
     }
 
     /// Process input from stdin
+    ///
+    /// Reads stdin line-by-line with a BufReader, enforcing max_lines and
+    /// max_bytes limits incrementally to avoid unbounded memory usage.
     pub fn process_stdin(config: &BatlessConfig) -> BatlessResult<FileInfo> {
-        use std::io::{stdin, Read};
+        use std::io::{stdin, BufRead, BufReader};
 
-        // Read all content from stdin
-        let mut content = String::new();
-        stdin()
-            .read_to_string(&mut content)
-            .map_err(|e| BatlessError::FileReadError {
+        let reader = BufReader::new(stdin());
+        let mut lines = Vec::new();
+        let mut bytes_seen = 0usize;
+        let mut truncated_by_lines = false;
+        let mut truncated_by_bytes = false;
+
+        for line_result in reader.lines() {
+            if lines.len() >= config.max_lines {
+                truncated_by_lines = true;
+                break;
+            }
+
+            let line = line_result.map_err(|e| BatlessError::FileReadError {
                 path: "<stdin>".to_string(),
                 source: e,
             })?;
 
-        // Split into lines
-        let lines: Vec<String> = content.lines().map(str::to_owned).collect();
-        let total_lines = lines.len();
-        let total_bytes = content.len();
-
-        // Apply line limits if configured
-        let (final_lines, truncated_by_lines) = if total_lines > config.max_lines {
-            (lines[..config.max_lines].to_vec(), true)
-        } else {
-            (lines, false)
-        };
-
-        // Apply byte limits if configured
-        let (final_lines, total_bytes, truncated_by_bytes) =
+            let line_bytes = line.len() + 1; // +1 for newline
             if let Some(max_bytes) = config.max_bytes {
-                let mut byte_count = 0;
-                let mut truncated_lines = Vec::new();
-                let mut truncated = false;
-
-                for line in final_lines {
-                    let line_bytes = line.len() + 1; // +1 for newline
-                    if byte_count + line_bytes > max_bytes {
-                        truncated = true;
-                        break;
-                    }
-                    byte_count += line_bytes;
-                    truncated_lines.push(line);
+                if bytes_seen + line_bytes > max_bytes {
+                    truncated_by_bytes = true;
+                    break;
                 }
-                (truncated_lines, byte_count, truncated)
-            } else {
-                (final_lines, total_bytes, false)
-            };
+            }
+
+            bytes_seen += line_bytes;
+            lines.push(line);
+        }
+
+        let total_lines = lines.len();
+        let total_bytes = bytes_seen;
+        let final_lines = lines;
 
         // Detect language from content (limited for stdin without filename)
         let language = config.language.clone(); // Use configured language or none

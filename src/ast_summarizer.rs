@@ -5,13 +5,45 @@
 //! relevant nodes based on the summary level.
 
 use crate::summary::SummaryLevel;
+use std::ops::ControlFlow;
+use std::time::{Duration, Instant};
 // use streaming_iterator::StreamingIterator; // Removed
-use tree_sitter::{Parser, Query, QueryCursor, StreamingIterator}; // Added StreamingIterator
+use tree_sitter::{ParseOptions, Parser, Query, QueryCursor, StreamingIterator}; // Added StreamingIterator
+
+/// Maximum time allowed for tree-sitter parsing before aborting.
+const PARSE_TIMEOUT: Duration = Duration::from_millis(500);
 
 /// AST-based summary extractor
 pub struct AstSummarizer;
 
 impl AstSummarizer {
+    /// Parse content with a timeout to prevent hangs on pathological inputs.
+    /// Returns `None` if parsing fails or times out.
+    fn parse_with_timeout(parser: &mut Parser, content: &str) -> Option<tree_sitter::Tree> {
+        let deadline = Instant::now() + PARSE_TIMEOUT;
+        let bytes = content.as_bytes();
+        let len = bytes.len();
+        let mut progress = |_: &_| {
+            if Instant::now() >= deadline {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        };
+        let mut options = ParseOptions::new().progress_callback(&mut progress);
+        parser.parse_with_options(
+            &mut |i, _| {
+                if i < len {
+                    &bytes[i..]
+                } else {
+                    &[]
+                }
+            },
+            None,
+            Some(options.reborrow()),
+        )
+    }
+
     /// Extract a summary of important code structures using AST parsing
     pub fn extract_summary(
         content: &str,
@@ -38,7 +70,7 @@ impl AstSummarizer {
             .set_language(&tree_sitter_rust::LANGUAGE.into())
             .expect("Error loading Rust grammar");
 
-        let Some(tree) = parser.parse(content, None) else {
+        let Some(tree) = Self::parse_with_timeout(&mut parser, content) else {
             return Vec::new();
         };
         let root_node = tree.root_node();
@@ -108,7 +140,7 @@ impl AstSummarizer {
             .set_language(&tree_sitter_python::LANGUAGE.into())
             .expect("Error loading Python grammar");
 
-        let Some(tree) = parser.parse(content, None) else {
+        let Some(tree) = Self::parse_with_timeout(&mut parser, content) else {
             return Vec::new();
         };
         let root_node = tree.root_node();
@@ -170,7 +202,7 @@ impl AstSummarizer {
             .set_language(&tree_sitter_javascript::LANGUAGE.into())
             .expect("Error loading JavaScript grammar");
 
-        let Some(tree) = parser.parse(content, None) else {
+        let Some(tree) = Self::parse_with_timeout(&mut parser, content) else {
             return Vec::new();
         };
         let root_node = tree.root_node();
@@ -234,7 +266,7 @@ impl AstSummarizer {
             .set_language(&tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into())
             .expect("Error loading TypeScript grammar");
 
-        let Some(tree) = parser.parse(content, None) else {
+        let Some(tree) = Self::parse_with_timeout(&mut parser, content) else {
             return Vec::new();
         };
         let root_node = tree.root_node();
