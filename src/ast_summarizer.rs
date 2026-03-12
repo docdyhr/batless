@@ -469,4 +469,66 @@ mod tests {
             AstSummarizer::extract_summary("   \n\n\t\t\n  ", Some("Rust"), SummaryLevel::Standard);
         assert!(result.is_empty());
     }
+
+    #[test]
+    fn test_parse_with_timeout_returns_tree_for_valid_code() {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_rust::LANGUAGE.into())
+            .unwrap();
+        let tree = AstSummarizer::parse_with_timeout(&mut parser, "fn main() {}");
+        assert!(tree.is_some(), "Valid code should parse successfully");
+        let tree = tree.unwrap();
+        assert_eq!(tree.root_node().kind(), "source_file");
+    }
+
+    #[test]
+    fn test_parse_with_timeout_handles_empty_content() {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_rust::LANGUAGE.into())
+            .unwrap();
+        let tree = AstSummarizer::parse_with_timeout(&mut parser, "");
+        assert!(tree.is_some(), "Empty content should still produce a tree");
+    }
+
+    #[test]
+    fn test_parse_with_timeout_handles_invalid_syntax() {
+        let mut parser = Parser::new();
+        parser
+            .set_language(&tree_sitter_rust::LANGUAGE.into())
+            .unwrap();
+        // Tree-sitter produces partial trees for invalid syntax (doesn't return None)
+        let tree = AstSummarizer::parse_with_timeout(&mut parser, "{{{{{{");
+        assert!(tree.is_some());
+        assert!(tree.unwrap().root_node().has_error());
+    }
+
+    #[test]
+    fn test_parse_with_timeout_all_languages() {
+        let languages: Vec<(&str, tree_sitter::Language)> = vec![
+            ("Rust", tree_sitter_rust::LANGUAGE.into()),
+            ("Python", tree_sitter_python::LANGUAGE.into()),
+            ("JavaScript", tree_sitter_javascript::LANGUAGE.into()),
+            (
+                "TypeScript",
+                tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
+            ),
+        ];
+        let snippets = [
+            ("Rust", "fn hello() {} struct S {}"),
+            ("Python", "def hello():\n    pass"),
+            ("JavaScript", "function hello() {}"),
+            ("TypeScript", "function hello(): void {}"),
+        ];
+        for ((name, lang), (_, snippet)) in languages.iter().zip(snippets.iter()) {
+            let mut parser = Parser::new();
+            parser.set_language(lang).unwrap();
+            let tree = AstSummarizer::parse_with_timeout(&mut parser, snippet);
+            assert!(
+                tree.is_some(),
+                "parse_with_timeout should succeed for {name}"
+            );
+        }
+    }
 }
