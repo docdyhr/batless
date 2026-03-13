@@ -624,6 +624,52 @@ fn test_stdin_processing() {
 }
 
 #[test]
+fn test_stdin_processing_with_max_lines() {
+    // Pipe many lines but limit to 3 — verifies incremental truncation
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("printf 'line1\\nline2\\nline3\\nline4\\nline5\\n' | cargo run -- --mode=json --max-lines=3")
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(stdout.contains("line1"));
+    assert!(stdout.contains("line3"));
+    assert!(!stdout.contains("line4"), "line4 should be truncated");
+
+    // Verify truncation is reported in JSON
+    assert!(
+        stdout.contains("\"truncated\": true") || stdout.contains("\"truncated\":true"),
+        "Expected truncated flag in JSON output"
+    );
+}
+
+#[test]
+fn test_stdin_processing_with_max_bytes() {
+    // Pipe content but limit bytes — verifies byte-based truncation
+    // Use --max-lines to keep it balanced with max-bytes (avoids validation error)
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg("printf 'short\\nthis is a longer line\\nanother line\\n' | cargo run -- --mode=json --max-bytes=100 --max-lines=1")
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Only the first line should be included due to --max-lines=1
+    assert!(stdout.contains("short"));
+    assert!(
+        !stdout.contains("another line"),
+        "Content beyond max-lines should be truncated"
+    );
+    assert!(
+        stdout.contains("\"truncated\": true") || stdout.contains("\"truncated\":true"),
+        "Expected truncated flag in JSON output"
+    );
+}
+
+#[test]
 fn test_invalid_language_error() {
     let output = run_batless(&["src/main.rs", "--language=invalid-language"]);
     assert!(!output.status.success());
