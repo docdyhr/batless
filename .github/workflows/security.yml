@@ -38,7 +38,7 @@ jobs:
       - name: Install security tools
         run: |
           # Install tools with --locked for reproducible builds
-          cargo install cargo-audit cargo-deny cargo-outdated --locked
+          cargo install cargo-audit cargo-outdated --locked
 
       - name: Run cargo audit
         run: |
@@ -67,11 +67,7 @@ jobs:
 
       - name: Run cargo deny
         continue-on-error: true
-        run: |
-          # Clear advisory DB cache to force fresh fetch
-          rm -rf ~/.cargo/advisory-dbs 2>/dev/null || true
-          # Run cargo deny; continue even if advisory DB has issues
-          cargo deny check 2>&1 || echo "⚠️ cargo deny check completed with issues"
+        uses: EmbarkStudios/cargo-deny-action@v2
 
       - name: Check for outdated dependencies
         continue-on-error: true
