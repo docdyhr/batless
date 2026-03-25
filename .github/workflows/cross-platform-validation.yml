@@ -226,6 +226,7 @@ jobs:
         shell: pwsh
         run: |
           $output = & "./target/release/batless.exe" nonexistent.txt 2>&1 | Out-String
+          $LASTEXITCODE = 0  # batless exits non-zero for missing files; that's expected
           if ($output -match "(?i)error") { Write-Host "Error handling test passed" } else { Write-Host "Error handling test passed (no error string)" }
 
   integration-validation:
@@ -241,16 +242,17 @@ jobs:
       - name: Download all binary artifacts
         uses: actions/download-artifact@v8
         with:
-          merge-multiple: true
+          path: ./artifacts
 
       - name: Validate binary artifacts
         run: |
           echo "📦 Validating binary artifacts..."
 
-          # List all downloaded artifacts
-          find . -name "batless*" -type f -exec ls -la {} \;
+          # List all downloaded artifacts (each artifact is in its own subdirectory)
+          find ./artifacts -name "batless*" -type f -exec ls -la {} \;
 
           # Check that we have binaries for expected platforms
+          # Each artifact is downloaded to ./artifacts/batless-<target>/
           expected_targets=(
             "x86_64-unknown-linux-gnu"
             "x86_64-unknown-linux-musl"
@@ -260,7 +262,7 @@ jobs:
           )
 
           for target in "${expected_targets[@]}"; do
-            if find . -path "*$target*" -name "batless*" | grep -q .; then
+            if find ./artifacts -path "*batless-$target*" -name "batless*" | grep -q .; then
               echo "✅ Found binary for $target"
             else
               echo "❌ Missing binary for $target"
