@@ -4,6 +4,7 @@
 //! promoting separation of concerns and easier testing/maintenance.
 
 pub mod error_formatter;
+pub mod index_formatter;
 pub mod json_formatter;
 pub mod plain_formatter;
 pub mod summary_formatter;
@@ -34,6 +35,7 @@ pub fn create_formatter(mode: OutputMode) -> Box<dyn Formatter> {
         OutputMode::Highlight => Box::new(plain_formatter::HighlightFormatter),
         OutputMode::Json => Box::new(json_formatter::JsonFormatter),
         OutputMode::Summary => Box::new(summary_formatter::SummaryFormatter),
+        OutputMode::Index => Box::new(index_formatter::IndexFormatter),
     }
 }
 

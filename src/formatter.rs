@@ -25,6 +25,11 @@ impl OutputFormatter {
             OutputMode::Highlight => Self::format_highlighted(file_info, file_path, config),
             OutputMode::Json => Self::format_json(file_info, file_path, config),
             OutputMode::Summary => Self::format_summary(file_info, config),
+            OutputMode::Index => {
+                use crate::formatters::index_formatter::IndexFormatter;
+                use crate::formatters::Formatter;
+                IndexFormatter.format(file_info, file_path, config)
+            }
         }
     }
 
@@ -225,6 +230,7 @@ impl OutputFormatter {
                 serde_json::to_string(&json_line).map_err(BatlessError::from)
             }
             OutputMode::Summary => Ok(line.to_string()), // Summary mode doesn't stream
+            OutputMode::Index => Ok(line.to_string()),   // Index mode doesn't stream
         }
     }
 
@@ -402,6 +408,8 @@ pub enum OutputMode {
     Highlight,
     Json,
     Summary,
+    /// Machine-readable symbol index (functions, classes, structs with line ranges)
+    Index,
 }
 
 impl OutputMode {
@@ -412,6 +420,7 @@ impl OutputMode {
             "highlight" => Ok(OutputMode::Highlight),
             "json" => Ok(OutputMode::Json),
             "summary" => Ok(OutputMode::Summary),
+            "index" => Ok(OutputMode::Index),
             _ => Err(format!("Unknown output mode: {s}")),
         }
     }
@@ -423,6 +432,7 @@ impl OutputMode {
             OutputMode::Highlight,
             OutputMode::Json,
             OutputMode::Summary,
+            OutputMode::Index,
         ]
     }
 
@@ -433,6 +443,7 @@ impl OutputMode {
             OutputMode::Highlight => "highlight",
             OutputMode::Json => "json",
             OutputMode::Summary => "summary",
+            OutputMode::Index => "index",
         }
     }
 }

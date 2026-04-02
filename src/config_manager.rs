@@ -200,6 +200,8 @@ pub enum CliOutputMode {
     Highlight,
     Json,
     Summary,
+    /// Machine-readable symbol index with line ranges
+    Index,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -299,6 +301,7 @@ impl From<CliOutputMode> for OutputMode {
             CliOutputMode::Highlight => OutputMode::Highlight,
             CliOutputMode::Json => OutputMode::Json,
             CliOutputMode::Summary => OutputMode::Summary,
+            CliOutputMode::Index => OutputMode::Index,
         }
     }
 }
@@ -312,6 +315,7 @@ impl FromStr for OutputMode {
             "highlight" => Ok(OutputMode::Highlight),
             "json" => Ok(OutputMode::Json),
             "summary" => Ok(OutputMode::Summary),
+            "index" => Ok(OutputMode::Index),
             _ => Err(BatlessError::ConfigurationError {
                 message: format!("Invalid output mode: {s}"),
                 help: Some("Valid modes are: plain, highlight, json, summary".to_string()),
