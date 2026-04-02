@@ -64,7 +64,26 @@ impl FileProcessor {
             metadata.truncated_by_bytes,
         );
 
-        // Process summary if requested
+        file_info = Self::apply_post_processing(file_info, &lines, config);
+
+        // Compute file hash if requested (file-only; stdin has no path to hash)
+        if config.hash {
+            let hash = Self::compute_file_hash(file_path)?;
+            file_info = file_info.with_file_hash(Some(hash));
+        }
+
+        Ok(file_info)
+    }
+
+    /// Apply summary extraction, token extraction, and content stripping to a
+    /// FileInfo that has already been constructed from raw lines.  Shared by
+    /// both `process_file` and `process_stdin`.
+    fn apply_post_processing(
+        mut file_info: FileInfo,
+        lines: &[String],
+        config: &BatlessConfig,
+    ) -> FileInfo {
+        // Process summary if requested — try AST first, fall back to regex
         let summary_level = config.effective_summary_level();
         if summary_level.is_enabled() {
             let content = lines.join("\n");
@@ -73,40 +92,31 @@ impl FileProcessor {
                 file_info.language.as_deref(),
                 summary_level,
             );
-            // Fall back to regex-based summarizer if AST returned nothing
-            // (unsupported language, parse failure, or empty file)
             if summary_lines.is_empty() {
                 summary_lines = SummaryExtractor::extract_summary(
-                    &lines,
+                    lines,
                     file_info.language.as_deref(),
                     summary_level,
                 );
             }
-            // In summary mode, replace the output lines with summary text
             let summary_text: Vec<String> = summary_lines.iter().map(|s| s.line.clone()).collect();
             file_info = file_info
-                .with_original_lines(Some(lines.clone()))
+                .with_original_lines(Some(lines.to_vec()))
                 .with_summary_lines(Some(summary_lines));
             file_info.lines = summary_text;
         }
 
-        // Extract tokens if requested
+        // Extract identifiers if requested
         if config.include_tokens {
             let content = file_info.lines.join("\n");
             let token_result = TokenExtractor::extract_tokens_with_limit(
                 &content,
-                file_path,
+                "<content>",
                 TokenExtractor::MAX_SAMPLE_SIZE,
             );
             file_info = file_info
                 .with_tokens(Some(token_result.tokens))
                 .with_token_total(Some(token_result.total_count));
-        }
-
-        // Compute file hash if requested
-        if config.hash {
-            let hash = Self::compute_file_hash(file_path)?;
-            file_info = file_info.with_file_hash(Some(hash));
         }
 
         // Strip comments and/or blank lines if requested
@@ -128,7 +138,7 @@ impl FileProcessor {
             file_info = file_info.with_compression_ratio(Some(ratio));
         }
 
-        Ok(file_info)
+        file_info
     }
 
     /// Compute SHA-256 hex digest for a file's content
@@ -289,7 +299,7 @@ impl FileProcessor {
         let language = config.language.clone(); // Use configured language or none
 
         // Create FileInfo
-        let mut file_info = FileInfo::with_metadata(
+        let file_info = FileInfo::with_metadata(
             total_lines,
             total_bytes,
             language,
@@ -302,34 +312,7 @@ impl FileProcessor {
             truncated_by_bytes,
         );
 
-        // Process summary if requested
-        let summary_level = config.effective_summary_level();
-        if summary_level.is_enabled() {
-            let summary_lines = SummaryExtractor::extract_summary(
-                &final_lines,
-                file_info.language.as_deref(),
-                summary_level,
-            );
-            // In summary mode, replace the output lines with summary text
-            let summary_text: Vec<String> = summary_lines.iter().map(|s| s.line.clone()).collect();
-            file_info = file_info.with_summary_lines(Some(summary_lines));
-            file_info.lines = summary_text;
-        }
-
-        // Extract tokens if requested
-        if config.include_tokens {
-            let content = file_info.lines.join("\n");
-            let token_result = TokenExtractor::extract_tokens_with_limit(
-                &content,
-                "<stdin>",
-                TokenExtractor::MAX_SAMPLE_SIZE,
-            );
-            file_info = file_info
-                .with_tokens(Some(token_result.tokens))
-                .with_token_total(Some(token_result.total_count));
-        }
-
-        Ok(file_info)
+        Ok(Self::apply_post_processing(file_info, &final_lines, config))
     }
 
     /// Detect file encoding
