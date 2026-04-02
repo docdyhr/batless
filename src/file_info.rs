@@ -41,6 +41,10 @@ pub struct FileInfo {
     pub summary_lines: Option<Vec<SummaryItem>>,
     /// SHA-256 hex digest of file content (only populated when --hash is passed)
     pub file_hash: Option<String>,
+    /// Estimated LLM token count for the output content (heuristic)
+    pub estimated_llm_tokens: Option<u64>,
+    /// AI model used for token estimation (e.g. "Claude", "Gpt4")
+    pub token_model: Option<String>,
 }
 
 impl FileInfo {
@@ -63,6 +67,8 @@ impl FileInfo {
             token_total: None,
             summary_lines: None,
             file_hash: None,
+            estimated_llm_tokens: None,
+            token_model: None,
         }
     }
 
@@ -90,6 +96,8 @@ impl FileInfo {
             token_total: None,
             summary_lines: None,
             file_hash: None,
+            estimated_llm_tokens: None,
+            token_model: None,
         }
     }
 
@@ -134,6 +142,13 @@ impl FileInfo {
     /// Set file hash
     pub fn with_file_hash(mut self, hash: Option<String>) -> Self {
         self.file_hash = hash;
+        self
+    }
+
+    /// Set estimated LLM token count and the model used for estimation
+    pub fn with_estimated_llm_tokens(mut self, tokens: Option<u64>, model: Option<String>) -> Self {
+        self.estimated_llm_tokens = tokens;
+        self.token_model = model;
         self
     }
 

@@ -8,7 +8,7 @@ use std::io::{self, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 // The Args struct and its enums are now defined and re-exported from the config_manager module.
-use batless::config_manager::{Args, Shell};
+use batless::config_manager::{Args, CliAiModel, Shell};
 
 fn print_error(error: &BatlessError) {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
@@ -243,7 +243,7 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         print_token_analysis(&file_info, args.ai_model.into())?;
     }
 
-    let final_file_info = if args.fit_context {
+    let file_info = if args.fit_context {
         let counter = TokenCounter::new(args.ai_model.into());
         let (truncated_content, was_truncated) =
             counter.truncate_to_fit(&file_info.lines.join("\n"), args.prompt_tokens);
@@ -255,6 +255,23 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         } else {
             file_info
         }
+    } else {
+        file_info
+    };
+
+    // Attach estimated LLM token count when a profile or explicit model is active
+    let effective_model: Option<AiModel> = if let Some(profile) = args.profile {
+        Some(profile.get_ai_model())
+    } else if args.ai_model != CliAiModel::Generic {
+        Some(args.ai_model.into())
+    } else {
+        None
+    };
+    let final_file_info = if let Some(model) = effective_model {
+        let counter = TokenCounter::new(model);
+        let token_count = counter.count_tokens(&file_info.lines.join("\n"));
+        let model_name = format!("{model:?}");
+        file_info.with_estimated_llm_tokens(Some(token_count.tokens as u64), Some(model_name))
     } else {
         file_info
     };

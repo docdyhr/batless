@@ -262,6 +262,16 @@ impl AiProfile {
             AiProfile::Assistant => OutputMode::Summary,
         }
     }
+
+    /// Return the AI model to use for LLM token estimation
+    pub fn get_ai_model(self) -> AiModel {
+        match self {
+            AiProfile::Claude | AiProfile::ClaudeMax => AiModel::Claude,
+            AiProfile::Copilot | AiProfile::Chatgpt => AiModel::Gpt4,
+            AiProfile::Gemini => AiModel::Gemini,
+            AiProfile::Assistant => AiModel::Generic,
+        }
+    }
 }
 
 impl From<CliOutputMode> for OutputMode {

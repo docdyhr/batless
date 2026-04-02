@@ -49,6 +49,8 @@ impl Formatter for JsonFormatter {
             },
             "identifier_total": file_info.token_total,
             "file_hash": file_info.file_hash,
+            "estimated_llm_tokens": file_info.estimated_llm_tokens,
+            "token_model": file_info.token_model,
             "mode": "json"
         });
 

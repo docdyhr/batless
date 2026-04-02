@@ -117,6 +117,12 @@ impl OutputFormatter {
         if let Some(ref hash) = file_info.file_hash {
             json_data["file_hash"] = json!(hash);
         }
+        if let Some(estimated) = file_info.estimated_llm_tokens {
+            json_data["estimated_llm_tokens"] = json!(estimated);
+        }
+        if let Some(ref model) = file_info.token_model {
+            json_data["token_model"] = json!(model);
+        }
 
         if config.pretty_json {
             serde_json::to_string_pretty(&json_data).map_err(BatlessError::from)
