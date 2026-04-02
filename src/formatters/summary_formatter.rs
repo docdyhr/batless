@@ -58,8 +58,8 @@ Processing Ratio: {:.2}%",
         if let Some(ref summary_lines) = file_info.summary_lines {
             output.push(String::new()); // Empty line separator
             output.push("=== Code Structure ===".to_string());
-            for line in summary_lines {
-                output.push(line.clone());
+            for item in summary_lines {
+                output.push(format!("line {}: {}", item.line_number, item.line));
             }
         } else {
             output.push(String::new());

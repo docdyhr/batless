@@ -23,20 +23,20 @@ class User:
     println!("Summary: {:?}", summary);
 
     // Check for function definitions
-    assert!(summary.iter().any(|l| l.contains("def main")));
-    assert!(summary.iter().any(|l| l.contains("def __init__")));
-    assert!(summary.iter().any(|l| l.contains("def greet")));
+    assert!(summary.iter().any(|l| l.line.contains("def main")));
+    assert!(summary.iter().any(|l| l.line.contains("def __init__")));
+    assert!(summary.iter().any(|l| l.line.contains("def greet")));
 
     // Check for class definition
-    assert!(summary.iter().any(|l| l.contains("class User")));
+    assert!(summary.iter().any(|l| l.line.contains("class User")));
 
     // Check for imports
-    assert!(summary.iter().any(|l| l.contains("import os")));
-    assert!(summary.iter().any(|l| l.contains("import sys")));
+    assert!(summary.iter().any(|l| l.line.contains("import os")));
+    assert!(summary.iter().any(|l| l.line.contains("import sys")));
 
     // Should NOT contain function bodies
-    assert!(!summary.iter().any(|l| l.contains("print(\"Hello\")")));
-    assert!(!summary.iter().any(|l| l.contains("self.name = name")));
+    assert!(!summary.iter().any(|l| l.line.contains("print(\"Hello\")")));
+    assert!(!summary.iter().any(|l| l.line.contains("self.name = name")));
 }
 
 #[test]
@@ -54,11 +54,11 @@ class World:
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Minimal);
 
     // Minimal should have functions and classes
-    assert!(summary.iter().any(|l| l.contains("def hello")));
-    assert!(summary.iter().any(|l| l.contains("class World")));
+    assert!(summary.iter().any(|l| l.line.contains("def hello")));
+    assert!(summary.iter().any(|l| l.line.contains("class World")));
 
     // Minimal should NOT include imports
-    assert!(!summary.iter().any(|l| l.contains("import os")));
+    assert!(!summary.iter().any(|l| l.line.contains("import os")));
 }
 
 #[test]
@@ -82,9 +82,9 @@ def my_property(self):
     println!("Decorator summary: {:?}", summary);
 
     // Should capture decorated functions
-    assert!(summary.iter().any(|l| l.contains("@staticmethod")));
-    assert!(summary.iter().any(|l| l.contains("@classmethod")));
-    assert!(summary.iter().any(|l| l.contains("@property")));
+    assert!(summary.iter().any(|l| l.line.contains("@staticmethod")));
+    assert!(summary.iter().any(|l| l.line.contains("@classmethod")));
+    assert!(summary.iter().any(|l| l.line.contains("@property")));
 }
 
 #[test]
@@ -103,11 +103,13 @@ async def process():
     println!("Async summary: {:?}", summary);
 
     // Should capture async functions
-    assert!(summary.iter().any(|l| l.contains("async def fetch_data")));
-    assert!(summary.iter().any(|l| l.contains("async def process")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("async def fetch_data")));
+    assert!(summary.iter().any(|l| l.line.contains("async def process")));
 
     // Should NOT contain function bodies
-    assert!(!summary.iter().any(|l| l.contains("await get_data()")));
+    assert!(!summary.iter().any(|l| l.line.contains("await get_data()")));
 }
 
 #[test]
@@ -126,12 +128,16 @@ def process_user(user: User) -> Dict:
     println!("From import summary: {:?}", summary);
 
     // Should capture from imports
-    assert!(summary.iter().any(|l| l.contains("from os import")));
-    assert!(summary.iter().any(|l| l.contains("from typing import")));
-    assert!(summary.iter().any(|l| l.contains("from .models import")));
+    assert!(summary.iter().any(|l| l.line.contains("from os import")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("from typing import")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("from .models import")));
 
     // Should capture function
-    assert!(summary.iter().any(|l| l.contains("def process_user")));
+    assert!(summary.iter().any(|l| l.line.contains("def process_user")));
 }
 
 #[test]
@@ -151,10 +157,10 @@ class Outer:
     println!("Nested class summary: {:?}", summary);
 
     // Should capture both outer and inner classes
-    assert!(summary.iter().any(|l| l.contains("class Outer")));
-    assert!(summary.iter().any(|l| l.contains("class Inner")));
-    assert!(summary.iter().any(|l| l.contains("def inner_method")));
-    assert!(summary.iter().any(|l| l.contains("def outer_method")));
+    assert!(summary.iter().any(|l| l.line.contains("class Outer")));
+    assert!(summary.iter().any(|l| l.line.contains("class Inner")));
+    assert!(summary.iter().any(|l| l.line.contains("def inner_method")));
+    assert!(summary.iter().any(|l| l.line.contains("def outer_method")));
 }
 
 #[test]
@@ -170,7 +176,9 @@ square = lambda x: x ** 2
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
     // Should capture regular function
-    assert!(summary.iter().any(|l| l.contains("def regular_function")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("def regular_function")));
 
     // Lambda functions are typically not captured as "important" structures
     // (they're expressions, not statements)
@@ -205,8 +213,8 @@ class MyClass:
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
     // Should capture function and class
-    assert!(summary.iter().any(|l| l.contains("def my_function")));
-    assert!(summary.iter().any(|l| l.contains("class MyClass")));
+    assert!(summary.iter().any(|l| l.line.contains("def my_function")));
+    assert!(summary.iter().any(|l| l.line.contains("class MyClass")));
 
     // Comments themselves shouldn't be in summary (only the lines they're on if they have code)
 }
@@ -229,10 +237,10 @@ def process():
     println!("Detailed summary: {:?}", summary);
 
     // Detailed should include imports, functions, and module-level assignments
-    assert!(summary.iter().any(|l| l.contains("import os")));
-    assert!(summary.iter().any(|l| l.contains("MAX_SIZE")));
-    assert!(summary.iter().any(|l| l.contains("def process")));
-    assert!(summary.iter().any(|l| l.contains("global MAX_SIZE")));
+    assert!(summary.iter().any(|l| l.line.contains("import os")));
+    assert!(summary.iter().any(|l| l.line.contains("MAX_SIZE")));
+    assert!(summary.iter().any(|l| l.line.contains("def process")));
+    assert!(summary.iter().any(|l| l.line.contains("global MAX_SIZE")));
 }
 
 #[test]
@@ -268,10 +276,10 @@ class Config:
     println!("Complex decorator summary: {:?}", summary);
 
     // Should capture first decorator of each decorated definition and the definition itself
-    assert!(summary.iter().any(|l| l.contains("@app.route")));
-    assert!(summary.iter().any(|l| l.contains("def get_users")));
-    assert!(summary.iter().any(|l| l.contains("@dataclass")));
-    assert!(summary.iter().any(|l| l.contains("class Config")));
+    assert!(summary.iter().any(|l| l.line.contains("@app.route")));
+    assert!(summary.iter().any(|l| l.line.contains("def get_users")));
+    assert!(summary.iter().any(|l| l.line.contains("@dataclass")));
+    assert!(summary.iter().any(|l| l.line.contains("class Config")));
 
     // Note: Only the starting line of decorated definitions is captured,
     // so @login_required and @cache may not appear if they're on separate lines

@@ -57,8 +57,12 @@ pub struct Args {
     #[arg(long)]
     pub list_themes: bool,
 
-    /// Include tokens in JSON output (AI-friendly)
+    /// Include extracted code identifiers in JSON output (preferred flag)
     #[arg(long)]
+    pub include_identifiers: bool,
+
+    /// Include extracted code identifiers in JSON output (deprecated alias for --include-identifiers)
+    #[arg(long, hide = true)]
     pub include_tokens: bool,
 
     /// Summary mode: show only important code structures (deprecated, use --summary-level)
@@ -168,6 +172,14 @@ pub struct Args {
     /// Pretty-print JSON output (when --mode=json); does not affect streaming
     #[arg(long)]
     pub json_pretty: bool,
+
+    /// Include 1-based line numbers in JSON output lines array (e.g. {"n":1,"text":"..."})
+    #[arg(long)]
+    pub with_line_numbers: bool,
+
+    /// Compute and include SHA-256 content hash in JSON output (for change detection)
+    #[arg(long)]
+    pub hash: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -189,9 +201,12 @@ pub enum Shell {
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum AiProfile {
-    /// Optimized for Anthropic Claude (4K lines, summary mode)
+    /// Optimized for Anthropic Claude (20K lines, standard summary, 200K context)
     Claude,
-    /// Focused on code suggestions for GitHub Copilot (2K lines, tokens included)
+    /// Claude full-context mode — no summary, JSON output, up to 150K lines
+    #[clap(name = "claude-max")]
+    ClaudeMax,
+    /// Focused on code suggestions for GitHub Copilot (2K lines, identifiers included)
     Copilot,
     /// OpenAI ChatGPT optimizations (3K lines, JSON output)
     Chatgpt,
@@ -205,8 +220,13 @@ impl AiProfile {
     pub fn apply_to_config(self, config: BatlessConfig) -> BatlessConfig {
         match self {
             AiProfile::Claude => config
-                .with_max_lines(4000)
+                .with_max_lines(20_000)
                 .with_summary_level(SummaryLevel::Standard)
+                .with_include_tokens(false)
+                .with_use_color(false),
+            AiProfile::ClaudeMax => config
+                .with_max_lines(150_000)
+                .with_summary_level(SummaryLevel::None)
                 .with_include_tokens(false)
                 .with_use_color(false),
             AiProfile::Copilot => config
@@ -235,6 +255,7 @@ impl AiProfile {
     pub fn get_output_mode(self) -> OutputMode {
         match self {
             AiProfile::Claude => OutputMode::Summary,
+            AiProfile::ClaudeMax => OutputMode::Json,
             AiProfile::Copilot => OutputMode::Json,
             AiProfile::Chatgpt => OutputMode::Json,
             AiProfile::Gemini => OutputMode::Json,
@@ -495,14 +516,20 @@ impl ConfigManager {
         };
         new_config = new_config.with_use_color(use_color);
 
-        if self.args.include_tokens {
-            new_config = new_config.with_include_tokens(self.args.include_tokens);
+        if self.args.include_identifiers || self.args.include_tokens {
+            new_config = new_config.with_include_tokens(true);
         }
         if self.args.streaming_json {
             new_config = new_config.with_streaming_json(self.args.streaming_json);
         }
         if self.args.json_pretty {
             new_config = new_config.with_pretty_json(true);
+        }
+        if self.args.with_line_numbers {
+            new_config = new_config.with_json_line_numbers(true);
+        }
+        if self.args.hash {
+            new_config = new_config.with_hash(true);
         }
         if let Some(chunk_size) = self.args.streaming_chunk_size {
             new_config = new_config.with_streaming_chunk_size(chunk_size);
@@ -669,7 +696,7 @@ mod tests {
     fn test_profile_claude() {
         let mgr = make_manager(&["--profile=claude", "Cargo.toml"]);
         assert_eq!(mgr.output_mode(), OutputMode::Summary);
-        assert_eq!(mgr.config().max_lines, 4000);
+        assert_eq!(mgr.config().max_lines, 20_000);
         assert!(!mgr.config().use_color);
     }
 

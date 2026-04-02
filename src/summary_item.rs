@@ -18,7 +18,12 @@ pub struct SummaryItem {
 }
 
 impl SummaryItem {
-    pub fn new(line: impl Into<String>, line_number: usize, end_line: Option<usize>, kind: impl Into<String>) -> Self {
+    pub fn new(
+        line: impl Into<String>,
+        line_number: usize,
+        end_line: Option<usize>,
+        kind: impl Into<String>,
+    ) -> Self {
         Self {
             line: line.into(),
             line_number,

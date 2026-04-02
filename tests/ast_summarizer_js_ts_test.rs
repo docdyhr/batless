@@ -32,18 +32,20 @@ export default App;
     println!("JS Summary: {:?}", summary);
 
     // Should capture imports
-    assert!(summary.iter().any(|l| l.contains("import React")));
-    assert!(summary.iter().any(|l| l.contains("import { useState }")));
+    assert!(summary.iter().any(|l| l.line.contains("import React")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("import { useState }")));
 
     // Should capture function
-    assert!(summary.iter().any(|l| l.contains("function App")));
+    assert!(summary.iter().any(|l| l.line.contains("function App")));
 
     // Should capture class and methods
-    assert!(summary.iter().any(|l| l.contains("class Counter")));
-    assert!(summary.iter().any(|l| l.contains("increment()")));
+    assert!(summary.iter().any(|l| l.line.contains("class Counter")));
+    assert!(summary.iter().any(|l| l.line.contains("increment()")));
 
     // Should capture export
-    assert!(summary.iter().any(|l| l.contains("export default")));
+    assert!(summary.iter().any(|l| l.line.contains("export default")));
 }
 
 #[test]
@@ -65,7 +67,7 @@ const Component = () => {
     println!("Arrow function summary: {:?}", summary);
 
     // Arrow functions should be captured
-    assert!(summary.iter().any(|l| l.contains("=>")));
+    assert!(summary.iter().any(|l| l.line.contains("=>")));
 }
 
 #[test]
@@ -90,9 +92,9 @@ class Dog extends Animal {
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
-    assert!(summary.iter().any(|l| l.contains("class Animal")));
-    assert!(summary.iter().any(|l| l.contains("class Dog")));
-    assert!(summary.iter().any(|l| l.contains("speak()")));
+    assert!(summary.iter().any(|l| l.line.contains("class Animal")));
+    assert!(summary.iter().any(|l| l.line.contains("class Dog")));
+    assert!(summary.iter().any(|l| l.line.contains("speak()")));
 }
 
 #[test]
@@ -115,8 +117,8 @@ const processData = async () => {
 
     assert!(summary
         .iter()
-        .any(|l| l.contains("async function fetchData")));
-    assert!(summary.iter().any(|l| l.contains("=>")));
+        .any(|l| l.line.contains("async function fetchData")));
+    assert!(summary.iter().any(|l| l.line.contains("=>")));
 }
 
 #[test]
@@ -131,7 +133,7 @@ export { utils };
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
     // Should capture exports
-    assert!(summary.iter().any(|l| l.contains("export")));
+    assert!(summary.iter().any(|l| l.line.contains("export")));
 }
 
 // ========== TypeScript Tests ==========
@@ -172,24 +174,26 @@ export { UserService, processUser };
     println!("TS Summary: {:?}", summary);
 
     // Should capture imports
-    assert!(summary.iter().any(|l| l.contains("import")));
+    assert!(summary.iter().any(|l| l.line.contains("import")));
 
     // Should capture interface
-    assert!(summary.iter().any(|l| l.contains("interface User")));
+    assert!(summary.iter().any(|l| l.line.contains("interface User")));
 
     // Should capture type alias
-    assert!(summary.iter().any(|l| l.contains("type UserId")));
+    assert!(summary.iter().any(|l| l.line.contains("type UserId")));
 
     // Should capture class and methods
-    assert!(summary.iter().any(|l| l.contains("class UserService")));
-    assert!(summary.iter().any(|l| l.contains("addUser")));
-    assert!(summary.iter().any(|l| l.contains("getUser")));
+    assert!(summary.iter().any(|l| l.line.contains("class UserService")));
+    assert!(summary.iter().any(|l| l.line.contains("addUser")));
+    assert!(summary.iter().any(|l| l.line.contains("getUser")));
 
     // Should capture function
-    assert!(summary.iter().any(|l| l.contains("function processUser")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("function processUser")));
 
     // Should capture export
-    assert!(summary.iter().any(|l| l.contains("export")));
+    assert!(summary.iter().any(|l| l.line.contains("export")));
 }
 
 #[test]
@@ -214,9 +218,9 @@ interface Cat extends Animal {
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
-    assert!(summary.iter().any(|l| l.contains("interface Animal")));
-    assert!(summary.iter().any(|l| l.contains("interface Dog")));
-    assert!(summary.iter().any(|l| l.contains("interface Cat")));
+    assert!(summary.iter().any(|l| l.line.contains("interface Animal")));
+    assert!(summary.iter().any(|l| l.line.contains("interface Dog")));
+    assert!(summary.iter().any(|l| l.line.contains("interface Cat")));
 }
 
 #[test]
@@ -243,9 +247,9 @@ function getColor(): Color {
 
     println!("Enum summary: {:?}", summary);
 
-    assert!(summary.iter().any(|l| l.contains("enum Color")));
-    assert!(summary.iter().any(|l| l.contains("enum Status")));
-    assert!(summary.iter().any(|l| l.contains("function getColor")));
+    assert!(summary.iter().any(|l| l.line.contains("enum Color")));
+    assert!(summary.iter().any(|l| l.line.contains("enum Status")));
+    assert!(summary.iter().any(|l| l.line.contains("function getColor")));
 }
 
 #[test]
@@ -274,10 +278,10 @@ function identity<T>(arg: T): T {
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
-    assert!(summary.iter().any(|l| l.contains("interface Box")));
-    assert!(summary.iter().any(|l| l.contains("class Container")));
-    assert!(summary.iter().any(|l| l.contains("add")));
-    assert!(summary.iter().any(|l| l.contains("function identity")));
+    assert!(summary.iter().any(|l| l.line.contains("interface Box")));
+    assert!(summary.iter().any(|l| l.line.contains("class Container")));
+    assert!(summary.iter().any(|l| l.line.contains("add")));
+    assert!(summary.iter().any(|l| l.line.contains("function identity")));
 }
 
 #[test]
@@ -308,8 +312,10 @@ class MyComponent {
 
     println!("Decorator summary: {:?}", summary);
 
-    assert!(summary.iter().any(|l| l.contains("function Component")));
-    assert!(summary.iter().any(|l| l.contains("class MyComponent")));
+    assert!(summary
+        .iter()
+        .any(|l| l.line.contains("function Component")));
+    assert!(summary.iter().any(|l| l.line.contains("class MyComponent")));
 }
 
 #[test]
@@ -338,10 +344,10 @@ export default Counter;
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
-    assert!(summary.iter().any(|l| l.contains("import React")));
-    assert!(summary.iter().any(|l| l.contains("interface Props")));
-    assert!(summary.iter().any(|l| l.contains("=>")));
-    assert!(summary.iter().any(|l| l.contains("export default")));
+    assert!(summary.iter().any(|l| l.line.contains("import React")));
+    assert!(summary.iter().any(|l| l.line.contains("interface Props")));
+    assert!(summary.iter().any(|l| l.line.contains("=>")));
+    assert!(summary.iter().any(|l| l.line.contains("export default")));
 }
 
 #[test]
@@ -357,12 +363,12 @@ const handler = () => {};
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Minimal);
 
     // Minimal should have functions, classes, and arrow functions
-    assert!(summary.iter().any(|l| l.contains("function main")));
-    assert!(summary.iter().any(|l| l.contains("class App")));
-    assert!(summary.iter().any(|l| l.contains("=>")));
+    assert!(summary.iter().any(|l| l.line.contains("function main")));
+    assert!(summary.iter().any(|l| l.line.contains("class App")));
+    assert!(summary.iter().any(|l| l.line.contains("=>")));
 
     // Minimal should NOT include imports
-    assert!(!summary.iter().any(|l| l.contains("import")));
+    assert!(!summary.iter().any(|l| l.line.contains("import")));
 }
 
 #[test]
@@ -378,12 +384,12 @@ function process() {}
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Minimal);
 
     // Minimal should have interfaces, classes, functions
-    assert!(summary.iter().any(|l| l.contains("interface Config")));
-    assert!(summary.iter().any(|l| l.contains("class Service")));
-    assert!(summary.iter().any(|l| l.contains("function process")));
+    assert!(summary.iter().any(|l| l.line.contains("interface Config")));
+    assert!(summary.iter().any(|l| l.line.contains("class Service")));
+    assert!(summary.iter().any(|l| l.line.contains("function process")));
 
     // Minimal should NOT include imports
-    assert!(!summary.iter().any(|l| l.contains("import")));
+    assert!(!summary.iter().any(|l| l.line.contains("import")));
 }
 
 #[test]

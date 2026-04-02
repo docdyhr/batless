@@ -41,6 +41,7 @@ pub mod profile;
 pub mod streaming;
 pub mod summarizer;
 pub mod summary;
+pub mod summary_item;
 pub mod tokens;
 pub mod traits;
 

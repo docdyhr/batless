@@ -204,7 +204,8 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
 
     for chunk_result in chunks {
         let chunk = chunk_result?;
-        let json_output = serde_json::to_string_pretty(&chunk)?;
+        // NDJSON: one compact JSON object per line, no separator needed
+        let json_output = serde_json::to_string(&chunk)?;
         println!("{json_output}");
 
         if config.enable_resume && !chunk.is_final {
@@ -214,10 +215,6 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
                     std::path::Path::new(checkpoint_path),
                 )?;
             }
-        }
-
-        if !chunk.is_final {
-            println!("---");
         }
     }
     Ok(())

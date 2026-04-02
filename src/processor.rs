@@ -11,6 +11,7 @@ use crate::file_info::FileInfo;
 use crate::language::LanguageDetector;
 use crate::summarizer::SummaryExtractor;
 use crate::tokens::TokenExtractor;
+use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
@@ -81,11 +82,12 @@ impl FileProcessor {
                     summary_level,
                 );
             }
-            // In summary mode, replace the output lines with summary
+            // In summary mode, replace the output lines with summary text
+            let summary_text: Vec<String> = summary_lines.iter().map(|s| s.line.clone()).collect();
             file_info = file_info
                 .with_original_lines(Some(lines.clone()))
-                .with_summary_lines(Some(summary_lines.clone()));
-            file_info.lines = summary_lines;
+                .with_summary_lines(Some(summary_lines));
+            file_info.lines = summary_text;
         }
 
         // Extract tokens if requested
@@ -101,7 +103,31 @@ impl FileProcessor {
                 .with_token_total(Some(token_result.total_count));
         }
 
+        // Compute file hash if requested
+        if config.hash {
+            let hash = Self::compute_file_hash(file_path)?;
+            file_info = file_info.with_file_hash(Some(hash));
+        }
+
         Ok(file_info)
+    }
+
+    /// Compute SHA-256 hex digest for a file's content
+    fn compute_file_hash(file_path: &str) -> BatlessResult<String> {
+        let mut hasher = Sha256::new();
+        let mut file =
+            File::open(file_path).map_err(|e| BatlessError::from_io_error(e, file_path))?;
+        let mut buf = vec![0u8; 65536];
+        loop {
+            let n = file
+                .read(&mut buf)
+                .map_err(|e| BatlessError::from_io_error(e, file_path))?;
+            if n == 0 {
+                break;
+            }
+            hasher.update(&buf[..n]);
+        }
+        Ok(format!("{:x}", hasher.finalize()))
     }
 
     /// Process input from stdin
@@ -169,9 +195,10 @@ impl FileProcessor {
                 file_info.language.as_deref(),
                 summary_level,
             );
-            // In summary mode, replace the output lines with summary
-            file_info = file_info.with_summary_lines(Some(summary_lines.clone()));
-            file_info.lines = summary_lines;
+            // In summary mode, replace the output lines with summary text
+            let summary_text: Vec<String> = summary_lines.iter().map(|s| s.line.clone()).collect();
+            file_info = file_info.with_summary_lines(Some(summary_lines));
+            file_info.lines = summary_text;
         }
 
         // Extract tokens if requested

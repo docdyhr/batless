@@ -5,6 +5,7 @@
 //! relevant nodes based on the summary level.
 
 use crate::summary::SummaryLevel;
+use crate::summary_item::SummaryItem;
 use std::ops::ControlFlow;
 use std::time::{Duration, Instant};
 // use streaming_iterator::StreamingIterator; // Removed
@@ -59,7 +60,7 @@ impl AstSummarizer {
         content: &str,
         language: Option<&str>,
         level: SummaryLevel,
-    ) -> Vec<String> {
+    ) -> Vec<SummaryItem> {
         if !level.is_enabled() {
             return Vec::new();
         }
@@ -74,7 +75,7 @@ impl AstSummarizer {
         }
     }
 
-    fn summarize_rust(content: &str, level: SummaryLevel) -> Vec<String> {
+    fn summarize_rust(content: &str, level: SummaryLevel) -> Vec<SummaryItem> {
         let mut parser = Parser::new();
         parser
             .set_language(&tree_sitter_rust::LANGUAGE.into())
@@ -120,31 +121,47 @@ impl AstSummarizer {
         let query = Query::new(&tree_sitter_rust::LANGUAGE.into(), query_string)
             .expect("Error compiling query");
 
+        let capture_names = query.capture_names().to_vec();
         let mut cursor = QueryCursor::new();
         let mut matches = cursor.matches(&query, root_node, content.as_bytes());
 
         let lines: Vec<&str> = content.lines().collect();
-        // Use BTreeSet to automatically keep line numbers sorted and unique
-        let mut line_indices = std::collections::BTreeSet::new();
+        // BTreeMap<start_line, (kind, end_line)> — first write wins per line
+        let mut line_items: std::collections::BTreeMap<usize, (String, usize)> =
+            std::collections::BTreeMap::new();
 
         while let Some(m) = matches.next() {
+            // Use @name capture's row when present — it lands on the declaration line,
+            // not on any preceding decorator whose span is included in the outer node
+            let name_row = m
+                .captures
+                .iter()
+                .find(|c| capture_names[c.index as usize] == "name")
+                .map(|c| c.node.start_position().row);
             for capture in m.captures {
-                let start_line = capture.node.start_position().row;
-                line_indices.insert(start_line);
+                let kind = &capture_names[capture.index as usize];
+                if *kind == "name" {
+                    continue;
+                }
+                let start_line = name_row.unwrap_or_else(|| capture.node.start_position().row);
+                let end_line = capture.node.end_position().row;
+                line_items
+                    .entry(start_line)
+                    .or_insert_with(|| (kind.to_string(), end_line));
             }
         }
 
-        let mut summary_lines = Vec::new();
-        for idx in line_indices {
-            if let Some(&line) = lines.get(idx) {
-                summary_lines.push(line.to_owned());
-            }
-        }
-
-        summary_lines
+        line_items
+            .into_iter()
+            .filter_map(|(idx, (kind, end_row))| {
+                lines
+                    .get(idx)
+                    .map(|&line| SummaryItem::new(line, idx + 1, Some(end_row + 1), kind))
+            })
+            .collect()
     }
 
-    fn summarize_python(content: &str, level: SummaryLevel) -> Vec<String> {
+    fn summarize_python(content: &str, level: SummaryLevel) -> Vec<SummaryItem> {
         let mut parser = Parser::new();
         parser
             .set_language(&tree_sitter_python::LANGUAGE.into())
@@ -183,30 +200,46 @@ impl AstSummarizer {
         let query = Query::new(&tree_sitter_python::LANGUAGE.into(), query_string)
             .expect("Error compiling query");
 
+        let capture_names = query.capture_names().to_vec();
         let mut cursor = QueryCursor::new();
         let mut matches = cursor.matches(&query, root_node, content.as_bytes());
 
         let lines: Vec<&str> = content.lines().collect();
-        let mut line_indices = std::collections::BTreeSet::new();
+        let mut line_items: std::collections::BTreeMap<usize, (String, usize)> =
+            std::collections::BTreeMap::new();
 
         while let Some(m) = matches.next() {
+            // Use @name capture's row when present — it lands on the declaration line,
+            // not on any preceding decorator whose span is included in the outer node
+            let name_row = m
+                .captures
+                .iter()
+                .find(|c| capture_names[c.index as usize] == "name")
+                .map(|c| c.node.start_position().row);
             for capture in m.captures {
-                let start_line = capture.node.start_position().row;
-                line_indices.insert(start_line);
+                let kind = &capture_names[capture.index as usize];
+                if *kind == "name" {
+                    continue;
+                }
+                let start_line = name_row.unwrap_or_else(|| capture.node.start_position().row);
+                let end_line = capture.node.end_position().row;
+                line_items
+                    .entry(start_line)
+                    .or_insert_with(|| (kind.to_string(), end_line));
             }
         }
 
-        let mut summary_lines = Vec::new();
-        for idx in line_indices {
-            if let Some(&line) = lines.get(idx) {
-                summary_lines.push(line.to_owned());
-            }
-        }
-
-        summary_lines
+        line_items
+            .into_iter()
+            .filter_map(|(idx, (kind, end_row))| {
+                lines
+                    .get(idx)
+                    .map(|&line| SummaryItem::new(line, idx + 1, Some(end_row + 1), kind))
+            })
+            .collect()
     }
 
-    fn summarize_javascript(content: &str, level: SummaryLevel) -> Vec<String> {
+    fn summarize_javascript(content: &str, level: SummaryLevel) -> Vec<SummaryItem> {
         let mut parser = Parser::new();
         parser
             .set_language(&tree_sitter_javascript::LANGUAGE.into())
@@ -247,30 +280,46 @@ impl AstSummarizer {
         let query = Query::new(&tree_sitter_javascript::LANGUAGE.into(), query_string)
             .expect("Error compiling query");
 
+        let capture_names = query.capture_names().to_vec();
         let mut cursor = QueryCursor::new();
         let mut matches = cursor.matches(&query, root_node, content.as_bytes());
 
         let lines: Vec<&str> = content.lines().collect();
-        let mut line_indices = std::collections::BTreeSet::new();
+        let mut line_items: std::collections::BTreeMap<usize, (String, usize)> =
+            std::collections::BTreeMap::new();
 
         while let Some(m) = matches.next() {
+            // Use @name capture's row when present — it lands on the declaration line,
+            // not on any preceding decorator whose span is included in the outer node
+            let name_row = m
+                .captures
+                .iter()
+                .find(|c| capture_names[c.index as usize] == "name")
+                .map(|c| c.node.start_position().row);
             for capture in m.captures {
-                let start_line = capture.node.start_position().row;
-                line_indices.insert(start_line);
+                let kind = &capture_names[capture.index as usize];
+                if *kind == "name" {
+                    continue;
+                }
+                let start_line = name_row.unwrap_or_else(|| capture.node.start_position().row);
+                let end_line = capture.node.end_position().row;
+                line_items
+                    .entry(start_line)
+                    .or_insert_with(|| (kind.to_string(), end_line));
             }
         }
 
-        let mut summary_lines = Vec::new();
-        for idx in line_indices {
-            if let Some(&line) = lines.get(idx) {
-                summary_lines.push(line.to_owned());
-            }
-        }
-
-        summary_lines
+        line_items
+            .into_iter()
+            .filter_map(|(idx, (kind, end_row))| {
+                lines
+                    .get(idx)
+                    .map(|&line| SummaryItem::new(line, idx + 1, Some(end_row + 1), kind))
+            })
+            .collect()
     }
 
-    fn summarize_typescript(content: &str, level: SummaryLevel) -> Vec<String> {
+    fn summarize_typescript(content: &str, level: SummaryLevel) -> Vec<SummaryItem> {
         let mut parser = Parser::new();
         parser
             .set_language(&tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into())
@@ -320,27 +369,43 @@ impl AstSummarizer {
         )
         .expect("Error compiling query");
 
+        let capture_names = query.capture_names().to_vec();
         let mut cursor = QueryCursor::new();
         let mut matches = cursor.matches(&query, root_node, content.as_bytes());
 
         let lines: Vec<&str> = content.lines().collect();
-        let mut line_indices = std::collections::BTreeSet::new();
+        let mut line_items: std::collections::BTreeMap<usize, (String, usize)> =
+            std::collections::BTreeMap::new();
 
         while let Some(m) = matches.next() {
+            // Use @name capture's row when present — it lands on the declaration line,
+            // not on any preceding decorator whose span is included in the outer node
+            let name_row = m
+                .captures
+                .iter()
+                .find(|c| capture_names[c.index as usize] == "name")
+                .map(|c| c.node.start_position().row);
             for capture in m.captures {
-                let start_line = capture.node.start_position().row;
-                line_indices.insert(start_line);
+                let kind = &capture_names[capture.index as usize];
+                if *kind == "name" {
+                    continue;
+                }
+                let start_line = name_row.unwrap_or_else(|| capture.node.start_position().row);
+                let end_line = capture.node.end_position().row;
+                line_items
+                    .entry(start_line)
+                    .or_insert_with(|| (kind.to_string(), end_line));
             }
         }
 
-        let mut summary_lines = Vec::new();
-        for idx in line_indices {
-            if let Some(&line) = lines.get(idx) {
-                summary_lines.push(line.to_owned());
-            }
-        }
-
-        summary_lines
+        line_items
+            .into_iter()
+            .filter_map(|(idx, (kind, end_row))| {
+                lines
+                    .get(idx)
+                    .map(|&line| SummaryItem::new(line, idx + 1, Some(end_row + 1), kind))
+            })
+            .collect()
     }
 }
 
@@ -408,31 +473,31 @@ mod tests {
     fn test_rust_minimal_level() {
         let code = "use std::io;\nfn main() {}\nstruct S {}\nenum E {}\ntrait T {}\nmod m {}";
         let result = AstSummarizer::extract_summary(code, Some("Rust"), SummaryLevel::Minimal);
-        assert!(result.iter().any(|l| l.contains("fn main")));
-        assert!(result.iter().any(|l| l.contains("struct S")));
-        assert!(result.iter().any(|l| l.contains("enum E")));
+        assert!(result.iter().any(|l| l.line.contains("fn main")));
+        assert!(result.iter().any(|l| l.line.contains("struct S")));
+        assert!(result.iter().any(|l| l.line.contains("enum E")));
         // Minimal should NOT include trait or mod
-        assert!(!result.iter().any(|l| l.contains("trait T")));
-        assert!(!result.iter().any(|l| l.contains("mod m")));
+        assert!(!result.iter().any(|l| l.line.contains("trait T")));
+        assert!(!result.iter().any(|l| l.line.contains("mod m")));
     }
 
     #[test]
     fn test_rust_detailed_includes_use_and_const() {
         let code = "use std::io;\nconst X: i32 = 1;\nstatic Y: i32 = 2;\nfn f() {}";
         let result = AstSummarizer::extract_summary(code, Some("Rust"), SummaryLevel::Detailed);
-        assert!(result.iter().any(|l| l.contains("use std::io")));
-        assert!(result.iter().any(|l| l.contains("const X")));
-        assert!(result.iter().any(|l| l.contains("static Y")));
+        assert!(result.iter().any(|l| l.line.contains("use std::io")));
+        assert!(result.iter().any(|l| l.line.contains("const X")));
+        assert!(result.iter().any(|l| l.line.contains("static Y")));
     }
 
     #[test]
     fn test_python_minimal_level() {
         let code = "import os\ndef foo():\n    pass\nclass Bar:\n    pass";
         let result = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Minimal);
-        assert!(result.iter().any(|l| l.contains("def foo")));
-        assert!(result.iter().any(|l| l.contains("class Bar")));
+        assert!(result.iter().any(|l| l.line.contains("def foo")));
+        assert!(result.iter().any(|l| l.line.contains("class Bar")));
         // Minimal should NOT include imports
-        assert!(!result.iter().any(|l| l.contains("import os")));
+        assert!(!result.iter().any(|l| l.line.contains("import os")));
     }
 
     #[test]
@@ -440,8 +505,8 @@ mod tests {
         let code = "function hello() {}\nclass World {}\nconst x = () => {};";
         let result =
             AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
-        assert!(result.iter().any(|l| l.contains("function hello")));
-        assert!(result.iter().any(|l| l.contains("class World")));
+        assert!(result.iter().any(|l| l.line.contains("function hello")));
+        assert!(result.iter().any(|l| l.line.contains("class World")));
     }
 
     #[test]
@@ -449,15 +514,15 @@ mod tests {
         let code = "interface User { name: string; }\nfunction greet(u: User) {}";
         let result =
             AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
-        assert!(result.iter().any(|l| l.contains("interface User")));
-        assert!(result.iter().any(|l| l.contains("function greet")));
+        assert!(result.iter().any(|l| l.line.contains("interface User")));
+        assert!(result.iter().any(|l| l.line.contains("function greet")));
     }
 
     #[test]
     fn test_jsx_uses_javascript_parser() {
         let code = "function App() { return <div/>; }";
         let result = AstSummarizer::extract_summary(code, Some("JSX"), SummaryLevel::Standard);
-        assert!(result.iter().any(|l| l.contains("function App")));
+        assert!(result.iter().any(|l| l.line.contains("function App")));
     }
 
     #[test]
@@ -465,7 +530,7 @@ mod tests {
         // TSX is routed through the TypeScript parser, so pure TS syntax works
         let code = "function App(): string { return 'hello'; }";
         let result = AstSummarizer::extract_summary(code, Some("TSX"), SummaryLevel::Standard);
-        assert!(result.iter().any(|l| l.contains("function App")));
+        assert!(result.iter().any(|l| l.line.contains("function App")));
     }
 
     #[test]

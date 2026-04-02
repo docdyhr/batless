@@ -17,11 +17,23 @@ impl Formatter for JsonFormatter {
         file_path: &str,
         config: &BatlessConfig,
     ) -> BatlessResult<String> {
+        let lines_value: serde_json::Value = if config.json_line_numbers {
+            file_info
+                .lines
+                .iter()
+                .enumerate()
+                .map(|(i, text)| json!({"n": i + 1, "text": text}))
+                .collect()
+        } else {
+            json!(file_info.lines)
+        };
+
         let json_output = json!({
             "file": file_path,
             "language": file_info.language,
-            "lines": file_info.lines,
+            "lines": lines_value,
             "total_lines": file_info.total_lines,
+            "total_lines_exact": file_info.total_lines_exact,
             "total_bytes": file_info.total_bytes,
             "encoding": file_info.encoding,
             "truncated": file_info.truncated,
@@ -30,11 +42,13 @@ impl Formatter for JsonFormatter {
             "truncated_by_context": file_info.truncated_by_context,
             "summary_lines": file_info.summary_lines,
             "syntax_errors": file_info.syntax_errors,
-            "tokens": if config.include_tokens {
+            "identifiers": if config.include_tokens {
                 file_info.tokens.clone()
             } else {
                 None
             },
+            "identifier_total": file_info.token_total,
+            "file_hash": file_info.file_hash,
             "mode": "json"
         });
 

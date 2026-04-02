@@ -113,8 +113,8 @@ fn test_json_mode() {
     assert!(json["total_lines"].is_number());
     assert!(json["total_lines_exact"].is_boolean());
     assert!(json["total_bytes"].is_number());
-    assert!(json["token_count"].is_number());
-    assert!(json["tokens_truncated"].is_boolean());
+    assert!(json["identifier_count"].is_number());
+    assert!(json["identifiers_truncated"].is_boolean());
 }
 
 #[test]
@@ -420,14 +420,14 @@ fn test_token_sampling_reports_truncation() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
 
-    let tokens = json["tokens"].as_array().expect("tokens array");
-    let token_count = json["token_count"].as_u64().expect("token_count");
+    let tokens = json["identifiers"].as_array().expect("tokens array");
+    let token_count = json["identifier_count"].as_u64().expect("token_count");
 
     assert!(
         token_count as usize > tokens.len(),
         "Reported count should exceed sampled tokens"
     );
-    assert_eq!(json["tokens_truncated"], true);
+    assert_eq!(json["identifiers_truncated"], true);
 }
 
 #[test]
@@ -445,8 +445,8 @@ fn test_include_tokens() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
 
-    assert!(json["tokens"].is_array());
-    let tokens = json["tokens"].as_array().unwrap();
+    assert!(json["identifiers"].is_array());
+    let tokens = json["identifiers"].as_array().unwrap();
     assert!(!tokens.is_empty());
 }
 
@@ -472,9 +472,9 @@ fn test_enhanced_json_output() {
     assert!(json["truncated_by_bytes"].is_boolean());
     assert!(json["processed_lines"].is_number());
     assert!(json["total_lines"].is_number());
-    assert!(json["tokens"].is_array());
-    assert!(json["token_count"].is_number());
-    assert!(json["tokens_truncated"].is_boolean());
+    assert!(json["identifiers"].is_array());
+    assert!(json["identifier_count"].is_number());
+    assert!(json["identifiers_truncated"].is_boolean());
 }
 
 #[test]
@@ -513,7 +513,7 @@ fn test_ai_profile_copilot() {
         "Expected language Rust field in JSON output, got: {}",
         stdout
     );
-    assert!(stdout.contains("\"tokens\":"));
+    assert!(stdout.contains("\"identifiers\":"));
 }
 
 #[test]
@@ -529,7 +529,7 @@ fn test_ai_profile_chatgpt() {
         "Expected language Python field in JSON output, got: {}",
         stdout
     );
-    assert!(stdout.contains("\"tokens\":"));
+    assert!(stdout.contains("\"identifiers\":"));
 }
 
 #[test]
@@ -782,8 +782,8 @@ fn test_memory_efficiency_string_handling() {
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
 
     // Verify tokens are properly included without excessive memory usage
-    assert!(json["tokens"].is_array());
-    assert!(!json["tokens"].as_array().unwrap().is_empty());
+    assert!(json["identifiers"].is_array());
+    assert!(!json["identifiers"].as_array().unwrap().is_empty());
 }
 
 #[test]
@@ -800,12 +800,12 @@ fn test_schema_validation() {
         .as_object()
         .expect("properties should be an object");
     assert!(
-        properties.contains_key("token_count"),
-        "schema should expose token_count"
+        properties.contains_key("identifier_count"),
+        "schema should expose identifier_count"
     );
     assert!(
-        properties.contains_key("tokens_truncated"),
-        "schema should expose tokens_truncated"
+        properties.contains_key("identifiers_truncated"),
+        "schema should expose identifiers_truncated"
     );
     assert!(
         properties.contains_key("total_lines_exact"),

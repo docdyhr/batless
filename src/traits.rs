@@ -6,6 +6,7 @@
 use crate::error::BatlessResult;
 use crate::file_info::FileInfo;
 use crate::summary::SummaryLevel;
+use crate::summary_item::SummaryItem;
 
 /// Trait for language detection functionality
 pub trait LanguageDetection {
@@ -24,7 +25,7 @@ pub trait SummaryExtraction {
         lines: &[String],
         language: Option<&str>,
         level: SummaryLevel,
-    ) -> Vec<String>;
+    ) -> Vec<SummaryItem>;
 
     /// Check if a line is summary-worthy
     fn is_summary_worthy(&self, line: &str, language: Option<&str>, level: SummaryLevel) -> bool;

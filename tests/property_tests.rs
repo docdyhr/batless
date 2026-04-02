@@ -105,7 +105,10 @@ proptest! {
         if let Ok(result) = process_file(file_path, &config) {
             if let Some(summary_lines) = &result.summary_lines {
                 prop_assert!(summary_lines.len() <= result.total_lines);
-                prop_assert_eq!(result.lines, summary_lines.clone());
+                // result.lines contains the text from summary items
+                let summary_text: Vec<String> =
+                    summary_lines.iter().map(|s| s.line.clone()).collect();
+                prop_assert_eq!(result.lines, summary_text);
             }
         }
     }

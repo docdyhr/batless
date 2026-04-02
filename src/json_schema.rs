@@ -246,7 +246,7 @@ impl JsonSchemaValidator {
                     "type": "array",
                     "items": { "type": "string" }
                 },
-                "tokens": {
+                "identifiers": {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
                 },
@@ -288,12 +288,12 @@ impl JsonSchemaValidator {
                     "type": "array",
                     "items": { "type": "string" }
                 },
-                "tokens": {
+                "identifiers": {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
                 },
-                "token_count": { "type": "integer" },
-                "tokens_truncated": { "type": "boolean" },
+                "identifier_count": { "type": "integer" },
+                "identifiers_truncated": { "type": "boolean" },
                 "summary_lines": {
                     "type": ["array", "null"],
                     "items": { "type": "string" }
@@ -312,8 +312,8 @@ impl JsonSchemaValidator {
                 "truncated_by_lines",
                 "truncated_by_bytes",
                 "encoding",
-                "token_count",
-                "tokens_truncated",
+                "identifier_count",
+                "identifiers_truncated",
                 "syntax_errors",
                 "mode"
             ]
@@ -423,7 +423,7 @@ mod tests {
             "language": "rust",
             "encoding": "UTF-8",
             "syntax_errors": [],
-            "tokens": null,
+            "identifiers": null,
             "summary_lines": null
         });
 
@@ -522,9 +522,9 @@ mod tests {
             "language": "rust",
             "encoding": "UTF-8",
             "syntax_errors": [],
-            "token_count": 0,
-            "tokens_truncated": false,
-            "tokens": null,
+            "identifier_count": 0,
+            "identifiers_truncated": false,
+            "identifiers": null,
             "summary_lines": null,
             "mode": "json"
         }"#;

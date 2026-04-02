@@ -3,6 +3,7 @@
 //! This module defines the FileInfo structure that holds all information
 //! about a processed file, including content, metadata, and processing results.
 
+use crate::summary_item::SummaryItem;
 use serde::{Deserialize, Serialize};
 
 /// Information about a processed file
@@ -36,8 +37,10 @@ pub struct FileInfo {
     pub tokens: Option<Vec<String>>,
     /// Total number of tokens extracted (including truncated samples)
     pub token_total: Option<usize>,
-    /// Summary lines (if in summary mode)
-    pub summary_lines: Option<Vec<String>>,
+    /// Summary items with line numbers (if in summary mode)
+    pub summary_lines: Option<Vec<SummaryItem>>,
+    /// SHA-256 hex digest of file content (only populated when --hash is passed)
+    pub file_hash: Option<String>,
 }
 
 impl FileInfo {
@@ -59,6 +62,7 @@ impl FileInfo {
             tokens: None,
             token_total: None,
             summary_lines: None,
+            file_hash: None,
         }
     }
 
@@ -85,6 +89,7 @@ impl FileInfo {
             tokens: None,
             token_total: None,
             summary_lines: None,
+            file_hash: None,
         }
     }
 
@@ -126,8 +131,14 @@ impl FileInfo {
         self
     }
 
-    /// Set summary lines
-    pub fn with_summary_lines(mut self, summary_lines: Option<Vec<String>>) -> Self {
+    /// Set file hash
+    pub fn with_file_hash(mut self, hash: Option<String>) -> Self {
+        self.file_hash = hash;
+        self
+    }
+
+    /// Set summary items
+    pub fn with_summary_lines(mut self, summary_lines: Option<Vec<SummaryItem>>) -> Self {
         self.summary_lines = summary_lines;
         self
     }
@@ -298,9 +309,10 @@ mod tests {
 
     #[test]
     fn test_builder_pattern() {
+        use crate::summary_item::SummaryItem;
         let lines = vec!["line1".to_string(), "line2".to_string()];
         let tokens = vec!["token1".to_string(), "token2".to_string()];
-        let summary = vec!["fn main()".to_string()];
+        let summary = vec![SummaryItem::new("fn main()", 1, Some(3), "function")];
 
         let info = FileInfo::new()
             .with_lines(lines.clone())
@@ -316,7 +328,7 @@ mod tests {
         assert!(!info.truncated_by_bytes);
         assert_eq!(info.tokens, Some(tokens));
         assert!(!info.total_lines_exact);
-        assert_eq!(info.summary_lines, Some(summary));
+        assert_eq!(info.summary_lines.as_ref().map(Vec::len), Some(1));
     }
 
     #[test]
@@ -369,7 +381,7 @@ mod tests {
 
         info.tokens = Some(vec!["token".to_string()]);
         info.token_total = Some(5);
-        info.summary_lines = Some(vec!["summary".to_string()]);
+        info.summary_lines = Some(vec![SummaryItem::new("summary", 1, None, "other")]);
 
         assert!(info.has_tokens());
         assert!(info.tokens_truncated());

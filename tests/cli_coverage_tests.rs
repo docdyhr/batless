@@ -283,8 +283,8 @@ fn test_ai_model_token_counting() {
 
     let stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
     assert!(
-        stdout_str.contains("tokens"),
-        "Should include token information"
+        stdout_str.contains("identifiers"),
+        "Should include identifier information"
     );
 }
 

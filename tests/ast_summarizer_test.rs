@@ -24,12 +24,12 @@ impl User {
     // Debug output
     println!("Summary: {:?}", summary);
 
-    assert!(summary.iter().any(|l| l.contains("fn main")));
-    assert!(summary.iter().any(|l| l.contains("struct User")));
-    assert!(summary.iter().any(|l| l.contains("impl User")));
-    assert!(summary.iter().any(|l| l.contains("fn new")));
+    assert!(summary.iter().any(|l| l.line.contains("fn main")));
+    assert!(summary.iter().any(|l| l.line.contains("struct User")));
+    assert!(summary.iter().any(|l| l.line.contains("impl User")));
+    assert!(summary.iter().any(|l| l.line.contains("fn new")));
 
     // Should NOT contain the body lines (unless they are on the same line as definition)
-    assert!(!summary.iter().any(|l| l.contains("println!")));
-    assert!(!summary.iter().any(|l| l.contains("Self { name }")));
+    assert!(!summary.iter().any(|l| l.line.contains("println!")));
+    assert!(!summary.iter().any(|l| l.line.contains("Self { name }")));
 }

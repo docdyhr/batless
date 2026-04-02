@@ -65,6 +65,12 @@ pub struct BatlessConfig {
     /// Pretty print JSON output (non-streaming JSON mode)
     #[serde(default)]
     pub pretty_json: bool,
+    /// Include 1-based line numbers in JSON output lines array
+    #[serde(default)]
+    pub json_line_numbers: bool,
+    /// Compute and include SHA-256 file hash in JSON output
+    #[serde(default)]
+    pub hash: bool,
 }
 
 fn default_max_lines() -> usize {
@@ -107,6 +113,8 @@ impl Default for BatlessConfig {
             show_line_numbers: false,
             show_line_numbers_nonblank: false,
             pretty_json: false,
+            json_line_numbers: false,
+            hash: false,
         }
     }
 }
@@ -224,6 +232,18 @@ impl BatlessConfig {
     /// Enable pretty JSON output
     pub fn with_pretty_json(mut self, pretty: bool) -> Self {
         self.pretty_json = pretty;
+        self
+    }
+
+    /// Include 1-based line numbers in JSON output lines array
+    pub fn with_json_line_numbers(mut self, enabled: bool) -> Self {
+        self.json_line_numbers = enabled;
+        self
+    }
+
+    /// Compute and include SHA-256 file hash in JSON output
+    pub fn with_hash(mut self, enabled: bool) -> Self {
+        self.hash = enabled;
         self
     }
 
@@ -441,6 +461,12 @@ impl BatlessConfig {
         }
         if other.pretty_json != default.pretty_json {
             self.pretty_json = other.pretty_json;
+        }
+        if other.json_line_numbers != default.json_line_numbers {
+            self.json_line_numbers = other.json_line_numbers;
+        }
+        if other.hash != default.hash {
+            self.hash = other.hash;
         }
 
         self

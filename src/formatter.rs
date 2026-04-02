@@ -77,9 +77,19 @@ impl OutputFormatter {
             .as_ref()
             .unwrap_or(&file_info.lines);
 
+        let lines_value: serde_json::Value = if config.json_line_numbers {
+            line_source
+                .iter()
+                .enumerate()
+                .map(|(i, text)| json!({"n": i + 1, "text": text}))
+                .collect()
+        } else {
+            json!(line_source)
+        };
+
         let mut json_data = json!({
             "file": file_path,
-            "lines": line_source,
+            "lines": lines_value,
             "processed_lines": file_info.processed_lines(),
             "total_lines": file_info.total_lines,
             "total_lines_exact": file_info.total_lines_exact,
@@ -96,13 +106,16 @@ impl OutputFormatter {
 
         // Add optional fields if they exist
         if let Some(ref tokens) = file_info.tokens {
-            json_data["tokens"] = json!(tokens);
+            json_data["identifiers"] = json!(tokens);
         }
-        json_data["token_count"] = json!(file_info.token_count());
-        json_data["tokens_truncated"] = json!(file_info.tokens_truncated());
+        json_data["identifier_count"] = json!(file_info.token_count());
+        json_data["identifiers_truncated"] = json!(file_info.tokens_truncated());
 
         if let Some(ref summary_lines) = file_info.summary_lines {
             json_data["summary_lines"] = json!(summary_lines);
+        }
+        if let Some(ref hash) = file_info.file_hash {
+            json_data["file_hash"] = json!(hash);
         }
 
         if config.pretty_json {
@@ -144,8 +157,8 @@ impl OutputFormatter {
         // Summary content
         if let Some(ref summary_lines) = file_info.summary_lines {
             output.push("=== Code Structure ===".to_string());
-            for line in summary_lines {
-                output.push(line.clone());
+            for item in summary_lines {
+                output.push(format!("line {}: {}", item.line_number, item.line));
             }
         } else {
             output.push("=== Content ===".to_string());

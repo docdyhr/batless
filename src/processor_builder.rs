@@ -11,6 +11,7 @@ use crate::language::LanguageDetector;
 use crate::processor::FileProcessor;
 use crate::summarizer::SummaryExtractor;
 use crate::summary::SummaryLevel;
+use crate::summary_item::SummaryItem;
 use crate::tokens::TokenExtractor;
 use crate::traits::{LanguageDetection, SummaryExtraction, TokenExtraction};
 
@@ -137,8 +138,13 @@ impl SummaryExtraction for MockSummaryExtractor {
         lines: &[String],
         _language: Option<&str>,
         _level: SummaryLevel,
-    ) -> Vec<String> {
-        lines.iter().take(3).cloned().collect()
+    ) -> Vec<SummaryItem> {
+        lines
+            .iter()
+            .take(3)
+            .enumerate()
+            .map(|(i, line)| SummaryItem::new(line, i + 1, None, "other"))
+            .collect()
     }
 
     fn is_summary_worthy(
@@ -175,16 +181,28 @@ impl SummaryExtraction for FastSummaryExtractor {
         lines: &[String],
         _language: Option<&str>,
         _level: SummaryLevel,
-    ) -> Vec<String> {
+    ) -> Vec<SummaryItem> {
         lines
             .iter()
-            .filter(|line| {
+            .enumerate()
+            .filter_map(|(i, line)| {
                 let trimmed = line.trim();
-                trimmed.starts_with("fn ")
+                if trimmed.starts_with("fn ")
                     || trimmed.starts_with("class ")
                     || trimmed.starts_with("import ")
+                {
+                    let kind = if trimmed.starts_with("fn ") {
+                        "function"
+                    } else if trimmed.starts_with("class ") {
+                        "class"
+                    } else {
+                        "import"
+                    };
+                    Some(SummaryItem::new(line, i + 1, None, kind))
+                } else {
+                    None
+                }
             })
-            .cloned()
             .collect()
     }
 
