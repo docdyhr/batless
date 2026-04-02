@@ -35,7 +35,6 @@ pub mod formatters;
 pub mod highlighter;
 pub mod json_schema;
 pub mod language;
-pub mod performance;
 pub mod processor;
 pub mod profile;
 pub mod streaming;

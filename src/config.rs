@@ -6,7 +6,6 @@
 use crate::config_validation::validate_config;
 use crate::error::{BatlessError, BatlessResult};
 use crate::summary::SummaryLevel;
-use crate::traits::ProcessingConfig;
 use serde::{Deserialize, Serialize};
 
 /// Strategy for splitting streaming chunks
@@ -521,28 +520,6 @@ impl BatlessConfig {
         }
 
         self
-    }
-}
-
-impl ProcessingConfig for BatlessConfig {
-    fn max_lines(&self) -> usize {
-        self.max_lines
-    }
-
-    fn max_bytes(&self) -> Option<usize> {
-        self.max_bytes
-    }
-
-    fn language(&self) -> Option<&str> {
-        self.language.as_deref()
-    }
-
-    fn summary_mode(&self) -> bool {
-        self.summary_mode
-    }
-
-    fn include_tokens(&self) -> bool {
-        self.include_tokens
     }
 }
 
