@@ -2,8 +2,10 @@
 //! Focuses on StreamingCheckpoint functionality and edge cases
 
 use batless::{BatlessConfig, StreamingCheckpoint};
+use std::io::Write;
 use std::path::Path;
-use tempfile::TempDir;
+use std::process::Command;
+use tempfile::{NamedTempFile, TempDir};
 
 #[test]
 fn test_streaming_checkpoint_creation() {
@@ -261,4 +263,178 @@ fn test_streaming_checkpoint_serialization() {
     assert_eq!(deserialized.line_number, checkpoint.line_number);
     assert_eq!(deserialized.bytes_processed, checkpoint.bytes_processed);
     assert_eq!(deserialized.chunk_number, checkpoint.chunk_number);
+}
+
+// =========================================================================
+// ME-4: --chunk-strategy CLI integration tests
+// =========================================================================
+
+fn run_batless_cli(args: &[&str]) -> std::process::Output {
+    Command::new(env!("CARGO_BIN_EXE_batless"))
+        .args(args)
+        .output()
+        .expect("Failed to execute batless")
+}
+
+fn create_streaming_test_file(content: &str, extension: &str) -> NamedTempFile {
+    let mut file = tempfile::Builder::new()
+        .suffix(extension)
+        .tempfile()
+        .unwrap();
+    file.write_all(content.as_bytes()).unwrap();
+    file
+}
+
+#[test]
+fn test_chunk_strategy_line_default() {
+    // A Rust file with 3 functions totalling > 30 lines
+    let content = "pub fn alpha() -> i32 {\n    let x = 1;\n    let y = 2;\n    let z = 3;\n    let w = 4;\n    let v = 5;\n    x + y + z + w + v\n}\n\npub fn beta() -> i32 {\n    let a = 10;\n    let b = 20;\n    let c = 30;\n    let d = 40;\n    let e = 50;\n    a + b + c + d + e\n}\n\npub fn gamma() -> i32 {\n    let m = 100;\n    let n = 200;\n    let o = 300;\n    let p = 400;\n    let q = 500;\n    m + n + o + p + q\n}\n\npub fn delta() {\n    // intentionally empty\n}\n";
+    let file = create_streaming_test_file(content, ".rs");
+    let path = file.path().to_str().unwrap();
+
+    let output = run_batless_cli(&[
+        "--streaming-json",
+        "--mode=json",
+        "--streaming-chunk-size=10",
+        path,
+    ]);
+
+    assert!(
+        output.status.success(),
+        "batless --streaming-json --streaming-chunk-size=10 should succeed"
+    );
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(!stdout.is_empty(), "Output should not be empty");
+
+    // Parse NDJSON: each non-empty line is a JSON chunk
+    let chunks: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("Each NDJSON line should be valid JSON"))
+        .collect();
+
+    assert!(
+        chunks.len() > 1,
+        "File with >30 lines and chunk-size=10 should produce multiple chunks, got {}",
+        chunks.len()
+    );
+
+    // Collect all lines across chunks and verify the full file is covered
+    let total_lines_in_chunks: usize = chunks
+        .iter()
+        .map(|c| c["lines"].as_array().map(|a| a.len()).unwrap_or(0))
+        .sum();
+
+    let file_total_lines = content.lines().count();
+    assert_eq!(
+        total_lines_in_chunks, file_total_lines,
+        "All file lines should appear across chunks: expected {}, got {}",
+        file_total_lines, total_lines_in_chunks
+    );
+}
+
+#[test]
+fn test_chunk_strategy_semantic() {
+    // Same style Rust file — use semantic chunking
+    let content = "pub fn alpha() -> i32 {\n    let x = 1;\n    let y = 2;\n    let z = 3;\n    x + y + z\n}\n\npub fn beta() -> i32 {\n    let a = 10;\n    let b = 20;\n    a + b\n}\n\npub fn gamma() -> i32 {\n    let m = 100;\n    let n = 200;\n    m + n\n}\n\npub fn delta() {\n    // empty\n}\n\npub fn epsilon() -> bool {\n    true\n}\n";
+    let file = create_streaming_test_file(content, ".rs");
+    let path = file.path().to_str().unwrap();
+
+    let output = run_batless_cli(&[
+        "--streaming-json",
+        "--mode=json",
+        "--streaming-chunk-size=5",
+        "--chunk-strategy=semantic",
+        path,
+    ]);
+
+    assert!(
+        output.status.success(),
+        "batless --chunk-strategy=semantic should succeed"
+    );
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(!stdout.is_empty(), "Output should not be empty");
+
+    let chunks: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("Each NDJSON line should be valid JSON"))
+        .collect();
+
+    assert!(!chunks.is_empty(), "Should produce at least one chunk");
+
+    // With semantic chunking a chunk may extend beyond the nominal chunk size
+    // to avoid splitting in the middle of a declaration
+    let any_extended = chunks
+        .iter()
+        .any(|c| c["lines"].as_array().map(|a| a.len() > 5).unwrap_or(false));
+    assert!(
+        any_extended,
+        "At least one semantic chunk should extend beyond the nominal chunk size of 5"
+    );
+
+    // All file lines should still be covered
+    let total_lines_in_chunks: usize = chunks
+        .iter()
+        .map(|c| c["lines"].as_array().map(|a| a.len()).unwrap_or(0))
+        .sum();
+
+    let file_total_lines = content.lines().count();
+    assert_eq!(
+        total_lines_in_chunks, file_total_lines,
+        "All file lines should appear across semantic chunks: expected {}, got {}",
+        file_total_lines, total_lines_in_chunks
+    );
+}
+
+#[test]
+fn test_chunk_strategy_unsupported_language_falls_back() {
+    // Plain text — no AST support, should fall back to line-based chunking
+    let lines: Vec<String> = (1..=20).map(|i| format!("plain text line {}", i)).collect();
+    let content = lines.join("\n") + "\n";
+    let file = create_streaming_test_file(&content, ".txt");
+    let path = file.path().to_str().unwrap();
+
+    let output = run_batless_cli(&[
+        "--streaming-json",
+        "--mode=json",
+        "--streaming-chunk-size=5",
+        "--chunk-strategy=semantic",
+        path,
+    ]);
+
+    assert!(
+        output.status.success(),
+        "batless --chunk-strategy=semantic on a .txt file should succeed (fallback to line-based)"
+    );
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        !stdout.is_empty(),
+        "Output should not be empty even when falling back"
+    );
+
+    // Must parse as NDJSON without errors
+    let chunks: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("Each NDJSON line should be valid JSON"))
+        .collect();
+
+    assert!(!chunks.is_empty(), "Should produce at least one chunk");
+
+    // All lines should be covered
+    let total_lines_in_chunks: usize = chunks
+        .iter()
+        .map(|c| c["lines"].as_array().map(|a| a.len()).unwrap_or(0))
+        .sum();
+
+    let file_total_lines = lines.len();
+    assert_eq!(
+        total_lines_in_chunks, file_total_lines,
+        "All text lines should appear across fallback chunks: expected {}, got {}",
+        file_total_lines, total_lines_in_chunks
+    );
 }

@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-04-02
+
+### 🎯 Major Features
+
+- **🗂️ Symbol Index Mode (`--mode=index`)**: New output mode producing a machine-readable JSON symbol table
+  - Output shape: `{file, language, symbol_count, symbols: [{kind, name, line_start, line_end, signature, visibility}]}`
+  - AST-backed for Rust, Python, JavaScript, TypeScript; regex fallback for all other languages
+  - Designed for AI consumers that need precise, navigable code structure without reading full file content
+- **🌊 Semantic Chunking (`--chunk-strategy=semantic`)**: Streaming chunks now respect declaration boundaries
+  - Uses tree-sitter to extend each chunk to the next top-level declaration boundary (Rust/Python/JS/TS)
+  - Line-based fallback for languages without tree-sitter grammar support
+  - New `src/chunker.rs` module with `SemanticBoundaryFinder` abstraction
+- **✂️ Content Stripping Flags**: Two new flags for AI-optimized, compressed output
+  - `--strip-comments` — removes comment-only lines; language-aware (`//`, `#`, `--`, `%`, `;`, C block comments)
+  - `--strip-blank-lines` — removes blank/whitespace-only lines
+  - `compression_ratio` field added to JSON output (original_line_count / stripped_line_count)
+- **🔢 Structured Summary Items**: Summary lines now carry precise location metadata for AI consumers
+  - New `SummaryItem` struct with `line_number`, `end_line`, and `kind` fields
+  - Enables AI tools to jump directly to the exact source location of any summarized symbol
+- **🏷️ Line-Numbered JSON Lines (`--with-line-numbers`)**: JSON `lines` array entries become `{"n": 1, "text": "..."}` objects instead of plain strings
+- **#️⃣ Content Hash (`--hash`)**: SHA-256 file hash included in JSON output for robust change detection and cache invalidation
+
+### 🚀 Improvements
+
+- **📊 LLM Token Estimates in JSON**: `estimated_llm_tokens` and `token_model` fields added to JSON output when a profile or `--ai-model` flag is active
+- **🤖 Expanded AI Profile Limits**: `--profile=claude` max-lines raised from 4,000 → 20,000 with `SummaryLevel::Standard`; new `--profile=claude-max` supports up to 150,000 lines with JSON output and no summary overhead
+- **📡 Pure NDJSON Streaming**: Streaming mode no longer inserts `---` separators between chunks — output is now valid NDJSON (one compact JSON object per newline), enabling direct use with `jq` and streaming parsers
+- **🔖 Renamed JSON Fields for Clarity**: `tokens` → `identifiers`, `token_total` → `identifier_total` in JSON output; `--include-tokens` kept as a deprecated alias for `--include-identifiers`
+- **📐 Serialized Missing JSON Fields**: `total_lines_exact` and `identifier_total` were previously computed but not emitted in JSON output — both are now always serialized
+
+### Bug Fixes
+
+- **TypeScript AST**: Fixed decorator-aware class line detection so classes preceded by decorators (`@Component`, `@Injectable`, etc.) report the correct `line_number` for the `class` keyword rather than the decorator line
+
+### Testing
+
+- **404 total tests** (up from 386 in v0.4.1, +18 tests)
+  - 9 new integration tests covering `--mode=index`, `--chunk-strategy=semantic`, `--strip-comments`, and `--strip-blank-lines`
+  - 9 new unit tests for `SemanticBoundaryFinder`, `SummaryItem` struct, and compression ratio calculation
+- Zero clippy warnings, zero test failures
+
+---
+
 ## [0.4.1] - 2026-02-27
 
 ### Bug Fixes

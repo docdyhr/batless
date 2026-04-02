@@ -379,10 +379,11 @@ batless --generate-completions powershell >> $PROFILE
 
 ### Output Modes
 
-- `--mode <MODE>` - Output mode: `plain`, `highlight`, `json`, `summary`
+- `--mode <MODE>` - Output mode: `plain`, `highlight`, `json`, `summary`, `index`
 - `--plain` - Plain text output (equivalent to `--mode=plain`)
 - `--mode=json` - Structured JSON output for automation
 - `--mode=summary` - Extract only key code structures
+- `--mode=index` - Machine-readable symbol table (kind, name, line ranges, visibility)
 
 ### Limiting Output
 
@@ -399,10 +400,52 @@ batless --generate-completions powershell >> $PROFILE
 
 ### AI/Automation Features
 
-- `--include-tokens` - Include token analysis in JSON output
+- `--include-identifiers` - Include extracted code identifiers in JSON output (`--include-tokens` still works as alias)
+- `--with-line-numbers` - JSON `lines` array uses `{"n": N, "text": "..."}` objects instead of plain strings
+- `--hash` - Include SHA-256 content hash in JSON output (for change detection)
+- `--strip-comments` - Strip comment-only lines from output
+- `--strip-blank-lines` - Strip blank lines from output
+- `--chunk-strategy <STRATEGY>` - Streaming chunk strategy: `line` (default) or `semantic` (splits at top-level declaration boundaries for Rust/Python/JS/TS)
 - `--summary` - Add code summary to JSON output
-- `--profile <PROFILE>` - Use AI-optimized profile (claude, copilot, chatgpt)
+- `--profile <PROFILE>` - Use AI-optimized profile (`claude` 20K lines, `claude-max` 150K lines, `copilot`, `chatgpt`, `gemini`, `assistant`)
 - `--custom-profile <PATH>` - Load custom profile from file
+
+### JSON Output Fields
+
+When using `--mode=json`, the output includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | string | File path |
+| `language` | string\|null | Detected language |
+| `lines` | array | File lines (strings, or `{"n","text"}` objects with `--with-line-numbers`) |
+| `total_lines` | integer | Line count in original file |
+| `total_lines_exact` | boolean | Whether `total_lines` covers the full file |
+| `total_bytes` | integer | File size in bytes |
+| `truncated` | boolean | Whether output was truncated |
+| `encoding` | string | Detected encoding |
+| `summary_lines` | array\|null | Summary items `{line, line_number, end_line, kind}` |
+| `identifiers` | array\|null | Extracted code identifiers (with `--include-identifiers`) |
+| `identifier_total` | integer\|null | Total identifier count |
+| `file_hash` | string\|null | SHA-256 hex digest (with `--hash`) |
+| `estimated_llm_tokens` | integer\|null | Heuristic LLM token estimate (when profile active) |
+| `token_model` | string\|null | Model used for token estimation |
+| `compression_ratio` | number\|null | original/stripped lines ratio (with `--strip-*` flags) |
+
+When using `--mode=index`, the output includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | string | File path |
+| `language` | string\|null | Detected language |
+| `symbol_count` | integer | Number of symbols found |
+| `symbols` | array | Symbol table entries |
+| `symbols[].kind` | string | `function`, `struct`, `class`, `impl`, `trait`, etc. |
+| `symbols[].name` | string | Symbol identifier name |
+| `symbols[].line_start` | integer | 1-based start line |
+| `symbols[].line_end` | integer\|null | 1-based end line |
+| `symbols[].signature` | string | First declaration line |
+| `symbols[].visibility` | string\|null | `pub`, `private`, `export`, `local` |
 
 ### Configuration
 

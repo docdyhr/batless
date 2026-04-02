@@ -877,3 +877,215 @@ fn test_encoding_detection_robustness() {
         // Binary content might fail, which is acceptable
     }
 }
+
+// =========================================================================
+// ME-3: --strip-blank-lines and --strip-comments tests
+// =========================================================================
+
+#[test]
+fn test_strip_blank_lines() {
+    let content = "def foo():\n    pass\n\n\ndef bar():\n    pass\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--strip-blank-lines",
+        "--mode=plain",
+    ]);
+
+    assert!(
+        output.status.success(),
+        "batless --strip-blank-lines should succeed"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    // Blank lines should be stripped — no consecutive empty lines
+    let has_consecutive_blanks = stdout.contains("\n\n");
+    assert!(
+        !has_consecutive_blanks,
+        "Output should not contain consecutive blank lines after --strip-blank-lines"
+    );
+
+    // Code lines should still be present
+    assert!(
+        stdout.contains("def foo():"),
+        "def foo(): should be retained"
+    );
+    assert!(
+        stdout.contains("def bar():"),
+        "def bar(): should be retained"
+    );
+}
+
+#[test]
+fn test_strip_comments() {
+    let content = "# this is a comment\ndef foo():\n    # inline comment\n    pass\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--strip-comments",
+        "--mode=plain",
+    ]);
+
+    assert!(
+        output.status.success(),
+        "batless --strip-comments should succeed"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+
+    assert!(
+        !stdout.contains("# this is a comment"),
+        "Top-level comment should be stripped"
+    );
+    assert!(
+        !stdout.contains("# inline comment"),
+        "Inline comment line should be stripped"
+    );
+    assert!(
+        stdout.contains("def foo():"),
+        "Function definition should be retained"
+    );
+}
+
+#[test]
+fn test_strip_compression_ratio_in_json() {
+    let content = "# comment\ndef foo():\n    pass\n\n# comment2\n";
+    let file = create_test_file(content, ".py");
+
+    let output = run_batless(&[
+        file.path().to_str().unwrap(),
+        "--strip-comments",
+        "--strip-blank-lines",
+        "--mode=json",
+    ]);
+
+    assert!(
+        output.status.success(),
+        "batless --strip-comments --strip-blank-lines --mode=json should succeed"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value =
+        serde_json::from_str(&stdout).expect("Output should be valid JSON");
+
+    assert!(
+        json.get("compression_ratio").is_some(),
+        "JSON output should contain compression_ratio field"
+    );
+    let ratio = json["compression_ratio"]
+        .as_f64()
+        .expect("compression_ratio should be a float");
+    assert!(
+        ratio > 1.0,
+        "compression_ratio should be > 1.0 when content was stripped, got {}",
+        ratio
+    );
+}
+
+// =========================================================================
+// SF-1: --mode=index tests
+// =========================================================================
+
+#[test]
+fn test_mode_index_rust() {
+    let content = "pub fn foo() -> i32 { 1 }\nstruct Bar { x: i32 }\npub fn baz() {}\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=index"]);
+
+    assert!(
+        output.status.success(),
+        "batless --mode=index should succeed for a Rust file"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--mode=index output should be valid JSON");
+
+    assert!(
+        json["symbols"].is_array(),
+        "JSON output should contain a symbols array"
+    );
+    let symbol_count = json["symbol_count"]
+        .as_u64()
+        .expect("symbol_count should be a number");
+    assert!(symbol_count > 0, "symbol_count should be > 0");
+
+    let symbols = json["symbols"].as_array().unwrap();
+    assert!(
+        symbols
+            .iter()
+            .any(|s| s["kind"].as_str().is_some_and(|k| k == "function")),
+        "At least one symbol should have kind == function"
+    );
+    assert!(
+        symbols.iter().any(|s| s["name"].as_str() == Some("foo")),
+        "At least one symbol should have name == foo"
+    );
+    assert!(
+        symbols.iter().all(|s| s.get("line_start").is_some()),
+        "All symbols should have a line_start field"
+    );
+}
+
+#[test]
+fn test_mode_index_has_file_metadata() {
+    let content = "pub fn main() {}\nstruct Config { value: i32 }\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=index"]);
+
+    assert!(
+        output.status.success(),
+        "batless --mode=index should succeed"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--mode=index output should be valid JSON");
+
+    assert!(
+        json.get("file").is_some(),
+        "JSON output should contain file field"
+    );
+    assert!(
+        json.get("language").is_some(),
+        "JSON output should contain language field"
+    );
+    assert!(
+        json["total_lines"].is_number(),
+        "JSON output should contain total_lines field"
+    );
+    assert!(
+        json["symbol_count"].is_number(),
+        "JSON output should contain symbol_count field"
+    );
+    assert_eq!(
+        json["mode"].as_str(),
+        Some("index"),
+        "mode field should equal index"
+    );
+}
+
+#[test]
+fn test_mode_index_with_hash() {
+    let content = "pub fn answer() -> i32 { 42 }\n";
+    let file = create_test_file(content, ".rs");
+
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=index", "--hash"]);
+
+    assert!(
+        output.status.success(),
+        "batless --mode=index --hash should succeed"
+    );
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let json: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--mode=index --hash output should be valid JSON");
+
+    assert!(
+        json.get("file_hash").is_some(),
+        "JSON output should contain file_hash field when --hash is passed"
+    );
+    assert!(
+        !json["file_hash"].is_null(),
+        "file_hash should not be null when --hash is passed"
+    );
+}
