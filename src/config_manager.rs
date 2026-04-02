@@ -121,6 +121,10 @@ pub struct Args {
     #[arg(long)]
     pub streaming_chunk_size: Option<usize>,
 
+    /// Streaming chunk strategy: line (fixed line count) or semantic (top-level declaration boundaries)
+    #[arg(long, value_name = "STRATEGY")]
+    pub chunk_strategy: Option<CliChunkStrategy>,
+
     /// Enable resume capability with checkpoint support
     #[arg(long)]
     pub enable_resume: bool,
@@ -196,6 +200,12 @@ pub enum CliOutputMode {
     Highlight,
     Json,
     Summary,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+pub enum CliChunkStrategy {
+    Line,
+    Semantic,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -557,6 +567,13 @@ impl ConfigManager {
         }
         if let Some(chunk_size) = self.args.streaming_chunk_size {
             new_config = new_config.with_streaming_chunk_size(chunk_size);
+        }
+        if let Some(strategy) = self.args.chunk_strategy {
+            use crate::config::ChunkStrategy;
+            new_config = new_config.with_chunk_strategy(match strategy {
+                CliChunkStrategy::Line => ChunkStrategy::Line,
+                CliChunkStrategy::Semantic => ChunkStrategy::Semantic,
+            });
         }
         if self.args.enable_resume {
             new_config = new_config.with_enable_resume(self.args.enable_resume);

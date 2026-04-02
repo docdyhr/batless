@@ -8,6 +8,18 @@ use crate::error::{BatlessError, BatlessResult};
 use crate::summary::SummaryLevel;
 use crate::traits::ProcessingConfig;
 use serde::{Deserialize, Serialize};
+
+/// Strategy for splitting streaming chunks
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+pub enum ChunkStrategy {
+    /// Split at fixed line counts (default)
+    #[default]
+    Line,
+    /// Split at top-level declaration boundaries using tree-sitter (falls back to line-based for
+    /// unsupported languages)
+    Semantic,
+}
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -77,6 +89,9 @@ pub struct BatlessConfig {
     /// Strip blank lines from output
     #[serde(default)]
     pub strip_blank_lines: bool,
+    /// Strategy for splitting streaming chunks
+    #[serde(default)]
+    pub chunk_strategy: ChunkStrategy,
 }
 
 fn default_max_lines() -> usize {
@@ -123,6 +138,7 @@ impl Default for BatlessConfig {
             hash: false,
             strip_comments: false,
             strip_blank_lines: false,
+            chunk_strategy: ChunkStrategy::Line,
         }
     }
 }
@@ -264,6 +280,12 @@ impl BatlessConfig {
     /// Strip blank lines from output
     pub fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
         self.strip_blank_lines = enabled;
+        self
+    }
+
+    /// Set streaming chunk strategy
+    pub fn with_chunk_strategy(mut self, strategy: ChunkStrategy) -> Self {
+        self.chunk_strategy = strategy;
         self
     }
 
@@ -493,6 +515,9 @@ impl BatlessConfig {
         }
         if other.strip_blank_lines != default.strip_blank_lines {
             self.strip_blank_lines = other.strip_blank_lines;
+        }
+        if other.chunk_strategy != default.chunk_strategy {
+            self.chunk_strategy = other.chunk_strategy;
         }
 
         self

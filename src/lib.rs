@@ -24,6 +24,7 @@
 #![allow(clippy::match_same_arms)] // Sometimes clearer to have explicit arms
 
 pub mod ast_summarizer;
+pub mod chunker;
 pub mod config;
 pub mod config_manager;
 pub mod config_validation;

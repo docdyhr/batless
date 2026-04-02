@@ -3,7 +3,8 @@
 //! This module provides streaming JSON output for very large files,
 //! allowing partial content processing with resume capability.
 
-use crate::config::BatlessConfig;
+use crate::chunker::SemanticBoundaryFinder;
+use crate::config::{BatlessConfig, ChunkStrategy};
 use crate::error::{BatlessError, BatlessResult};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -260,6 +261,8 @@ enum StreamingProcessorIterator {
         bytes_processed: usize,
         chunk_number: usize,
         finished: bool,
+        /// Pre-computed top-level declaration start lines for semantic chunking (may be empty).
+        semantic_boundaries: Vec<usize>,
     },
     Stdin {
         reader: BufReader<std::io::Stdin>,
@@ -312,6 +315,14 @@ impl StreamingProcessorIterator {
             (0, 0, 0)
         };
 
+        // Pre-compute semantic boundaries if requested
+        let semantic_boundaries = if config.chunk_strategy == ChunkStrategy::Semantic {
+            let content = std::fs::read_to_string(file_path).unwrap_or_default();
+            SemanticBoundaryFinder::find_boundaries(&content, file_metadata.language.as_deref())
+        } else {
+            Vec::new()
+        };
+
         Ok(StreamingProcessorIterator::File {
             reader,
             config: config.clone(),
@@ -320,6 +331,7 @@ impl StreamingProcessorIterator {
             bytes_processed,
             chunk_number,
             finished: false,
+            semantic_boundaries,
         })
     }
 
@@ -389,6 +401,7 @@ impl Iterator for StreamingProcessorIterator {
                 bytes_processed,
                 chunk_number,
                 finished,
+                semantic_boundaries,
             } => {
                 if *finished {
                     return None;
@@ -399,30 +412,72 @@ impl Iterator for StreamingProcessorIterator {
                 let mut chunk_bytes = 0;
                 let start_line = *current_line;
 
-                for _ in 0..config.streaming_chunk_size {
+                let read_one_line = |reader: &mut BufReader<File>,
+                                     chunk_lines: &mut Vec<String>,
+                                     chunk_bytes: &mut usize,
+                                     bytes_processed: &mut usize,
+                                     current_line: &mut usize,
+                                     path: &str|
+                 -> Option<BatlessResult<()>> {
                     let mut line = String::new();
                     match reader.read_line(&mut line) {
-                        Ok(0) => break, // EOF
+                        Ok(0) => None, // EOF
                         Ok(bytes_read) => {
-                            chunk_bytes += bytes_read;
+                            *chunk_bytes += bytes_read;
                             *bytes_processed += bytes_read;
-
-                            // Remove trailing newline for consistency
                             if line.ends_with('\n') {
                                 line.pop();
                                 if line.ends_with('\r') {
                                     line.pop();
                                 }
                             }
-
                             chunk_lines.push(line);
                             *current_line += 1;
+                            Some(Ok(()))
                         }
-                        Err(e) => {
-                            return Some(Err(BatlessError::FileReadError {
-                                path: file_metadata.path.clone(),
-                                source: e,
-                            }));
+                        Err(e) => Some(Err(BatlessError::FileReadError {
+                            path: path.to_string(),
+                            source: e,
+                        })),
+                    }
+                };
+
+                // Read the base chunk_size lines
+                for _ in 0..config.streaming_chunk_size {
+                    match read_one_line(
+                        reader,
+                        &mut chunk_lines,
+                        &mut chunk_bytes,
+                        bytes_processed,
+                        current_line,
+                        &file_metadata.path,
+                    ) {
+                        None => break, // EOF
+                        Some(Err(e)) => return Some(Err(e)),
+                        Some(Ok(())) => {}
+                    }
+                }
+
+                // Semantic chunking: extend chunk to the next top-level boundary
+                if !semantic_boundaries.is_empty() && !chunk_lines.is_empty() {
+                    // Find the first boundary strictly after our current position
+                    if let Some(&next_boundary) =
+                        semantic_boundaries.iter().find(|&&b| b > *current_line)
+                    {
+                        // Keep reading until we reach that boundary
+                        while *current_line < next_boundary {
+                            match read_one_line(
+                                reader,
+                                &mut chunk_lines,
+                                &mut chunk_bytes,
+                                bytes_processed,
+                                current_line,
+                                &file_metadata.path,
+                            ) {
+                                None => break,
+                                Some(Err(e)) => return Some(Err(e)),
+                                Some(Ok(())) => {}
+                            }
                         }
                     }
                 }
