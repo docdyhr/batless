@@ -1,418 +1,120 @@
-# 🗺️ batless Development Roadmap
+# batless Development Roadmap
 
-> Strategic development plan for batless - the non-blocking code viewer built for AI and automation
+> Strategic development plan for batless — the non-blocking code viewer built for AI and automation
 
-## 🎯 Vision Statement
+## Vision
 
-Transform batless from a simple syntax viewer into the definitive code analysis tool for the AI era, while maintaining its core principles of non-blocking operation, automation-first design, and minimal resource usage.
-
----
-
-## 🚀 Release Schedule
-
-| Version | Target | Focus | Status |
-|---------|---------|-------|---------|
-| **v0.3.1** | Q4 2025 | UX & CI/CD Optimization | ✅ Released |
-| **v0.4.0** | Q1 2026 | AI Integration & Performance | 📋 In Progress |
-| **v0.5.0** | Q2 2026 | Plugin Architecture | 🔮 Planned |
-| **v0.6.0** | Q3 2026 | Advanced Code Analysis | 🔮 Planned |
-| **v1.0.0** | Q4 2026 | Universal Integration | 🔮 Planned |
+batless is the definitive code-viewing tool for AI workflows and automation pipelines. It never blocks, never pages, and always produces machine-readable output. Each release extends what AI agents can do with code: better context efficiency, richer navigation data, and broader language coverage — without adding interactive features or scope creep.
 
 ---
 
-## ✅ v0.3.1: UX & CI/CD Optimization (Released October 2025)
+## Release History
 
-*Status: Released*
-
-### 🎯 **Completed Goals**
-
-Enhanced user experience, streamlined CI/CD pipeline, and established solid foundation for future development.
-
-### ✨ **Delivered Features**
-
-- ✅ **AI Tool Presets**: `--profile=claude`, `--profile=copilot`, `--profile=chatgpt`
-- ✅ **Cat Compatibility**: Full `cat -n` and `cat -b` flag support for easy migration
-- ✅ **Performance Optimizations**: Comprehensive benchmark suite and regression detection
-- ✅ **Enhanced Error Messages**: User-friendly error handling and suggestions
-- ✅ **CI/CD Pipeline**: Optimized workflows with parallel execution and caching
-
-### 🔧 **Technical Improvements**
-
-- ✅ Improved memory management for large files
-- ✅ Better Unicode and emoji handling
-- ✅ Cross-platform path handling improvements
-- ✅ Comprehensive test coverage with fuzz testing
-
-### 📊 **Achieved Results**
-
-- 95%+ test coverage across core functionality
-- Sub-50ms processing time for typical files
-- Zero critical security vulnerabilities
+| Version | Released | Focus |
+|---------|----------|-------|
+| **v0.3.1** | Oct 2025 | UX & CI/CD — AI profiles, cat compatibility, performance suite |
+| **v0.4.0** | Dec 2025 | AST Summarization — tree-sitter for Rust/Python/JS/TS, `SummaryItem` with line numbers |
+| **v0.5.0** | Apr 2026 | AI Efficiency — NDJSON streaming, index mode, semantic chunking, comment stripping |
 
 ---
 
-## 🤖 v0.4.0: Enhanced AI Integration & Performance
+## v0.5.0: AI Efficiency (Released April 2026)
 
-*Target: Q1 2026 (12-14 weeks)*
+All items shipped and tagged.
 
-### 🎯 **Goals**
+- **NDJSON streaming** — removed `---` separator; each chunk is compact JSON + newline
+- **`--with-line-numbers`** — JSON `lines` array entries become `{"n": N, "text": "..."}` objects
+- **`--mode=index`** — machine-readable symbol table: `{kind, name, line_start, line_end, signature, visibility}`
+- **`--chunk-strategy=semantic`** — streaming extends chunks to tree-sitter top-level boundaries
+- **`--strip-comments` / `--strip-blank-lines`** — language-aware content stripping; `compression_ratio` in JSON output
+- **`--hash`** — SHA-256 file hash in JSON output for change detection
+- **`--include-identifiers`** — renamed from `--include-tokens` (deprecated alias kept); `tokens` field renamed `identifiers`
+- **`estimated_llm_tokens` / `token_model`** in JSON when a profile or `--ai-model` is active
+- **`--profile=claude-max`** — new profile: 150K lines, JSON output, no summary
+- **Claude profile raised** to 20K lines (was 4K)
 
-Position batless as the premier code analysis tool for AI workflows and modern development.
+---
 
-### 🚀 **Major Features**
+## v0.6.0: Internal Consolidation + stdin Parity
 
-#### **Smart Summary Modes**
+*Target: Q3 2026*
+
+Focus: clean up the architectural debt identified post-v0.5.0 before adding new features. No breaking changes to the CLI surface.
+
+### Code Health
+
+- **Delete dead modules** — `src/debt_prevention.rs` and `src/performance.rs` are never called; remove them
+- **Delete unused traits** — `FileProcessing`, `EncodingDetection`, `ProcessorFactory` in `traits.rs` have zero implementations; remove them
+- **Consolidate formatter system** — `src/formatter.rs` has inline Plain/JSON/Summary implementations; `src/formatters/` has parallel dead copies; migrate to a single trait-based path
+
+### Feature: `process_stdin` Parity
+
+`process_stdin` is missing four features that `process_file` has:
+- AST summarization (currently regex-only fallback)
+- `--hash` support (silently ignored on stdin)
+- `--strip-comments` / `--strip-blank-lines` (silently ignored on stdin)
+- Language detection from provided `--language` flag (partially works)
+
+Fix: extract a shared `post_process(lines, language, config)` pipeline that both paths call.
+
+### Feature: `--ast` Raw Output
+
+Expose the tree-sitter parse tree directly as JSON. The parsers are already in the dependency tree; this is a new output mode, not new infrastructure.
 
 ```bash
-batless --summary=minimal file.rs      # Functions and exports only
-batless --summary=standard file.py     # + imports, classes (current)
-batless --summary=detailed src/        # + comments, complexity metrics
+batless --mode=ast src/main.rs | jq '.tree.children[0]'
 ```
 
-#### **AI Context Optimization**
+### Feature: Multi-file Index Mode
+
+Allow `batless --mode=index src/` to process a directory and emit one JSON object per file to stdout (NDJSON), enabling a project-wide symbol table in a single invocation.
 
 ```bash
-batless --tokens file.js               # Count tokens for context windows
-batless --context-window=8000 src/     # Optimize for specific AI limits
-batless --compress-context file.py     # Smart context compression
+batless --mode=index src/ | jq -s 'map(.symbols) | flatten | group_by(.kind)'
 ```
-
-#### **Enhanced JSON Output**
-
-- **Schema validation** for AI tool compatibility
-- **Structured metadata** (complexity, dependencies, symbols)
-- **Streaming JSON** for large codebases
-- **Token counting** with model-specific algorithms
-
-#### **Language-Specific Intelligence**
-
-- **Symbol extraction** (functions, classes, interfaces, exports)
-- **Import/dependency mapping** across files
-- **Documentation extraction** (docstrings, comments)
-- **Type information** where available
-
-### 🔧 **Technical Architecture**
-
-- Modular language analyzers for extensibility
-- Caching layer for repeated analysis
-- Streaming processors for memory efficiency
-- Configurable output schemas
-
-### 📊 **Success Metrics**
-
-- 50%+ adoption by AI tool developers
-- 25% improvement in AI context relevance scores
-- Support for 15+ programming languages with deep analysis
 
 ---
 
-## 🔌 v0.5.0: Plugin Architecture
+## v0.7.0: Deeper Language Analysis
 
-*Target: Q2 2026 (14-16 weeks)*
+*Target: Q4 2026*
 
-### 🎯 **Goals**
+Build on the tree-sitter foundation to expose richer per-symbol data.
 
-Enable community-driven extensibility while maintaining security and performance.
-
-### 🏗️ **Plugin System Design**
-
-#### **Plugin Types**
-
-- **Formatters**: Custom output formats (HTML, LaTeX, etc.)
-- **Analyzers**: Language-specific parsing and analysis
-- **Integrations**: Direct tool integrations (IDEs, CI/CD, AI services)
-- **Filters**: Content transformation and filtering
-
-#### **Plugin Interface**
-
-```rust
-trait BatlessPlugin {
-    fn name(&self) -> &str;
-    fn version(&self) -> &str;
-    fn supported_formats(&self) -> &[&str];
-    fn process(&self, input: &PluginInput) -> Result<PluginOutput>;
-    fn configure(&mut self, config: &PluginConfig) -> Result<()>;
-}
-```
-
-#### **Plugin Management**
-
-```bash
-batless plugin list                    # Show installed plugins
-batless plugin install ai-summary      # Install from registry
-batless plugin enable typescript-ast   # Enable/disable plugins
-batless plugin update --all           # Update all plugins
-```
-
-#### **Built-in Plugin Gallery**
-
-- **OpenAI Integration**: Direct API calls with optimized context
-- **Anthropic Claude**: Specialized prompt formatting
-- **GitHub Copilot**: Code suggestion context preparation
-- **Tree-sitter AST**: Universal syntax tree extraction
-- **Mermaid Diagrams**: Generate flowcharts from code structure
-
-### 🛡️ **Security Model**
-
-- Sandboxed plugin execution
-- Capability-based permissions
-- Code signing for verified plugins
-- Resource limits and monitoring
-
-### 📦 **Plugin Ecosystem**
-
-- **Plugin registry** with search and discovery
-- **Plugin SDK** with documentation and examples
-- **Community marketplace** for sharing plugins
-- **Enterprise plugin** support with private registries
+- **Signature extraction improvements** — full parameter types and return types from AST nodes (not string stripping)
+- **Import/dependency listing** — `--mode=imports` emits a flat list of all imports/requires/use statements
+- **Additional language coverage** — Go, Ruby, C, C++ added to AST summarizer (tree-sitter grammars available)
+- **`--summary-level=comments`** — extract doc comments and attach to their symbol in index output
 
 ---
 
-## 🔍 v0.6.0: Advanced Code Analysis
+## v1.0.0: Stability & Ecosystem
 
-*Target: Q3 2026 (16-18 weeks)*
+*Target: H1 2027*
 
-### 🎯 **Goals**
+The 1.0 milestone signals API and output schema stability. No major new features — focus on guarantees.
 
-Provide deep code understanding capabilities rivaling dedicated analysis tools.
-
-### 🧠 **Analysis Capabilities**
-
-#### **Abstract Syntax Tree (AST) Processing**
-
-```bash
-batless --ast file.rs                  # Full AST as structured JSON
-batless --ast --filter=functions *.py  # Extract only function definitions
-batless --ast --depth=2 src/          # Control AST detail level
-```
-
-#### **Dependency Analysis**
-
-```bash
-batless --dependencies src/            # Import/dependency graph
-batless --dep-graph --format=dot *.js  # Visual dependency graphs
-batless --circular-deps project/       # Detect circular dependencies
-```
-
-#### **Code Quality Metrics**
-
-```bash
-batless --complexity file.py           # Cyclomatic complexity
-batless --metrics --format=json src/   # Comprehensive quality metrics
-batless --duplication project/         # Code duplication detection
-```
-
-#### **Cross-Reference Analysis**
-
-```bash
-batless --xref function_name src/      # Find all references
-batless --call-graph main.rs          # Function call hierarchy
-batless --dead-code project/          # Unused code detection
-```
-
-### 🌍 **Multi-Language Support**
-
-Support for 25+ languages with deep analysis:
-
-- **Rust**: Full semantic analysis with macro expansion
-- **Python**: Type hint analysis, import resolution
-- **JavaScript/TypeScript**: ES module analysis, type checking
-- **Go**: Package analysis, interface implementation
-- **Java**: Class hierarchy, annotation processing
-- **C/C++**: Header dependency analysis, macro expansion
-
-### 🔧 **Technical Foundation**
-
-- **Tree-sitter integration** for universal parsing
-- **Language Server Protocol** clients for deep analysis
-- **Incremental analysis** for performance
-- **Distributed processing** for large codebases
+- **Stable JSON schema** — commit to backwards compatibility for all JSON output fields; add schema version field
+- **Shell completions** — generated completions for bash, zsh, fish, PowerShell included in release artifacts
+- **`--validate`** flag — validate a file's JSON output against the published schema
+- **GitHub Action** — `batless-action` for using batless in CI workflows without installing manually
+- **Homebrew formula** — automated tap update on release
+- **MSRV policy** — explicit minimum supported Rust version with a documented update policy
 
 ---
 
-## 🌐 v1.0.0: Universal Integration
+## What is NOT on the Roadmap
 
-*Target: Q4 2026 (20-24 weeks)*
+These were in earlier drafts and have been explicitly removed:
 
-### 🎯 **Goals**
-
-Establish batless as the universal code analysis standard across all platforms and environments.
-
-### 🕸️ **WebAssembly & Browser Integration**
-
-#### **WASM Builds**
-
-```bash
-# Browser usage
-import init, { analyze_code } from 'batless-wasm';
-const result = analyze_code(sourceCode, { mode: 'summary' });
-
-# Node.js usage
-const batless = require('batless-node');
-const analysis = await batless.processFile('src/main.rs');
-```
-
-#### **Web Platform Features**
-
-- **Online playground** for testing batless functionality
-- **Browser extension** for GitHub/GitLab code analysis
-- **Real-time collaboration** features for code review
-- **Progressive Web App** for offline code analysis
-
-### 🔗 **Ecosystem Integrations**
-
-#### **Development Environment Integration**
-
-- **VS Code extension** with WASM backend
-- **JetBrains plugin** for IntelliJ family
-- **Vim/Neovim plugin** with native performance
-- **Emacs package** with async processing
-
-#### **CI/CD Platform Integration**
-
-```yaml
-# GitHub Actions
-- uses: batless-action@v1
-  with:
-    mode: analysis
-    output: pr-comment
-
-# Jenkins Pipeline
-stage('Code Analysis') {
-    batless analysis --ci-output=junit
-}
-```
-
-#### **AI Platform Integration**
-
-- **Direct API integrations** with major AI services
-- **Prompt template library** for different AI models
-- **Context optimization** algorithms for token efficiency
-- **Real-time code understanding** for AI assistants
-
-### 🏢 **Enterprise Features**
-
-- **SSO integration** (SAML, OAuth2, LDAP)
-- **Audit logging** and compliance reporting
-- **Rate limiting** and resource management
-- **Multi-tenant** architecture support
-- **Air-gapped** deployment options
-
-### 📊 **Analytics & Insights**
-
-- **Usage analytics** dashboard
-- **Performance monitoring** and alerting
-- **Code quality** trends over time
-- **Team productivity** metrics
+- **Plugin architecture** — dynamic plugin loading adds significant complexity (sandboxing, signing, registry) for unclear gain; the trait-based extension points in `traits.rs` are sufficient
+- **Language Server Protocol client** — LSP is a separate tool category; batless is a viewer, not an IDE backend
+- **Cross-reference / call graph analysis** — requires multi-file indexing infrastructure; too large for the current scope
+- **WASM / browser build** — possible but not a priority; nothing in the current user base requires it
+- **Enterprise features** (SSO, SAML, multi-tenant, audit logging, compliance certifications) — out of scope for a CLI tool
 
 ---
 
-## 🧬 Parallel Development Tracks
+## Contributing
 
-### 🤖 **AI Ecosystem Integration**
-
-*Ongoing throughout all versions*
-
-- **Direct integrations** with popular AI coding tools
-- **Prompt engineering** and template optimization
-- **Context window** optimization algorithms
-- **AI model compatibility** testing and validation
-- **Feedback loops** with AI service providers
-
-### 👨‍💻 **Developer Experience**
-
-*Continuous improvement focus*
-
-- **Documentation** and tutorial expansion
-- **Error message** quality improvements
-- **Configuration** flexibility and validation
-- **Debugging tools** and diagnostic modes
-- **Community feedback** integration
-
-### 🏢 **Enterprise & Compliance**
-
-*Growing importance with adoption*
-
-- **Security auditing** and penetration testing
-- **Compliance certifications** (SOC2, ISO27001)
-- **Enterprise deployment** guides and tooling
-- **Professional support** and SLA offerings
-- **Training programs** and certification
-
----
-
-## 🎯 Strategic Success Indicators
-
-### **Technical Excellence**
-
-- [x] ~~95%+ uptime in production environments~~ ✅ Achieved
-- [x] ~~<50ms processing time for typical files~~ ✅ Achieved
-- [x] ~~<10MB memory usage regardless of input size~~ ✅ Achieved
-- [ ] 99%+ accuracy in syntax analysis across supported languages (In Progress)
-
-### **Market Adoption** *(Updated for 2026 Roadmap)*
-
-- [ ] 1,000+ monthly active users by v0.4.0
-- [ ] 10,000+ monthly active users by v0.5.0
-- [ ] 50+ community plugins by v0.6.0
-- [ ] 5+ major AI tool integrations by v0.6.0
-- [ ] 100,000+ downloads by v1.0
-
-### **Developer Ecosystem**
-
-- [ ] 20+ contributors to core project
-- [ ] 50+ third-party integrations and tools
-- [ ] 5+ enterprise customers using in production
-- [ ] Featured in major developer conferences and publications
-
-### **Quality Standards**
-
-- [ ] Maintain 90%+ test coverage across all versions
-- [ ] Zero critical security vulnerabilities
-- [ ] 95%+ positive user satisfaction ratings
-- [ ] Sub-24h response time for critical issues
-
----
-
-## 🔄 Feedback & Iteration
-
-### **Community Input Channels**
-
-- **GitHub Discussions** for feature requests and design feedback
-- **Monthly community calls** for roadmap updates and Q&A
-- **User surveys** for experience and priority feedback
-- **Beta testing programs** for early feature validation
-
-### **Success Metrics Review**
-
-- **Quarterly roadmap reviews** with community input
-- **Feature usage analytics** to guide prioritization
-- **Performance benchmarking** against established tools
-- **Security audit results** and remediation tracking
-
-### **Roadmap Flexibility**
-
-This roadmap is a living document that evolves based on:
-
-- **Community feedback** and feature requests
-- **Market opportunities** and competitive landscape
-- **Technical discoveries** and implementation learnings
-- **Partnership opportunities** with AI and development tool vendors
-
----
-
-## 🤝 Contributing to the Roadmap
-
-We welcome community input on our development direction:
-
-1. **Feature Requests**: Open issues with detailed use cases
-2. **Design Discussions**: Participate in RFC discussions
-3. **Implementation**: Contribute code for roadmap features
-4. **Testing**: Join beta testing programs
-5. **Documentation**: Help improve guides and tutorials
-
-**Contact**: <roadmap@batless-project.com> for strategic discussions
-
----
-
-*This roadmap reflects our commitment to making batless the definitive code analysis tool for the AI era while maintaining our core values of performance, reliability, and developer-first design.*
+Feature requests and design input welcome via GitHub Issues. For roadmap-level discussion, open a Discussion thread — changes to this document go through the same review process as code.
