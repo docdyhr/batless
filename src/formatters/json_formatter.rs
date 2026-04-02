@@ -51,6 +51,7 @@ impl Formatter for JsonFormatter {
             "file_hash": file_info.file_hash,
             "estimated_llm_tokens": file_info.estimated_llm_tokens,
             "token_model": file_info.token_model,
+            "compression_ratio": file_info.compression_ratio,
             "mode": "json"
         });
 

@@ -123,6 +123,9 @@ impl OutputFormatter {
         if let Some(ref model) = file_info.token_model {
             json_data["token_model"] = json!(model);
         }
+        if let Some(ratio) = file_info.compression_ratio {
+            json_data["compression_ratio"] = json!(ratio);
+        }
 
         if config.pretty_json {
             serde_json::to_string_pretty(&json_data).map_err(BatlessError::from)

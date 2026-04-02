@@ -45,6 +45,8 @@ pub struct FileInfo {
     pub estimated_llm_tokens: Option<u64>,
     /// AI model used for token estimation (e.g. "Claude", "Gpt4")
     pub token_model: Option<String>,
+    /// Ratio of original line count to stripped line count (set when strip_comments or strip_blank_lines is active)
+    pub compression_ratio: Option<f64>,
 }
 
 impl FileInfo {
@@ -69,6 +71,7 @@ impl FileInfo {
             file_hash: None,
             estimated_llm_tokens: None,
             token_model: None,
+            compression_ratio: None,
         }
     }
 
@@ -98,6 +101,7 @@ impl FileInfo {
             file_hash: None,
             estimated_llm_tokens: None,
             token_model: None,
+            compression_ratio: None,
         }
     }
 
@@ -149,6 +153,12 @@ impl FileInfo {
     pub fn with_estimated_llm_tokens(mut self, tokens: Option<u64>, model: Option<String>) -> Self {
         self.estimated_llm_tokens = tokens;
         self.token_model = model;
+        self
+    }
+
+    /// Set compression ratio (original lines / stripped lines)
+    pub fn with_compression_ratio(mut self, ratio: Option<f64>) -> Self {
+        self.compression_ratio = ratio;
         self
     }
 

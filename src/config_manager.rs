@@ -180,6 +180,14 @@ pub struct Args {
     /// Compute and include SHA-256 content hash in JSON output (for change detection)
     #[arg(long)]
     pub hash: bool,
+
+    /// Strip comment-only lines from output
+    #[arg(long)]
+    pub strip_comments: bool,
+
+    /// Strip blank lines from output
+    #[arg(long)]
+    pub strip_blank_lines: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -540,6 +548,12 @@ impl ConfigManager {
         }
         if self.args.hash {
             new_config = new_config.with_hash(true);
+        }
+        if self.args.strip_comments {
+            new_config = new_config.with_strip_comments(true);
+        }
+        if self.args.strip_blank_lines {
+            new_config = new_config.with_strip_blank_lines(true);
         }
         if let Some(chunk_size) = self.args.streaming_chunk_size {
             new_config = new_config.with_streaming_chunk_size(chunk_size);

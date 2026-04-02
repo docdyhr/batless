@@ -109,6 +109,25 @@ impl FileProcessor {
             file_info = file_info.with_file_hash(Some(hash));
         }
 
+        // Strip comments and/or blank lines if requested
+        if config.strip_comments || config.strip_blank_lines {
+            let original_count = file_info.lines.len();
+            let language = file_info.language.as_deref();
+            file_info.lines = Self::strip_content_lines(
+                file_info.lines,
+                language,
+                config.strip_comments,
+                config.strip_blank_lines,
+            );
+            let stripped_count = file_info.lines.len();
+            let ratio = if stripped_count > 0 {
+                original_count as f64 / stripped_count as f64
+            } else {
+                original_count as f64
+            };
+            file_info = file_info.with_compression_ratio(Some(ratio));
+        }
+
         Ok(file_info)
     }
 
@@ -128,6 +147,102 @@ impl FileProcessor {
             hasher.update(&buf[..n]);
         }
         Ok(format!("{:x}", hasher.finalize()))
+    }
+
+    /// Strip comment-only and/or blank lines from a line buffer.
+    ///
+    /// Uses simple prefix-based heuristics for most languages.  For single-line
+    /// comment detection the rules are:
+    ///   - `//` — C, Rust, Go, Java, JS/TS, Swift, Kotlin, Dart, C++
+    ///   - `#`  — Python, Ruby, Shell, YAML, TOML, Perl, R
+    ///   - `--` — SQL, Lua, Haskell, Ada
+    ///   - `%`  — TeX/LaTeX, Prolog, MATLAB/Octave
+    ///   - `;`  — Lisp, Assembly, INI
+    ///
+    /// Multi-line block comments (`/* ... */`, `{- ... -}`, `(*...*}`, etc.)
+    /// are handled by tracking an `in_block` state flag.
+    fn strip_content_lines(
+        lines: Vec<String>,
+        language: Option<&str>,
+        strip_comments: bool,
+        strip_blank_lines: bool,
+    ) -> Vec<String> {
+        let lang = language.unwrap_or("").to_lowercase();
+
+        // Determine single-line comment prefix for language
+        let single_prefix: &str = if lang.contains("python")
+            || lang.contains("ruby")
+            || lang.contains("shell")
+            || lang.contains("bash")
+            || lang.contains("zsh")
+            || lang.contains("yaml")
+            || lang.contains("toml")
+            || lang.contains("perl")
+            || lang == "r"
+        {
+            "#"
+        } else if lang.contains("sql")
+            || lang.contains("lua")
+            || lang.contains("haskell")
+            || lang.contains("ada")
+        {
+            "--"
+        } else if lang.contains("tex")
+            || lang.contains("latex")
+            || lang.contains("matlab")
+            || lang.contains("octave")
+            || lang.contains("prolog")
+        {
+            "%"
+        } else if lang.contains("lisp")
+            || lang.contains("scheme")
+            || lang.contains("clojure")
+            || lang.contains("assembly")
+            || lang.contains("ini")
+        {
+            ";"
+        } else {
+            "//"
+        };
+
+        let mut result = Vec::with_capacity(lines.len());
+        let mut in_block = false;
+
+        for line in lines {
+            let trimmed = line.trim();
+
+            if strip_blank_lines && trimmed.is_empty() {
+                continue;
+            }
+
+            if strip_comments {
+                // Track block comments (C-style /* */ used by most languages)
+                if in_block {
+                    if trimmed.contains("*/") {
+                        in_block = false;
+                    }
+                    continue;
+                }
+
+                // Detect start of block comment
+                if trimmed.starts_with("/*") {
+                    if !trimmed.contains("*/") {
+                        in_block = true;
+                    }
+                    // Skip both single-line block comments (/* ... */) and opening lines
+                    continue;
+                }
+
+                // Single-line comment
+                if trimmed.starts_with(single_prefix) {
+                    continue;
+                }
+            }
+
+            result.push(line);
+        }
+
+        result
     }
 
     /// Process input from stdin

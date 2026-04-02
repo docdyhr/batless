@@ -71,6 +71,12 @@ pub struct BatlessConfig {
     /// Compute and include SHA-256 file hash in JSON output
     #[serde(default)]
     pub hash: bool,
+    /// Strip comment-only lines from output
+    #[serde(default)]
+    pub strip_comments: bool,
+    /// Strip blank lines from output
+    #[serde(default)]
+    pub strip_blank_lines: bool,
 }
 
 fn default_max_lines() -> usize {
@@ -115,6 +121,8 @@ impl Default for BatlessConfig {
             pretty_json: false,
             json_line_numbers: false,
             hash: false,
+            strip_comments: false,
+            strip_blank_lines: false,
         }
     }
 }
@@ -244,6 +252,18 @@ impl BatlessConfig {
     /// Compute and include SHA-256 file hash in JSON output
     pub fn with_hash(mut self, enabled: bool) -> Self {
         self.hash = enabled;
+        self
+    }
+
+    /// Strip comment-only lines from output
+    pub fn with_strip_comments(mut self, enabled: bool) -> Self {
+        self.strip_comments = enabled;
+        self
+    }
+
+    /// Strip blank lines from output
+    pub fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
+        self.strip_blank_lines = enabled;
         self
     }
 
@@ -467,6 +487,12 @@ impl BatlessConfig {
         }
         if other.hash != default.hash {
             self.hash = other.hash;
+        }
+        if other.strip_comments != default.strip_comments {
+            self.strip_comments = other.strip_comments;
+        }
+        if other.strip_blank_lines != default.strip_blank_lines {
+            self.strip_blank_lines = other.strip_blank_lines;
         }
 
         self
