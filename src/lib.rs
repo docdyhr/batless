@@ -37,7 +37,6 @@ pub mod json_schema;
 pub mod language;
 pub mod performance;
 pub mod processor;
-pub mod processor_builder;
 pub mod profile;
 pub mod streaming;
 pub mod summarizer;

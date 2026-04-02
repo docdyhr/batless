@@ -8,8 +8,7 @@ use crate::summary::SummaryLevel;
 use crate::summary_item::SummaryItem;
 use std::ops::ControlFlow;
 use std::time::{Duration, Instant};
-// use streaming_iterator::StreamingIterator; // Removed
-use tree_sitter::{ParseOptions, Parser, Query, QueryCursor, StreamingIterator}; // Added StreamingIterator
+use tree_sitter::{ParseOptions, Parser, Query, QueryCursor, StreamingIterator};
 
 /// Maximum time allowed for tree-sitter parsing before aborting.
 const PARSE_TIMEOUT: Duration = Duration::from_millis(500);
