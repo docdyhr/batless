@@ -29,7 +29,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Extract version
         id: version
@@ -51,7 +51,7 @@ jobs:
             exit 1
           fi
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
 
       - name: Validate crate
         run: cargo check --release
@@ -67,8 +67,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - name: Run tests
         run: cargo test --all --release --verbose
         shell: bash
@@ -98,17 +98,17 @@ jobs:
             binary_suffix: ""
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Install musl tools
         if: matrix.target == 'x86_64-unknown-linux-musl'
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with:
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           key: release-${{ matrix.target }}
 
@@ -126,7 +126,7 @@ jobs:
           fi
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: batless-${{ matrix.target }}
           path: batless-${{ matrix.target }}.*
@@ -138,10 +138,10 @@ jobs:
     needs: [validate, build-release]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
 
       - name: Generate changelog
         id: changelog
@@ -157,7 +157,7 @@ jobs:
           fi
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
           tag_name: v${{ needs.validate.outputs.version }}
           name: Release v${{ needs.validate.outputs.version }}
@@ -175,12 +175,12 @@ jobs:
     permissions:
       id-token: write # required for OIDC trusted publishing
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
 
       - name: Authenticate with crates.io (trusted publishing)
         id: auth
-        uses: rust-lang/crates-io-auth-action@v1.0.4
+        uses: rust-lang/crates-io-auth-action@bbd81622f20ce9e2dd9622e3218b975523e45bbe # v1.0.4
 
       - name: Publish to crates.io
         env:
@@ -207,7 +207,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v7
+        uses: dawidd6/action-homebrew-bump-formula@1446dca236b0440c6f02723a3f14f13be2c04ab0 # v7
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           tap: docdyhr/homebrew-tap
@@ -222,7 +222,7 @@ jobs:
     if: always() && needs.validate.result == 'success'
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Check release status
         run: |
@@ -257,7 +257,7 @@ jobs:
     if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'release')
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 

@@ -135,6 +135,8 @@ fix_dependencies() {
 
     # For Node.js projects
     if [ -f "package.json" ]; then
+        # Intentional clean reinstall (lockfile regeneration). Versions are
+        # controlled by semver ranges in package.json; npm audit fix follows.
         rm -rf node_modules package-lock.json
         npm install
         npm audit fix
@@ -196,7 +198,7 @@ check_precommit() {
 
     if ! command -v pre-commit &> /dev/null; then
         log "Installing pre-commit..." "$YELLOW"
-        pip install pre-commit
+        pip install "pre-commit==4.2.0"
         pre-commit install
     fi
 

@@ -23,10 +23,10 @@ jobs:
     continue-on-error: true
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Install Rust (nightly for fuzzing)
-        uses: dtolnay/rust-toolchain@nightly
+        uses: dtolnay/rust-toolchain@5b842231ba77f5c045dba54ac5560fed2db780e2 # nightly
 
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
@@ -42,7 +42,7 @@ jobs:
 
       - name: Archive fuzz artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: fuzz-artifacts
           path: fuzz/artifacts/
@@ -54,7 +54,7 @@ jobs:
     if: always()
     steps:
       - name: Download fuzz artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: fuzz-artifacts
           path: fuzz/artifacts/
@@ -82,7 +82,7 @@ jobs:
           cat fuzz-summary.md
       - name: Comment PR with fuzz summary
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
