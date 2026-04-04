@@ -30,8 +30,8 @@ pub struct Args {
     pub max_bytes: Option<usize>,
 
     /// Output mode
-    #[arg(long, value_enum, default_value = "highlight")]
-    pub mode: CliOutputMode,
+    #[arg(long, value_enum)]
+    pub mode: Option<CliOutputMode>,
 
     /// Color output control
     #[arg(long, value_enum, default_value = "auto")]
@@ -587,7 +587,7 @@ impl ConfigManager {
         }
         if let Some(summary_level) = self.args.summary_level {
             new_config = new_config.with_summary_level(summary_level.into());
-        } else if self.args.summary || self.args.mode == CliOutputMode::Summary {
+        } else if self.args.summary || self.args.mode == Some(CliOutputMode::Summary) {
             new_config = new_config.with_summary_mode(true);
         }
 
@@ -602,12 +602,16 @@ impl ConfigManager {
             custom_profile
                 .get_output_mode()
                 .and_then(|mode| mode.parse().ok())
-                .unwrap_or_else(|| self.args.mode.into())
+                .unwrap_or_else(|| self.args.mode.map_or(OutputMode::Highlight, Into::into))
         } else if let Some(profile) = self.args.profile {
             self.config = profile.apply_to_config(std::mem::take(&mut self.config));
-            profile.get_output_mode()
+            if let Some(explicit_mode) = self.args.mode {
+                explicit_mode.into()
+            } else {
+                profile.get_output_mode()
+            }
         } else {
-            self.args.mode.into()
+            self.args.mode.map_or(OutputMode::Highlight, Into::into)
         };
         Ok(())
     }

@@ -544,21 +544,31 @@ fn test_ai_profile_assistant() {
 }
 
 #[test]
-fn test_profile_overrides_other_flags() {
+fn test_explicit_mode_overrides_profile() {
     let test_file = create_test_file("fn main() {}\n", ".rs");
     let output = run_batless(&[
         "--profile",
         "claude",
         "--mode",
-        "json", // This should be overridden by claude profile
-        "--max-lines",
-        "1000", // This should be overridden by claude profile
+        "json", // Explicit --mode wins over profile default
         test_file.path().to_str().unwrap(),
     ]);
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
-    // Should still be summary output (claude profile), not JSON
+    // Explicit --mode=json should win over claude profile's summary default
+    assert!(stdout.starts_with("{"));
+    assert!(!stdout.contains("=== File Summary ==="));
+}
+
+#[test]
+fn test_profile_default_mode_used_without_explicit_mode() {
+    let test_file = create_test_file("fn main() {}\n", ".rs");
+    let output = run_batless(&["--profile", "claude", test_file.path().to_str().unwrap()]);
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    // Without explicit --mode, claude profile's summary default applies
     assert!(stdout.contains("=== File Summary ==="));
     assert!(!stdout.starts_with("{"));
 }
