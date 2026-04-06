@@ -2,7 +2,7 @@
 # Produces a minimal Docker image (~8MB) for containerized usage
 
 # Stage 1: Build
-FROM rust:1.80-alpine AS builder
+FROM rust:1.80-alpine@sha256:1f5aff501e02c1384ec61bb47f89e3eebf60e287e6ed5d1c598077afc82e83d5 AS builder
 
 # Install build dependencies including oniguruma for syntect
 RUN apk add --no-cache musl-dev gcc oniguruma-dev pkgconfig
@@ -29,7 +29,7 @@ COPY README.md ./
 RUN timeout 1200 cargo build --release --verbose || (echo "Build failed - checking disk space:" && df -h && echo "Memory usage:" && free -h && echo "Architecture: $(uname -m)" && exit 1)
 
 # Stage 2: Runtime
-FROM alpine:3.18 AS runtime
+FROM alpine:3.18@sha256:de0eb0b3f2a47ba1eb89389859a9bd88b28e82f5826b6969ad604979713c2d4f AS runtime
 
 # Install CA certificates for HTTPS
 RUN apk add --no-cache ca-certificates

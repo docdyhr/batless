@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 jobs:
@@ -126,6 +125,9 @@ jobs:
   semgrep:
     name: Semgrep Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
     container:
       image: semgrep/semgrep
     steps:
