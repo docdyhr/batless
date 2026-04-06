@@ -143,6 +143,7 @@ impl FileProcessor {
 
     /// Compute SHA-256 hex digest for a file's content
     fn compute_file_hash(file_path: &str) -> BatlessResult<String> {
+        use std::fmt::Write as FmtWrite;
         let mut hasher = Sha256::new();
         let mut file =
             File::open(file_path).map_err(|e| BatlessError::from_io_error(e, file_path))?;
@@ -156,7 +157,13 @@ impl FileProcessor {
             }
             hasher.update(&buf[..n]);
         }
-        Ok(format!("{:x}", hasher.finalize()))
+        Ok(hasher
+            .finalize()
+            .iter()
+            .fold(String::with_capacity(64), |mut s, b| {
+                let _ = write!(s, "{b:02x}");
+                s
+            }))
     }
 
     /// Strip comment-only and/or blank lines from a line buffer.
