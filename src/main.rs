@@ -203,14 +203,30 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
 }
 
 fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
+    let entries = match std::fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("batless: cannot read directory {}: {}", dir.display(), e);
+            return;
+        }
     };
     let mut entries: Vec<_> = entries.flatten().collect();
     entries.sort_by_key(|e| e.path());
     for entry in entries {
         let path = entry.path();
-        if path.is_dir() {
+        // Use symlink_metadata so symlinks are never followed — prevents cycles.
+        let meta = match std::fs::symlink_metadata(&path) {
+            Ok(m) => m,
+            Err(e) => {
+                eprintln!("batless: cannot stat {}: {}", path.display(), e);
+                continue;
+            }
+        };
+        if meta.is_symlink() {
+            // Skip symlinks entirely to avoid directory cycles.
+            continue;
+        }
+        if meta.is_dir() {
             // Skip hidden directories
             if path
                 .file_name()
@@ -221,7 +237,7 @@ fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathB
                 continue;
             }
             collect_files_recursive(&path, out);
-        } else if path.is_file() {
+        } else if meta.is_file() {
             out.push(path);
         }
     }

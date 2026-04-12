@@ -12,12 +12,36 @@ use std::path::Path;
 pub struct LanguageDetector;
 
 impl LanguageDetector {
-    /// Detect the programming language from a file path (extension-based)
+    /// Detect the programming language from a file path.
+    ///
+    /// Checks the file extension first; falls back to filename-only matching
+    /// for extensionless files like `Dockerfile` and `Makefile`.
     pub fn detect_language(file_path: &str) -> Option<String> {
         let path = Path::new(file_path);
-        path.extension()
+        // Extension-based detection
+        if let Some(lang) = path
+            .extension()
             .and_then(|e| e.to_str())
             .and_then(Self::extension_to_language)
+        {
+            return Some(lang);
+        }
+        // Filename-only fallback for extensionless conventional files
+        path.file_name()
+            .and_then(|n| n.to_str())
+            .and_then(Self::filename_to_language)
+    }
+
+    /// Map well-known extensionless filenames to language names.
+    fn filename_to_language(filename: &str) -> Option<String> {
+        let language_name = match filename.to_lowercase().as_str() {
+            "dockerfile" => "Dockerfile",
+            "makefile" | "gnumakefile" => "Makefile",
+            "vagrantfile" | "gemfile" | "rakefile" | "guardfile" | "podfile" => "Ruby",
+            "justfile" => "Makefile",
+            _ => return None,
+        };
+        Some(language_name.to_string())
     }
 
     /// Detect language with fallback (alias for detect_language post-syntect removal)

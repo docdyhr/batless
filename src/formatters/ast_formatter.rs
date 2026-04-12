@@ -106,7 +106,7 @@ impl Formatter for AstFormatter {
         &self,
         file_info: &FileInfo,
         file_path: &str,
-        _config: &BatlessConfig,
+        config: &BatlessConfig,
     ) -> BatlessResult<String> {
         let language = file_info.language.as_deref();
         let content = file_info.lines.join("\n");
@@ -130,7 +130,11 @@ impl Formatter for AstFormatter {
             "root": root_value,
         });
 
-        Ok(serde_json::to_string_pretty(&output)?)
+        if config.pretty_json {
+            Ok(serde_json::to_string_pretty(&output)?)
+        } else {
+            Ok(serde_json::to_string(&output)?)
+        }
     }
 
     fn output_mode(&self) -> OutputMode {

@@ -53,9 +53,9 @@ for arg in "$@"; do
         --hash|--streaming|\
         -n|--number|-b|--number-nonblank)
             FLAGS+=("$arg") ;;
-        --chunk-strategy=*|--language=*|--theme=*|--ai-model=*)
+        --chunk-strategy=*|--language=*|--ai-model=*)
             EXTRA_FLAGS+=("${arg%%=*}") ;;
-        --version|--version-json|--list-languages|--list-themes)
+        --version|--version-json|--list-languages)
             FLAGS+=("$arg") ;;
         -*) FLAGS+=("$arg") ;;
         *)  FILES+=("$arg") ;;
