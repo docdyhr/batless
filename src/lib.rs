@@ -32,7 +32,6 @@ pub mod error;
 pub mod file_info;
 pub mod formatter;
 pub mod formatters;
-pub mod highlighter;
 pub mod json_schema;
 pub mod language;
 pub mod processor;
@@ -46,35 +45,23 @@ pub mod traits;
 
 // Re-export for fuzzing and external use
 pub use tokens::TokenExtractor;
-pub mod wizard;
 
 // Re-export commonly used types
 pub use config::BatlessConfig;
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};
-pub use highlighter::SyntaxHighlighter;
 pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValidator};
-pub use language::{LanguageDetector, ThemeManager};
+pub use language::LanguageDetector;
 pub use processor::FileProcessor;
 pub use profile::CustomProfile;
 pub use streaming::{StreamingCheckpoint, StreamingChunk, StreamingProcessor};
 pub use summary::SummaryLevel;
 pub use tokens::{AiModel, TokenCount, TokenCounter};
-pub use wizard::ConfigurationWizard;
 
 /// Main entry point for processing a file with batless
 pub fn process_file(file_path: &str, config: &BatlessConfig) -> BatlessResult<FileInfo> {
     FileProcessor::process_file(file_path, config)
-}
-
-/// Highlight content with syntax highlighting
-pub fn highlight_content(
-    content: &str,
-    file_path: &str,
-    config: &BatlessConfig,
-) -> BatlessResult<String> {
-    SyntaxHighlighter::highlight_content(content, file_path, config)
 }
 
 /// Detect the programming language from a file path
@@ -85,11 +72,6 @@ pub fn detect_language(file_path: &str) -> Option<String> {
 /// Get list of all available programming languages
 pub fn list_languages() -> Vec<String> {
     LanguageDetector::list_languages()
-}
-
-/// Get list of all available themes
-pub fn list_themes() -> Vec<String> {
-    ThemeManager::list_themes()
 }
 
 /// Format output according to the specified mode
@@ -178,40 +160,10 @@ mod tests {
     }
 
     #[test]
-    fn test_highlight_content_plain() -> BatlessResult<()> {
-        let content = "fn main() {}";
-        let config = BatlessConfig::default().with_use_color(false);
-
-        let result = highlight_content(content, "test.rs", &config)?;
-        assert_eq!(result, content);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_highlight_content_with_syntax() -> BatlessResult<()> {
-        let content = "fn main() {}";
-        let config = BatlessConfig::default().with_use_color(true);
-
-        let result = highlight_content(content, "test.rs", &config)?;
-        // Should contain ANSI escape sequences when color is enabled
-        assert!(result.contains("\x1b[") || result == content); // May not have color in test env
-
-        Ok(())
-    }
-
-    #[test]
     fn test_list_languages() {
         let languages = list_languages();
         assert!(!languages.is_empty());
         assert!(languages.contains(&"Rust".to_string()));
-    }
-
-    #[test]
-    fn test_list_themes() {
-        let themes = list_themes();
-        assert!(!themes.is_empty());
-        assert!(themes.contains(&"base16-ocean.dark".to_string()));
     }
 
     #[test]
@@ -257,7 +209,6 @@ mod tests {
         assert_eq!(config.max_lines, 10000);
         assert_eq!(config.max_bytes, None);
         assert_eq!(config.language, None);
-        assert_eq!(config.theme, "base16-ocean.dark");
         assert!(!config.strip_ansi);
         assert!(config.use_color);
         assert!(!config.include_tokens);

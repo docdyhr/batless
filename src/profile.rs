@@ -26,8 +26,6 @@ pub struct CustomProfile {
     pub max_bytes: Option<usize>,
     /// Override language detection
     pub language: Option<String>,
-    /// Theme for syntax highlighting
-    pub theme: Option<String>,
     /// Whether to strip ANSI escape sequences
     pub strip_ansi: Option<bool>,
     /// Whether to use color output
@@ -71,7 +69,6 @@ impl CustomProfile {
             max_lines: None,
             max_bytes: None,
             language: None,
-            theme: None,
             strip_ansi: None,
             use_color: None,
             include_tokens: None,
@@ -98,9 +95,6 @@ impl CustomProfile {
         }
         if let Some(ref language) = self.language {
             config = config.with_language(Some(language.clone()));
-        }
-        if let Some(ref theme) = self.theme {
-            config = config.with_theme(theme.clone());
         }
         if let Some(strip_ansi) = self.strip_ansi {
             config = config.with_strip_ansi(strip_ansi);

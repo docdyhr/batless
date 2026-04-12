@@ -85,6 +85,12 @@ brew install batless
 # Symbol index — structure without loading full content
 batless --mode=index src/main.rs
 
+# Multi-file symbol index — walk directory, one NDJSON line per file
+batless --mode=index src/ | jq -c 'select(.symbol_count > 0) | {file, symbol_count}'
+
+# Raw AST — full tree-sitter parse tree for deep structural analysis
+batless --mode=ast src/lib.rs | jq '.root.type'
+
 # Token estimation — check size before loading into AI context
 batless --mode=json --profile=claude file.py | jq '.estimated_llm_tokens'
 
@@ -109,12 +115,14 @@ batless --version-json
 |---------|-----------|-------|-------|
 | **Never Blocks** | ✅ Guaranteed | ❌ Uses pager | ✅ |
 | **Symbol Index (`--mode=index`)** | ✅ AST-backed | ❌ | ❌ |
+| **Raw AST (`--mode=ast`)** | ✅ tree-sitter | ❌ | ❌ |
+| **Multi-file Index (directory)** | ✅ NDJSON walk | ❌ | ❌ |
 | **LLM Token Estimation** | ✅ Per-profile | ❌ | ❌ |
 | **Semantic Chunking** | ✅ tree-sitter | ❌ | ❌ |
 | **Comment/Blank Stripping** | ✅ Language-aware | ❌ | ❌ |
 | **Content Hash** | ✅ SHA-256 | ❌ | ❌ |
 | **JSON Output** | ✅ First-class | ❌ | ❌ |
-| **Syntax Highlighting** | ✅ (deprecated in v0.6) | ✅ Rich | ❌ |
+| **Syntax Highlighting** | ❌ Use `bat` | ✅ Rich | ❌ |
 | **Interactive Human Use** | ❌ Not the goal | ✅ | ✅ |
 
 ### 🚀 Core Capabilities
@@ -134,7 +142,7 @@ batless --version-json
 
 #### Smart Output Modes
 
-- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
+- 📊 **Multiple output modes**: plain, JSON, summary, index, ast
 - 📏 **Smart limiting** by lines (`--max-lines`) and/or bytes (`--max-bytes`)
 - 💾 **Memory efficient** - true streaming, never loads full files
 - 🎯 **Predictable behavior** - same output in terminal or pipe
@@ -380,11 +388,12 @@ batless --generate-completions powershell >> $PROFILE
 
 ### Output Modes
 
-- `--mode <MODE>` - Output mode: `plain`, `highlight`, `json`, `summary`, `index`
+- `--mode <MODE>` - Output mode: `plain`, `json`, `summary`, `index`, `ast`
 - `--plain` - Plain text output (equivalent to `--mode=plain`)
 - `--mode=json` - Structured JSON output for automation
 - `--mode=summary` - Extract only key code structures
-- `--mode=index` - Machine-readable symbol table (kind, name, line ranges, visibility)
+- `--mode=index` - Machine-readable symbol table (kind, name, line ranges, visibility); pass a directory to walk it and emit one NDJSON line per file
+- `--mode=ast` - Raw tree-sitter parse tree as JSON (Rust, Python, JavaScript, TypeScript, TSX; `"root": null` for other languages)
 
 ### Limiting Output
 
@@ -396,7 +405,6 @@ batless --generate-completions powershell >> $PROFILE
 
 - `-n, --number` - Show line numbers (cat -n compatibility)
 - `-b, --number-nonblank` - Number non-blank lines only (cat -b compatibility)
-- `--theme <THEME>` - Color scheme to use
 - `--language <LANG>` - Force specific language syntax
 
 ### AI/Automation Features
@@ -448,11 +456,26 @@ When using `--mode=index`, the output includes:
 | `symbols[].signature` | string | First declaration line |
 | `symbols[].visibility` | string\|null | `pub`, `private`, `export`, `local` |
 
+When using `--mode=ast`, the output includes:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file` | string | File path |
+| `language` | string\|null | Detected language |
+| `mode` | string | `"ast"` |
+| `parser` | string | `"tree-sitter-rust"` etc., or `"none"` for unsupported languages |
+| `total_lines` | integer | Line count |
+| `total_bytes` | integer | File size in bytes |
+| `root` | object\|null | Root parse tree node; `null` when `parser` is `"none"` |
+| `root.type` | string | Node kind (e.g., `"source_file"`, `"module"`) |
+| `root.start` | [row, col] | 0-based start position |
+| `root.end` | [row, col] | 0-based end position |
+| `root.text` | string\|null | Node text for leaf nodes (≤256 chars) |
+| `root.children` | array\|null | Child nodes (same shape, max depth 64) |
+| `root.is_error` | boolean\|null | Present and `true` for error recovery nodes |
+
 ### Configuration
 
-- `--configure` - Launch interactive configuration wizard
-- `--list-profiles` - Show all available custom profiles
-- `--list-themes` - Show all available color themes
 - `--list-languages` - Show all supported languages
 
 ### Utility

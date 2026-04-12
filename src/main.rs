@@ -7,7 +7,6 @@ use clap_complete::generate;
 use std::io::{self, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-// The Args struct and its enums are now defined and re-exported from the config_manager module.
 use batless::config_manager::{Args, CliAiModel, Shell};
 
 fn print_error(error: &BatlessError) {
@@ -84,6 +83,11 @@ fn run() -> BatlessResult<()> {
 
     let file_path = config_manager.file_path()?;
 
+    // Directory input with index mode: walk and emit NDJSON
+    if output_mode == OutputMode::Index && std::path::Path::new(&file_path).is_dir() {
+        return handle_directory_index(&file_path, &config_manager);
+    }
+
     if config.streaming_json && output_mode == OutputMode::Json {
         return handle_streaming_json(&file_path, &config_manager);
     }
@@ -152,28 +156,6 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
         return Ok(true);
     }
 
-    if args.list_themes {
-        for theme in batless::ThemeManager::list_themes() {
-            println!("{theme}");
-        }
-        return Ok(true);
-    }
-
-    if args.configure {
-        batless::ConfigurationWizard::run()?;
-        return Ok(true);
-    }
-
-    if args.list_profiles {
-        batless::ConfigurationWizard::list_profiles()?;
-        return Ok(true);
-    }
-
-    if let Some(profile_path) = &args.edit_profile {
-        batless::ConfigurationWizard::edit_profile_by_path(profile_path)?;
-        return Ok(true);
-    }
-
     Ok(false)
 }
 
@@ -216,6 +198,68 @@ fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessRes
                 )?;
             }
         }
+    }
+    Ok(())
+}
+
+fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut entries: Vec<_> = entries.flatten().collect();
+    entries.sort_by_key(|e| e.path());
+    for entry in entries {
+        let path = entry.path();
+        if path.is_dir() {
+            // Skip hidden directories
+            if path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.starts_with('.'))
+                .unwrap_or(false)
+            {
+                continue;
+            }
+            collect_files_recursive(&path, out);
+        } else if path.is_file() {
+            out.push(path);
+        }
+    }
+}
+
+fn handle_directory_index(dir_path: &str, manager: &ConfigManager) -> BatlessResult<()> {
+    let config = manager.config();
+    let mut files = Vec::new();
+    collect_files_recursive(std::path::Path::new(dir_path), &mut files);
+
+    let stdout = io::stdout();
+    let mut out = stdout.lock();
+
+    for file in &files {
+        let path_str = file.to_string_lossy();
+        let compact = match batless::process_file(&path_str, config) {
+            Ok(file_info) => {
+                match batless::format_output(&file_info, &path_str, config, OutputMode::Index) {
+                    Ok(pretty) => {
+                        // Compact the pretty JSON to a single line for NDJSON
+                        serde_json::from_str::<serde_json::Value>(&pretty)
+                            .and_then(|v| serde_json::to_string(&v))
+                            .unwrap_or(pretty)
+                    }
+                    Err(e) => {
+                        let err_obj =
+                            serde_json::json!({"file": path_str.as_ref(), "error": e.to_string()});
+                        serde_json::to_string(&err_obj).unwrap_or_default()
+                    }
+                }
+            }
+            Err(e) => {
+                let err_obj =
+                    serde_json::json!({"file": path_str.as_ref(), "error": e.to_string()});
+                serde_json::to_string(&err_obj).unwrap_or_default()
+            }
+        };
+        writeln!(out, "{compact}")?;
     }
     Ok(())
 }

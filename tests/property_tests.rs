@@ -1,4 +1,4 @@
-use batless::{highlight_content, process_file, BatlessConfig};
+use batless::{process_file, BatlessConfig};
 use proptest::prelude::*;
 use std::io::Write;
 use tempfile::NamedTempFile;
@@ -24,21 +24,6 @@ proptest! {
         // Should never panic, even with arbitrary input
         if let Some(path) = file.path().to_str() {
             let _result = process_file(path, &config);
-        }
-    }
-
-    #[test]
-    fn test_highlight_content_deterministic(content in ".*") {
-        let config = BatlessConfig::default();
-
-        // Highlighting should be deterministic
-        let result1 = highlight_content(&content, "test.rs", &config);
-        let result2 = highlight_content(&content, "test.rs", &config);
-
-        prop_assert_eq!(result1.is_ok(), result2.is_ok());
-
-        if let (Ok(r1), Ok(r2)) = (&result1, &result2) {
-            prop_assert_eq!(r1, r2);
         }
     }
 

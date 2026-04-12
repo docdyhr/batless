@@ -41,10 +41,6 @@ pub struct Args {
     #[arg(skip)]
     pub color_specified: bool,
 
-    /// Theme for syntax highlighting
-    #[arg(long)]
-    pub theme: Option<String>,
-
     /// Strip ANSI escape codes from output
     #[arg(long)]
     pub strip_ansi: bool,
@@ -52,10 +48,6 @@ pub struct Args {
     /// List all supported languages
     #[arg(long)]
     pub list_languages: bool,
-
-    /// List all available themes
-    #[arg(long)]
-    pub list_themes: bool,
 
     /// Include extracted code identifiers in JSON output (preferred flag)
     #[arg(long)]
@@ -133,18 +125,6 @@ pub struct Args {
     #[arg(long)]
     pub checkpoint: Option<String>,
 
-    /// Run interactive configuration wizard
-    #[arg(long)]
-    pub configure: bool,
-
-    /// List available custom profiles
-    #[arg(long)]
-    pub list_profiles: bool,
-
-    /// Edit existing custom profile
-    #[arg(long)]
-    pub edit_profile: Option<String>,
-
     /// Enable debug mode with detailed processing information
     #[arg(long)]
     pub debug: bool,
@@ -197,11 +177,12 @@ pub struct Args {
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum CliOutputMode {
     Plain,
-    Highlight,
     Json,
     Summary,
     /// Machine-readable symbol index with line ranges
     Index,
+    /// Raw tree-sitter parse tree as JSON
+    Ast,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -298,10 +279,10 @@ impl From<CliOutputMode> for OutputMode {
     fn from(mode: CliOutputMode) -> Self {
         match mode {
             CliOutputMode::Plain => OutputMode::Plain,
-            CliOutputMode::Highlight => OutputMode::Highlight,
             CliOutputMode::Json => OutputMode::Json,
             CliOutputMode::Summary => OutputMode::Summary,
             CliOutputMode::Index => OutputMode::Index,
+            CliOutputMode::Ast => OutputMode::Ast,
         }
     }
 }
@@ -312,13 +293,13 @@ impl FromStr for OutputMode {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "plain" => Ok(OutputMode::Plain),
-            "highlight" => Ok(OutputMode::Highlight),
             "json" => Ok(OutputMode::Json),
             "summary" => Ok(OutputMode::Summary),
             "index" => Ok(OutputMode::Index),
+            "ast" => Ok(OutputMode::Ast),
             _ => Err(BatlessError::ConfigurationError {
                 message: format!("Invalid output mode: {s}"),
-                help: Some("Valid modes are: plain, highlight, json, summary".to_string()),
+                help: Some("Valid modes are: plain, json, summary, index, ast".to_string()),
             }),
         }
     }
@@ -414,7 +395,7 @@ impl ConfigManager {
         let mut manager = Self {
             args,
             config: BatlessConfig::default(),
-            output_mode: OutputMode::Highlight,
+            output_mode: OutputMode::Plain,
         };
         manager.load_and_apply_config()?;
         Ok(manager)
@@ -445,7 +426,7 @@ impl ConfigManager {
         let mut manager = Self {
             args: parsed_args,
             config: BatlessConfig::default(),
-            output_mode: OutputMode::Highlight,
+            output_mode: OutputMode::Plain,
         };
         manager.load_and_apply_config()?;
         Ok(manager)
@@ -509,7 +490,7 @@ impl ConfigManager {
 
         // 5. Final validation
         self.config.validate()?;
-        self.validate_language_and_theme()?;
+        self.validate_language()?;
 
         Ok(())
     }
@@ -527,9 +508,6 @@ impl ConfigManager {
         }
         if let Some(ref language) = self.args.language {
             new_config = new_config.with_language(Some(language.clone()));
-        }
-        if let Some(ref theme) = self.args.theme {
-            new_config = new_config.with_theme(theme.clone());
         }
         if self.args.strip_ansi {
             new_config = new_config.with_strip_ansi(self.args.strip_ansi);
@@ -602,7 +580,7 @@ impl ConfigManager {
             custom_profile
                 .get_output_mode()
                 .and_then(|mode| mode.parse().ok())
-                .unwrap_or_else(|| self.args.mode.map_or(OutputMode::Highlight, Into::into))
+                .unwrap_or_else(|| self.args.mode.map_or(OutputMode::Plain, Into::into))
         } else if let Some(profile) = self.args.profile {
             self.config = profile.apply_to_config(std::mem::take(&mut self.config));
             if let Some(explicit_mode) = self.args.mode {
@@ -611,7 +589,7 @@ impl ConfigManager {
                 profile.get_output_mode()
             }
         } else {
-            self.args.mode.map_or(OutputMode::Highlight, Into::into)
+            self.args.mode.map_or(OutputMode::Plain, Into::into)
         };
         Ok(())
     }
@@ -630,12 +608,11 @@ impl ConfigManager {
         }
     }
 
-    /// Validates the language and theme settings.
-    fn validate_language_and_theme(&self) -> BatlessResult<()> {
+    /// Validates the language setting.
+    fn validate_language(&self) -> BatlessResult<()> {
         if let Some(ref lang) = self.config.language {
             crate::LanguageDetector::validate_language(lang)?;
         }
-        crate::ThemeManager::validate_theme(&self.config.theme)?;
         Ok(())
     }
 }
@@ -653,7 +630,7 @@ mod tests {
     #[test]
     fn test_default_output_mode() {
         let mgr = make_manager(&["Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Highlight);
+        assert_eq!(mgr.output_mode(), OutputMode::Plain);
     }
 
     #[test]
@@ -840,30 +817,25 @@ mod tests {
     #[test]
     fn test_output_mode_from_str() {
         assert_eq!(OutputMode::from_str("plain").unwrap(), OutputMode::Plain);
-        assert_eq!(
-            OutputMode::from_str("highlight").unwrap(),
-            OutputMode::Highlight
-        );
         assert_eq!(OutputMode::from_str("json").unwrap(), OutputMode::Json);
         assert_eq!(
             OutputMode::from_str("summary").unwrap(),
             OutputMode::Summary
         );
+        assert_eq!(OutputMode::from_str("index").unwrap(), OutputMode::Index);
+        assert!(OutputMode::from_str("highlight").is_err());
         assert!(OutputMode::from_str("invalid").is_err());
     }
 
     #[test]
     fn test_cli_output_mode_conversion() {
         assert_eq!(OutputMode::from(CliOutputMode::Plain), OutputMode::Plain);
-        assert_eq!(
-            OutputMode::from(CliOutputMode::Highlight),
-            OutputMode::Highlight
-        );
         assert_eq!(OutputMode::from(CliOutputMode::Json), OutputMode::Json);
         assert_eq!(
             OutputMode::from(CliOutputMode::Summary),
             OutputMode::Summary
         );
+        assert_eq!(OutputMode::from(CliOutputMode::Index), OutputMode::Index);
     }
 
     #[test]

@@ -1,11 +1,14 @@
 //! Modular formatting functionality
 //!
-//! This module provides the `Formatter` trait and specialized formatters.
-//! Production output routing goes through `src/formatter.rs`; this module
-//! provides the trait interface and the Index/Error formatters that use it.
+//! This module provides the `Formatter` trait and all output formatters.
+//! `src/formatter.rs` is a thin dispatcher that routes through these.
 
+pub mod ast_formatter;
 pub mod error_formatter;
 pub mod index_formatter;
+pub mod json_formatter;
+pub mod plain_formatter;
+pub mod summary_formatter;
 
 use crate::config::BatlessConfig;
 use crate::error::BatlessResult;
