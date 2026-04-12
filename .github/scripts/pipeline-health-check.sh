@@ -135,11 +135,14 @@ fix_dependencies() {
 
     # For Node.js projects
     if [ -f "package.json" ]; then
-        # Intentional clean reinstall (lockfile regeneration). Versions are
-        # controlled by semver ranges in package.json; npm audit fix follows.
-        rm -rf node_modules package-lock.json
-        npm install
-        npm audit fix
+        if [ -f "package-lock.json" ]; then
+            # Reproducible install from lockfile (Scorecard: no unpinned installs)
+            npm ci
+        else
+            # No lockfile present — generate one, then audit
+            npm install --ignore-scripts
+            npm audit fix
+        fi
     fi
 
     log "✅ Dependencies updated" "$GREEN"
@@ -198,7 +201,9 @@ check_precommit() {
 
     if ! command -v pre-commit &> /dev/null; then
         log "Installing pre-commit..." "$YELLOW"
-        pip install "pre-commit==4.2.0"
+        pip install "pre-commit==4.2.0" \
+            --require-hashes \
+            --hash=sha256:a009ca7205f1eb497d10b845e52c838a98b6cdd2102a6c8e4540e94ee75c58bd
         pre-commit install
     fi
 
