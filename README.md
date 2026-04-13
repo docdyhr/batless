@@ -91,6 +91,7 @@ batless --mode=index src/ | jq -c 'select(.symbol_count > 0) | {file, symbol_cou
 # Raw AST — full tree-sitter parse tree for deep structural analysis
 batless --mode=ast src/lib.rs | jq '.root.type'
 
+
 # Token estimation — check size before loading into AI context
 batless --mode=json --profile=claude file.py | jq '.estimated_llm_tokens'
 
