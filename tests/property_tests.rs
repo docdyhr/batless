@@ -111,4 +111,27 @@ proptest! {
         let file_path = file.path().to_str().expect("Failed to convert path");
         let _result = process_file(file_path, &config);
     }
+
+    // Replacing the removed test_highlight_content_deterministic property test:
+    // verify that JSON-mode output is deterministic for arbitrary input.
+    #[test]
+    fn test_json_mode_output_is_deterministic(content in ".*") {
+        let mut file = NamedTempFile::new().expect("Failed to create test file");
+        file.write_all(content.as_bytes()).expect("Failed to write test content");
+
+        let config = BatlessConfig::default();
+        let file_path = file.path().to_str().expect("Failed to convert path");
+
+        let r1 = process_file(file_path, &config);
+        let r2 = process_file(file_path, &config);
+
+        match (r1, r2) {
+            (Ok(a), Ok(b)) => {
+                prop_assert_eq!(a.lines, b.lines, "JSON mode output should be deterministic");
+                prop_assert_eq!(a.total_lines, b.total_lines);
+            }
+            (Err(_), Err(_)) => {} // both fail the same way — acceptable
+            _ => prop_assert!(false, "results should agree on success/failure"),
+        }
+    }
 }

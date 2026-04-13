@@ -109,7 +109,13 @@ impl Formatter for AstFormatter {
         config: &BatlessConfig,
     ) -> BatlessResult<String> {
         let language = file_info.language.as_deref();
-        let content = file_info.lines.join("\n");
+        // Use original_lines if available so comment/blank stripping doesn't
+        // alter the byte offsets that tree-sitter reports in its AST nodes.
+        let content = file_info
+            .original_lines
+            .as_deref()
+            .unwrap_or(&file_info.lines)
+            .join("\n");
         let source = content.as_bytes();
 
         let (root_value, parser_name) = match Self::parse_to_tree(&content, language) {
