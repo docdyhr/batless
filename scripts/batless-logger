@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+# batless-logger — transparent wrapper that logs every batless invocation
+# as NDJSON, then delegates to the real binary.
+#
+# INSTALL:
+#   1. Place real batless binary somewhere on PATH (e.g. ~/.cargo/bin/batless)
+#   2. Put this script earlier on PATH (e.g. ~/bin/batless) and chmod +x
+#   3. Set BATLESS_REAL to the real binary path if auto-detection fails
+#      e.g. export BATLESS_REAL="$HOME/.cargo/bin/batless"
+#
+# LOGS:  ~/.batless/stats/YYYY-MM-DD.ndjson  (one JSON object per call)
+# STATS: run batless-stats to analyse
+
+set -euo pipefail
+
+# ── Config ────────────────────────────────────────────────────────────────────
+LOG_DIR="${BATLESS_LOG_DIR:-$HOME/.batless/stats}"
+SESSION_ID="${BATLESS_SESSION:-$(date +%s | md5 -q 2>/dev/null || date +%s | md5sum | cut -c1-8)}"
+
+# Locate the real batless binary (skip this script itself)
+if [[ -n "${BATLESS_REAL:-}" ]]; then
+    REAL="$BATLESS_REAL"
+else
+    SCRIPT_PATH="$(realpath "$0" 2>/dev/null || readlink -f "$0")"
+    REAL="$(which -a batless 2>/dev/null | while read -r p; do
+        rp="$(realpath "$p" 2>/dev/null || readlink -f "$p")"
+        [[ "$rp" != "$SCRIPT_PATH" ]] && echo "$p" && break
+    done)"
+    if [[ -z "$REAL" ]]; then
+        echo "batless-logger: cannot find real batless binary. Set BATLESS_REAL." >&2
+        exit 1
+    fi
+fi
+
+# ── Parse args ────────────────────────────────────────────────────────────────
+MODE="default"
+PROFILE=""
+MAX_LINES=""
+MAX_BYTES=""
+FLAGS=()
+FILES=()
+EXTRA_FLAGS=()
+
+for arg in "$@"; do
+    case "$arg" in
+        --mode=*)        MODE="${arg#--mode=}" ;;
+        --plain)         MODE="plain" ;;
+        --profile=*)     PROFILE="${arg#--profile=}" ;;
+        --max-lines=*)   MAX_LINES="${arg#--max-lines=}" ;;
+        --max-bytes=*)   MAX_BYTES="${arg#--max-bytes=}" ;;
+        --strip-comments|--strip-blank-lines|\
+        --include-identifiers|--summary|--with-line-numbers|\
+        --hash|--streaming|\
+        -n|--number|-b|--number-nonblank)
+            FLAGS+=("$arg") ;;
+        --chunk-strategy=*|--language=*|--theme=*|--ai-model=*)
+            EXTRA_FLAGS+=("${arg%%=*}") ;;
+        --version|--version-json|--list-languages|--list-themes)
+            FLAGS+=("$arg") ;;
+        -*) FLAGS+=("$arg") ;;
+        *)  FILES+=("$arg") ;;
+    esac
+done
+
+# ── Build JSON log entry ──────────────────────────────────────────────────────
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/$(date +%Y-%m-%d).ndjson"
+TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Serialise bash arrays to JSON using python3
+json_array() {
+    if [[ $# -eq 0 ]]; then
+        echo "[]"
+    else
+        printf '%s\n' "$@" | python3 -c \
+            'import json,sys; print(json.dumps([l.rstrip() for l in sys.stdin]))'
+    fi
+}
+
+json_str() {
+    python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$1"
+}
+
+FLAGS_JSON="$(json_array "${FLAGS[@]+${FLAGS[@]}}")"
+FILES_JSON="$(json_array "${FILES[@]+${FILES[@]}}")"
+EXTRA_JSON="$(json_array "${EXTRA_FLAGS[@]+${EXTRA_FLAGS[@]}}")"
+
+FILE_COUNT=${#FILES[@]}
+FILE_EXTS="[]"
+if [[ $FILE_COUNT -gt 0 ]]; then
+    EXTS=()
+    for f in "${FILES[@]}"; do
+        ext="${f##*.}"
+        [[ "$ext" != "$f" ]] && EXTS+=(".$ext") || EXTS+=("(none)")
+    done
+    FILE_EXTS="$(json_array "${EXTS[@]}")"
+fi
+
+PROFILE_JSON="$([ -n "$PROFILE" ] && json_str "$PROFILE" || echo "null")"
+MAX_LINES_JSON="${MAX_LINES:-null}"
+MAX_BYTES_JSON="${MAX_BYTES:-null}"
+
+printf '%s\n' \
+  "{\"ts\":\"$TS\",\"session\":\"$SESSION_ID\",\"mode\":\"$MODE\",\"profile\":$PROFILE_JSON,\
+\"max_lines\":$MAX_LINES_JSON,\"max_bytes\":$MAX_BYTES_JSON,\
+\"flags\":$FLAGS_JSON,\"extra_flags\":$EXTRA_JSON,\
+\"files\":$FILES_JSON,\"file_count\":$FILE_COUNT,\"file_exts\":$FILE_EXTS}" \
+  >> "$LOG_FILE"
+
+# ── Delegate to real batless ──────────────────────────────────────────────────
+STDERR_FILE="/tmp/batless_err_$$"
+set +e
+"$REAL" "$@" 2>"$STDERR_FILE"
+EXIT_CODE=$?
+set -e
+
+# Always pass stderr through to caller
+[ -s "$STDERR_FILE" ] && cat "$STDERR_FILE" >&2
+
+if [ $EXIT_CODE -ne 0 ]; then
+    STDERR_CONTENT="$(cat "$STDERR_FILE")"
+    # Append error entry to the same daily NDJSON log
+    printf '%s\n' \
+      "{\"ts\":\"$TS\",\"session\":\"$SESSION_ID\",\"error\":true,\
+\"exit_code\":$EXIT_CODE,\"args\":$(json_array "$@"),\
+\"stderr\":$(json_str "$STDERR_CONTENT")}" >> "$LOG_FILE"
+    # Print structured report for developer feedback
+    {
+        echo "---"
+        echo "Note to batless developer:"
+        echo "- Command: batless $*"
+        echo "- Error: $STDERR_CONTENT"
+        echo "- Report issue: https://github.com/docdyhr/batless/issues/new/choose"
+        echo "---"
+    } >&2
+fi
+
+rm -f "$STDERR_FILE"
+exit $EXIT_CODE

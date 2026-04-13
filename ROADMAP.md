@@ -1,10 +1,12 @@
 # batless Development Roadmap
 
-> Strategic development plan for batless — the non-blocking code viewer built for AI and automation
+> Strategic development plan for batless — machine-readable code analysis for AI and automation
 
 ## Vision
 
-batless is the definitive code-viewing tool for AI workflows and automation pipelines. It never blocks, never pages, and always produces machine-readable output. Each release extends what AI agents can do with code: better context efficiency, richer navigation data, and broader language coverage — without adding interactive features or scope creep.
+batless is the definitive AI-native code analysis tool. It produces structured, machine-readable output that AI assistants, CI/CD pipelines, and automation scripts can consume directly. Its unique value is not file viewing — AI assistants already have native read tools for that — but the outputs they cannot produce themselves: symbol indexes, token-estimated compressed context, semantic chunks, and content hashes.
+
+Each release sharpens this focus: richer analysis data, broader language coverage, and a leaner binary. Interactive and cosmetic features are out of scope.
 
 ---
 
@@ -35,31 +37,45 @@ All items shipped and tagged.
 
 ---
 
-## v0.6.0: Internal Consolidation + stdin Parity
+## v0.6.0: Sharpen the Core
 
 *Target: Q3 2026*
 
-Focus: clean up the architectural debt identified post-v0.5.0 before adding new features. No breaking changes to the CLI surface.
+Focus: remove the fluff, fix architectural debt, and extend the AI-specific features. This release makes the strategic pivot concrete in code.
 
-### Code Health
+### Remove: Syntax Highlighting and Themes
 
-- **Delete dead modules** — `src/debt_prevention.rs` and `src/performance.rs` are never called; remove them
-- **Delete unused traits** — `FileProcessing`, `EncodingDetection`, `ProcessorFactory` in `traits.rs` have zero implementations; remove them
-- **Consolidate formatter system** — `src/formatter.rs` has inline Plain/JSON/Summary implementations; `src/formatters/` has parallel dead copies; migrate to a single trait-based path
+Syntax highlighting (`--mode=highlight`, `syntect` crate, `--theme`, `ThemeManager`) serves human terminal users — a use case where `bat` is the better tool. AI assistants don't benefit from ANSI color codes and have native read tools for plain file content.
 
-### Feature: `process_stdin` Parity
+- **Deprecate** `--mode=highlight` (the default bare invocation) and `--theme` — emit a warning directing users to `bat` for human viewing
+- **Remove** `src/highlighter.rs`, `ThemeManager` from `src/language.rs`, syntect integration from `src/formatter.rs`
+- **Remove** dependencies: `syntect`, `is-terminal`, `termcolor`, `strip-ansi-escapes`
+- **New default mode**: `--mode=plain` (no colors, no syntect dependency)
+- **Binary size reduction**: ~1.5MB off the ~2MB binary
+
+### Remove: Interactive Wizard
+
+`src/wizard.rs` (799 lines) is an interactive TUI config setup — the opposite of automation-first. Remove it; config is documented in the README.
+
+### Fix: Dead Code Cleanup
+
+- Delete `src/debt_prevention.rs` and `src/performance.rs` (never called)
+- Delete unused traits `FileProcessing`, `EncodingDetection`, `ProcessorFactory` from `src/traits.rs`
+- Consolidate formatter system: migrate `src/formatters/` parallel dead copies into a single trait-based path in `src/formatter.rs`
+
+### Fix: `process_stdin` Parity
 
 `process_stdin` is missing four features that `process_file` has:
 - AST summarization (currently regex-only fallback)
 - `--hash` support (silently ignored on stdin)
 - `--strip-comments` / `--strip-blank-lines` (silently ignored on stdin)
-- Language detection from provided `--language` flag (partially works)
+- Language detection from `--language` flag (partially works)
 
 Fix: extract a shared `post_process(lines, language, config)` pipeline that both paths call.
 
-### Feature: `--ast` Raw Output
+### Feature: `--mode=ast` Raw Output
 
-Expose the tree-sitter parse tree directly as JSON. The parsers are already in the dependency tree; this is a new output mode, not new infrastructure.
+Expose the tree-sitter parse tree directly as JSON. Parsers are already in the dependency tree.
 
 ```bash
 batless --mode=ast src/main.rs | jq '.tree.children[0]'
@@ -67,7 +83,7 @@ batless --mode=ast src/main.rs | jq '.tree.children[0]'
 
 ### Feature: Multi-file Index Mode
 
-Allow `batless --mode=index src/` to process a directory and emit one JSON object per file to stdout (NDJSON), enabling a project-wide symbol table in a single invocation.
+Allow `batless --mode=index src/` to process a directory and emit one JSON object per file (NDJSON), enabling a project-wide symbol table in one invocation.
 
 ```bash
 batless --mode=index src/ | jq -s 'map(.symbols) | flatten | group_by(.kind)'
@@ -105,13 +121,13 @@ The 1.0 milestone signals API and output schema stability. No major new features
 
 ## What is NOT on the Roadmap
 
-These were in earlier drafts and have been explicitly removed:
-
-- **Plugin architecture** — dynamic plugin loading adds significant complexity (sandboxing, signing, registry) for unclear gain; the trait-based extension points in `traits.rs` are sufficient
-- **Language Server Protocol client** — LSP is a separate tool category; batless is a viewer, not an IDE backend
-- **Cross-reference / call graph analysis** — requires multi-file indexing infrastructure; too large for the current scope
-- **WASM / browser build** — possible but not a priority; nothing in the current user base requires it
-- **Enterprise features** (SSO, SAML, multi-tenant, audit logging, compliance certifications) — out of scope for a CLI tool
+- **Syntax highlighting improvements** — `bat` does this better; AI assistants don't need ANSI colors
+- **Theme support** — cosmetic; no AI value
+- **Interactive features of any kind** — anti-automation by definition
+- **Plugin architecture** — dynamic loading adds complexity (sandboxing, signing, registry) for unclear AI gain
+- **Language Server Protocol client** — LSP is a separate tool category; batless is analysis output, not an IDE backend
+- **WASM / browser build** — not a priority; nothing in the current user base requires it
+- **Enterprise features** (SSO, SAML, audit logging) — out of scope for a CLI tool
 
 ---
 
