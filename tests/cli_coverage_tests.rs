@@ -115,57 +115,6 @@ fn test_get_schema_invalid() {
 }
 
 #[test]
-#[ignore] // Interactive wizard test - requires TTY input, skip in CI
-fn test_configuration_wizard_help() {
-    use std::process::Stdio;
-
-    // Use spawn with stdin piped to immediately close it,
-    // which causes the wizard to exit gracefully instead of hanging
-    let mut child = batless_command()
-        .arg("run")
-        .arg("--")
-        .arg("--configure")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to spawn batless");
-
-    // Drop stdin immediately to send EOF, causing wizard to exit
-    drop(child.stdin.take());
-
-    // Wait for the process with a timeout
-    let output = child
-        .wait_with_output()
-        .expect("Failed to wait for process");
-
-    // The wizard should exit (either successfully or with an error about stdin)
-    // We just verify it doesn't hang and doesn't panic
-    let _status_code = output.status.code().unwrap_or(-1);
-}
-
-#[test]
-fn test_list_profiles_command() {
-    let output = run_batless_args(&["--list-profiles"]);
-    assert!(output.status.success(), "Command should succeed");
-
-    let _stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
-    // Output depends on whether profiles exist, but command should not fail
-    // Just verify it doesn't crash - output content varies
-}
-
-#[test]
-fn test_edit_profile_nonexistent() {
-    let output = run_batless_args(&["--edit-profile", "nonexistent_profile.toml"]);
-    // This should either succeed (if file is created) or fail gracefully
-    let status_code = output.status.code().unwrap_or(-1);
-    assert!(
-        status_code >= 0,
-        "Command should handle nonexistent profile gracefully"
-    );
-}
-
-#[test]
 fn test_cli_with_max_lines_zero() {
     let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
     writeln!(temp_file, "line1\nline2\nline3").expect("Failed to write to temp file");
@@ -200,25 +149,6 @@ fn test_cli_with_max_bytes_zero() {
     assert!(
         stderr_str.contains("validation"),
         "Should show validation error"
-    );
-}
-
-#[test]
-fn test_cli_with_invalid_theme() {
-    let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
-    writeln!(temp_file, "content").expect("Failed to write to temp file");
-    let temp_path = temp_file.path().to_str().expect("Invalid temp path");
-
-    let output = run_batless_args(&["--theme", "nonexistent-theme", temp_path]);
-    assert!(
-        !output.status.success(),
-        "Command should fail with invalid theme"
-    );
-
-    let stderr_str = String::from_utf8(output.stderr).expect("Valid UTF-8 output");
-    assert!(
-        stderr_str.contains("Theme not found") || stderr_str.contains("theme"),
-        "Should show theme-related error"
     );
 }
 

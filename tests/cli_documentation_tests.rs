@@ -153,29 +153,12 @@ fn test_language_override() {
 }
 
 #[test]
-fn test_theme_selection() {
-    let file = create_test_file("test\n", ".py");
-    let output = run_batless(&["--theme=base16-ocean.dark", file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-}
-
-#[test]
 fn test_list_languages() {
     let output = run_batless(&["--list-languages"]);
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("Rust") || stdout.contains("Python"));
-}
-
-#[test]
-fn test_list_themes() {
-    let output = run_batless(&["--list-themes"]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(!stdout.is_empty());
 }
 
 #[test]
@@ -209,17 +192,16 @@ fn test_number_nonblank_with_plain() {
 }
 
 #[test]
-fn test_line_numbers_without_plain_no_numbers() {
+fn test_line_numbers_default_mode() {
     let file = create_test_file("line1\nline2\n", ".txt");
 
-    // Line numbers without --plain should not show line numbers
+    // Default mode is now plain, so -n shows line numbers without --plain
     let output = run_batless(&["-n", file.path().to_str().unwrap()]);
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
 
-    // Should NOT contain numbered format
-    // (with highlighting, no line numbers are shown)
-    assert!(!stdout.contains("     1\tline1"));
+    // Default mode is plain, so line numbers ARE shown
+    assert!(stdout.contains("1\t") || stdout.contains("     1\t"));
 }
 
 #[test]

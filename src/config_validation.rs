@@ -11,7 +11,6 @@ pub fn validate_config(config: &BatlessConfig) -> BatlessResult<()> {
     validate_max_lines(config)?;
     validate_max_bytes(config)?;
     validate_language(config)?;
-    validate_theme(config)?;
     validate_limits_combination(config)?;
     validate_streaming(config)?;
     validate_schema_version(config)?;
@@ -94,26 +93,6 @@ fn validate_language(config: &BatlessConfig) -> BatlessResult<()> {
                 Some("Language names should contain only alphanumeric characters, hyphens, and underscores".to_string()),
             ));
         }
-    }
-
-    Ok(())
-}
-
-fn validate_theme(config: &BatlessConfig) -> BatlessResult<()> {
-    if config.theme.is_empty() {
-        return Err(BatlessError::config_error_with_help(
-            "theme cannot be empty".to_string(),
-            Some(
-                "Use --list-themes to see available themes, or try 'base16-ocean.dark'".to_string(),
-            ),
-        ));
-    }
-
-    if config.theme.len() > 100 {
-        return Err(BatlessError::config_error_with_help(
-            format!("theme name is too long: '{}'", config.theme),
-            Some("Theme names should be reasonable identifiers. Use --list-themes to see valid options".to_string()),
-        ));
     }
 
     Ok(())
@@ -228,12 +207,6 @@ mod tests {
     }
 
     #[test]
-    fn test_validation_empty_theme() {
-        let config = BatlessConfig::default().with_theme(String::new());
-        assert!(validate_config(&config).is_err());
-    }
-
-    #[test]
     fn test_validation_large_max_lines() {
         let config = BatlessConfig::default().with_max_lines(2_000_000);
         let result = validate_config(&config);
@@ -277,14 +250,6 @@ mod tests {
     }
 
     #[test]
-    fn test_validation_long_theme() {
-        let config = BatlessConfig::default().with_theme("a".repeat(150));
-        let result = validate_config(&config);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("too long"));
-    }
-
-    #[test]
     fn test_validation_conflicting_limits() {
         let config = BatlessConfig::default()
             .with_max_lines(1_000_000) // Extremely large line limit
@@ -315,8 +280,7 @@ mod tests {
         let config = BatlessConfig::default()
             .with_max_lines(5000)
             .with_max_bytes(Some(1_000_000))
-            .with_language(Some("rust".to_string()))
-            .with_theme("monokai".to_string());
+            .with_language(Some("rust".to_string()));
         assert!(validate_config(&config).is_ok());
     }
 

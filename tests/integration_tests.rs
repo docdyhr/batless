@@ -69,19 +69,14 @@ fn test_plain_mode() {
 }
 
 #[test]
-fn test_highlight_mode() {
+fn test_plain_output() {
     let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n";
     let file = create_test_file(content, ".rs");
 
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=highlight",
-        "--color=always",
-    ]);
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=plain"]);
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
-    // Should contain the content, might have ANSI codes but that's ok
     assert!(stdout.contains("main"));
     assert!(stdout.contains("println"));
 }
@@ -209,19 +204,15 @@ fn test_explicit_language() {
 }
 
 #[test]
-fn test_color_never() {
+fn test_plain_no_ansi() {
     let content = "fn main() {\n    println!(\"Hello\");\n}\n";
     let file = create_test_file(content, ".rs");
 
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=highlight",
-        "--color=never",
-    ]);
+    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=plain"]);
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
-    // With color=never, should not contain ANSI escape sequences
+    // Plain mode never produces ANSI escape sequences
     assert!(!stdout.contains("\x1b["));
 }
 
@@ -239,22 +230,6 @@ fn test_strip_ansi() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("fn main()"));
-}
-
-#[test]
-fn test_custom_theme() {
-    let content = "fn main() {\n    println!(\"Hello\");\n}\n";
-    let file = create_test_file(content, ".rs");
-
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=highlight",
-        "--theme=InspiredGitHub",
-        "--color=always",
-    ]);
-
-    assert!(output.status.success());
-    // Should not crash with custom theme
 }
 
 #[test]
@@ -318,16 +293,6 @@ fn test_list_languages() {
     assert!(stdout.contains("Rust"));
     assert!(stdout.contains("Python"));
     assert!(stdout.contains("JavaScript"));
-}
-
-#[test]
-fn test_list_themes() {
-    let output = run_batless(&["--list-themes"]);
-    assert!(output.status.success());
-
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("base16-ocean.dark"));
-    assert!(stdout.contains("InspiredGitHub"));
 }
 
 #[test]
@@ -689,15 +654,6 @@ fn test_invalid_language_error() {
 }
 
 #[test]
-fn test_invalid_theme_error() {
-    let output = run_batless(&["src/main.rs", "--theme=invalid-theme"]);
-    assert!(!output.status.success());
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    assert!(stderr.contains("Theme 'invalid-theme' not found"));
-    assert!(stderr.contains("E202"));
-}
-
-#[test]
 fn test_summary_mode_different_languages() {
     // Test JavaScript
     let js_content = "import React from 'react';\n\nfunction Component() {\n    console.log('test');\n    return <div>Hello</div>;\n}\n\nexport default Component;\n";
@@ -824,15 +780,7 @@ fn test_schema_validation() {
 }
 
 #[test]
-fn test_theme_and_language_validation() {
-    // Test theme validation with case sensitivity
-    let output = run_batless(&["--list-themes"]);
-    assert!(output.status.success());
-
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("base16-ocean.dark"));
-
-    // Test language validation
+fn test_language_validation() {
     let output = run_batless(&["--list-languages"]);
     assert!(output.status.success());
 
@@ -852,13 +800,8 @@ fn test_compatibility_flags() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert_eq!(stdout.trim(), content.trim());
 
-    // Test --number flag (might require specific mode or color settings)
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--number",
-        "--mode=highlight",
-        "--color=never",
-    ]);
+    // Test --number flag with plain mode
+    let output = run_batless(&[file.path().to_str().unwrap(), "--number", "--mode=plain"]);
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     // Line numbering should be present in some form

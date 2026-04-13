@@ -34,9 +34,6 @@ pub struct BatlessConfig {
     /// Override language detection with specific language
     #[serde(default)]
     pub language: Option<String>,
-    /// Theme name for syntax highlighting
-    #[serde(default = "default_theme")]
-    pub theme: String,
     /// Whether to strip ANSI escape sequences
     #[serde(default)]
     pub strip_ansi: bool,
@@ -97,10 +94,6 @@ fn default_max_lines() -> usize {
     10000
 }
 
-fn default_theme() -> String {
-    "base16-ocean.dark".to_string()
-}
-
 fn default_use_color() -> bool {
     true
 }
@@ -119,7 +112,6 @@ impl Default for BatlessConfig {
             max_lines: 10000,
             max_bytes: None,
             language: None,
-            theme: "base16-ocean.dark".to_string(),
             strip_ansi: false,
             use_color: true,
             include_tokens: false,
@@ -163,12 +155,6 @@ impl BatlessConfig {
     /// Set language override
     pub fn with_language(mut self, language: Option<String>) -> Self {
         self.language = language;
-        self
-    }
-
-    /// Set theme
-    pub fn with_theme(mut self, theme: String) -> Self {
-        self.theme = theme;
         self
     }
 
@@ -461,9 +447,6 @@ impl BatlessConfig {
         if other.language != default.language {
             self.language = other.language;
         }
-        if other.theme != default.theme {
-            self.theme = other.theme;
-        }
         if other.strip_ansi != default.strip_ansi {
             self.strip_ansi = other.strip_ansi;
         }
@@ -534,7 +517,6 @@ mod tests {
         assert_eq!(config.max_lines, 10000);
         assert_eq!(config.max_bytes, None);
         assert_eq!(config.language, None);
-        assert_eq!(config.theme, "base16-ocean.dark");
         assert!(!config.strip_ansi);
         assert!(config.use_color);
         assert!(!config.include_tokens);
@@ -547,7 +529,6 @@ mod tests {
             .with_max_lines(5000)
             .with_max_bytes(Some(1024))
             .with_language(Some("rust".to_string()))
-            .with_theme("monokai".to_string())
             .with_strip_ansi(true)
             .with_use_color(false)
             .with_include_tokens(true)
@@ -556,7 +537,6 @@ mod tests {
         assert_eq!(config.max_lines, 5000);
         assert_eq!(config.max_bytes, Some(1024));
         assert_eq!(config.language, Some("rust".to_string()));
-        assert_eq!(config.theme, "monokai");
         assert!(config.strip_ansi);
         assert!(!config.use_color);
         assert!(config.include_tokens);
@@ -565,7 +545,6 @@ mod tests {
 
     #[test]
     fn test_validate_delegates_to_config_validation() {
-        // Smoke test: validate() delegates to config_validation module
         assert!(BatlessConfig::default().validate().is_ok());
         assert!(BatlessConfig::default()
             .with_max_lines(0)
@@ -597,17 +576,13 @@ mod tests {
 
     #[test]
     fn test_toml_serialization() {
-        let config = BatlessConfig::default()
-            .with_max_lines(5000)
-            .with_theme("monokai".to_string());
+        let config = BatlessConfig::default().with_max_lines(5000);
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
         assert!(toml_str.contains("max_lines = 5000"));
-        assert!(toml_str.contains("theme = \"monokai\""));
 
         let deserialized: BatlessConfig = toml::from_str(&toml_str).unwrap();
         assert_eq!(deserialized.max_lines, 5000);
-        assert_eq!(deserialized.theme, "monokai");
     }
 
     #[test]
@@ -627,7 +602,6 @@ mod tests {
         let base = BatlessConfig::default();
         let override_config = BatlessConfig::default()
             .with_max_lines(2000)
-            .with_theme("solarized".to_string())
             .with_summary_level(SummaryLevel::Detailed)
             .with_streaming_json(true)
             .with_streaming_chunk_size(42)
@@ -640,7 +614,6 @@ mod tests {
 
         let merged = base.merge_with(override_config);
         assert_eq!(merged.max_lines, 2000);
-        assert_eq!(merged.theme, "solarized");
         assert_eq!(merged.summary_level, SummaryLevel::Detailed);
         assert!(merged.streaming_json);
         assert_eq!(merged.streaming_chunk_size, 42);
@@ -674,7 +647,6 @@ mod tests {
 
         let toml_content = r#"
 max_lines = 15000
-theme = "zenburn"
 use_color = false
 summary_mode = true
 "#;
@@ -684,7 +656,6 @@ summary_mode = true
 
         let config = BatlessConfig::from_file(temp_file.path()).unwrap();
         assert_eq!(config.max_lines, 15000);
-        assert_eq!(config.theme, "zenburn");
         assert!(!config.use_color);
         assert!(config.summary_mode);
     }
@@ -696,7 +667,6 @@ summary_mode = true
 
         let json_content = r#"{
   "max_lines": 8000,
-  "theme": "github",
   "include_tokens": true,
   "strip_ansi": true
 }"#;
@@ -706,7 +676,6 @@ summary_mode = true
 
         let config = BatlessConfig::from_json_file(temp_file.path()).unwrap();
         assert_eq!(config.max_lines, 8000);
-        assert_eq!(config.theme, "github");
         assert!(config.include_tokens);
         assert!(config.strip_ansi);
     }
@@ -731,16 +700,13 @@ max_lines = "not_a_number"
     fn test_save_to_file() {
         use tempfile::NamedTempFile;
 
-        let config = BatlessConfig::default()
-            .with_max_lines(7000)
-            .with_theme("dracula".to_string());
+        let config = BatlessConfig::default().with_max_lines(7000);
 
         let temp_file = NamedTempFile::new().unwrap();
         config.save_to_file(temp_file.path()).unwrap();
 
         let loaded_config = BatlessConfig::from_file(temp_file.path()).unwrap();
         assert_eq!(loaded_config.max_lines, 7000);
-        assert_eq!(loaded_config.theme, "dracula");
     }
 
     // Custom Profile Tests
@@ -771,7 +737,6 @@ max_lines = "not_a_number"
             max_lines: Some(2500),
             max_bytes: Some(50000),
             language: Some("rust".to_string()),
-            theme: Some("zenburn".to_string()),
             strip_ansi: Some(true),
             use_color: Some(false),
             include_tokens: Some(true),
@@ -793,7 +758,6 @@ max_lines = "not_a_number"
         assert_eq!(applied_config.max_lines, 2500);
         assert_eq!(applied_config.max_bytes, Some(50000));
         assert_eq!(applied_config.language, Some("rust".to_string()));
-        assert_eq!(applied_config.theme, "zenburn");
         assert!(applied_config.strip_ansi);
         assert!(!applied_config.use_color);
         assert!(applied_config.include_tokens);
@@ -809,7 +773,6 @@ max_lines = "not_a_number"
             max_lines: Some(1000),
             max_bytes: None,
             language: None,
-            theme: None,
             strip_ansi: None,
             use_color: None,
             include_tokens: None,
@@ -825,15 +788,12 @@ max_lines = "not_a_number"
             updated_at: None,
         };
 
-        let base_config = BatlessConfig::default()
-            .with_theme("monokai".to_string())
-            .with_use_color(false);
+        let base_config = BatlessConfig::default().with_use_color(false);
 
         let applied_config = profile.apply_to_config(base_config);
 
         // Profile should only override max_lines
         assert_eq!(applied_config.max_lines, 1000);
-        assert_eq!(applied_config.theme, "monokai"); // Unchanged
         assert!(!applied_config.use_color); // Unchanged
     }
 
@@ -864,7 +824,6 @@ max_lines = "not_a_number"
             max_lines: None,
             max_bytes: None,
             language: None,
-            theme: None,
             strip_ansi: None,
             use_color: None,
             include_tokens: None,

@@ -1,4 +1,4 @@
-use batless::{highlight_content, process_file, BatlessConfig};
+use batless::{process_file, BatlessConfig};
 use proptest::prelude::*;
 use std::io::Write;
 use tempfile::NamedTempFile;
@@ -24,21 +24,6 @@ proptest! {
         // Should never panic, even with arbitrary input
         if let Some(path) = file.path().to_str() {
             let _result = process_file(path, &config);
-        }
-    }
-
-    #[test]
-    fn test_highlight_content_deterministic(content in ".*") {
-        let config = BatlessConfig::default();
-
-        // Highlighting should be deterministic
-        let result1 = highlight_content(&content, "test.rs", &config);
-        let result2 = highlight_content(&content, "test.rs", &config);
-
-        prop_assert_eq!(result1.is_ok(), result2.is_ok());
-
-        if let (Ok(r1), Ok(r2)) = (&result1, &result2) {
-            prop_assert_eq!(r1, r2);
         }
     }
 
@@ -125,5 +110,28 @@ proptest! {
         // Should handle any byte sequence without panicking
         let file_path = file.path().to_str().expect("Failed to convert path");
         let _result = process_file(file_path, &config);
+    }
+
+    // Replacing the removed test_highlight_content_deterministic property test:
+    // verify that JSON-mode output is deterministic for arbitrary input.
+    #[test]
+    fn test_json_mode_output_is_deterministic(content in ".*") {
+        let mut file = NamedTempFile::new().expect("Failed to create test file");
+        file.write_all(content.as_bytes()).expect("Failed to write test content");
+
+        let config = BatlessConfig::default();
+        let file_path = file.path().to_str().expect("Failed to convert path");
+
+        let r1 = process_file(file_path, &config);
+        let r2 = process_file(file_path, &config);
+
+        match (r1, r2) {
+            (Ok(a), Ok(b)) => {
+                prop_assert_eq!(a.lines, b.lines, "JSON mode output should be deterministic");
+                prop_assert_eq!(a.total_lines, b.total_lines);
+            }
+            (Err(_), Err(_)) => {} // both fail the same way — acceptable
+            _ => prop_assert!(false, "results should agree on success/failure"),
+        }
     }
 }

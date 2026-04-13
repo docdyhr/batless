@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-04-09
+
+### Breaking Changes
+
+- **Removed syntax highlighting** (`--mode=highlight`, `--theme`, `--list-themes`, `--configure`, `--list-profiles`, `--edit-profile`): batless is now positioned as a pure AI-native structured output tool. The syntect dependency has been dropped entirely, reducing binary size and eliminating the transitive dependency chain. Use `bat` for interactive terminal highlighting.
+- **Default output mode changed**: `plain` is now the default (was `highlight`). This is more predictable in scripts and pipelines.
+
+### 🎯 Major Features
+
+- **🌳 AST Mode (`--mode=ast`)**: Emits the raw tree-sitter parse tree as pretty-printed JSON
+  - Output shape: `{file, language, mode, parser, total_lines, total_bytes, root: {type, start, end, children|text}}`
+  - Supported: Rust, Python, JavaScript, TypeScript, TSX
+  - Unsupported languages: `"parser": "none", "root": null`
+  - Leaf nodes include `text` (≤256 chars); max recursion depth 64
+- **📁 Multi-file Index Mode**: `batless --mode=index <dir>` walks directories, emitting one compact NDJSON line per file
+  - Hidden directories skipped automatically
+  - Files processed in sorted order for deterministic output
+  - Per-file errors emitted as `{"file":"...","error":"..."}` keeping the stream valid
+
+### 🏗️ Architecture
+
+- **Formatter trait consolidation**: Plain, Json, Summary, Index, and Ast modes all implement the `Formatter` trait in `src/formatters/`. `formatter.rs` is now a thin dispatcher.
+- **Removed**: `src/highlighter.rs`, `src/wizard.rs`, `ThemeManager`, `OutputMode::Highlight`
+- **Dependencies removed**: `syntect 5`, `strip-ansi-escapes 0.2`
+
+### Testing
+
+- **365 total tests** (lib: 225, integration: 140), zero failures
+
+---
+
 ## [0.5.0] - 2026-04-02
 
 ### 🎯 Major Features

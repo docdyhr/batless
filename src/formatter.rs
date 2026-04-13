@@ -6,7 +6,6 @@
 use crate::config::BatlessConfig;
 use crate::error::{BatlessError, BatlessResult};
 use crate::file_info::FileInfo;
-use crate::highlighter::SyntaxHighlighter;
 use serde_json::json;
 
 /// Output formatter for different display modes
@@ -20,208 +19,31 @@ impl OutputFormatter {
         config: &BatlessConfig,
         output_mode: OutputMode,
     ) -> BatlessResult<String> {
+        use crate::formatters::Formatter;
+        use crate::formatters::{
+            ast_formatter::AstFormatter, index_formatter::IndexFormatter,
+            json_formatter::JsonFormatter, plain_formatter::PlainFormatter,
+            summary_formatter::SummaryFormatter,
+        };
         match output_mode {
-            OutputMode::Plain => Self::format_plain(file_info, config),
-            OutputMode::Highlight => Self::format_highlighted(file_info, file_path, config),
-            OutputMode::Json => Self::format_json(file_info, file_path, config),
-            OutputMode::Summary => Self::format_summary(file_info, config),
-            OutputMode::Index => {
-                use crate::formatters::index_formatter::IndexFormatter;
-                use crate::formatters::Formatter;
-                IndexFormatter.format(file_info, file_path, config)
-            }
+            OutputMode::Plain => PlainFormatter.format(file_info, file_path, config),
+            OutputMode::Json => JsonFormatter.format(file_info, file_path, config),
+            OutputMode::Summary => SummaryFormatter.format(file_info, file_path, config),
+            OutputMode::Index => IndexFormatter.format(file_info, file_path, config),
+            OutputMode::Ast => AstFormatter.format(file_info, file_path, config),
         }
-    }
-
-    /// Format as plain text without highlighting
-    fn format_plain(file_info: &FileInfo, config: &BatlessConfig) -> BatlessResult<String> {
-        if config.show_line_numbers || config.show_line_numbers_nonblank {
-            let mut result = Vec::new();
-            let mut line_number = 1;
-
-            for line in &file_info.lines {
-                if config.show_line_numbers_nonblank {
-                    // Only number non-blank lines (cat -b behavior)
-                    if line.trim().is_empty() {
-                        result.push(line.clone());
-                    } else {
-                        result.push(format!("{line_number:6}\t{line}"));
-                        line_number += 1;
-                    }
-                } else {
-                    // Number all lines (cat -n behavior)
-                    result.push(format!("{line_number:6}\t{line}"));
-                    line_number += 1;
-                }
-            }
-            Ok(result.join("\n"))
-        } else {
-            Ok(file_info.lines.join("\n"))
-        }
-    }
-
-    /// Format with syntax highlighting
-    fn format_highlighted(
-        file_info: &FileInfo,
-        file_path: &str,
-        config: &BatlessConfig,
-    ) -> BatlessResult<String> {
-        let content = file_info.lines.join("\n");
-        SyntaxHighlighter::highlight_and_process(&content, file_path, config)
-    }
-
-    /// Format as JSON with metadata
-    fn format_json(
-        file_info: &FileInfo,
-        file_path: &str,
-        config: &BatlessConfig,
-    ) -> BatlessResult<String> {
-        // Create backward-compatible JSON format while reporting both totals and processed counts
-        let line_source = file_info
-            .original_lines
-            .as_ref()
-            .unwrap_or(&file_info.lines);
-
-        let lines_value: serde_json::Value = if config.json_line_numbers {
-            line_source
-                .iter()
-                .enumerate()
-                .map(|(i, text)| json!({"n": i + 1, "text": text}))
-                .collect()
-        } else {
-            json!(line_source)
-        };
-
-        let mut json_data = json!({
-            "file": file_path,
-            "lines": lines_value,
-            "processed_lines": file_info.processed_lines(),
-            "total_lines": file_info.total_lines,
-            "total_lines_exact": file_info.total_lines_exact,
-            "total_bytes": file_info.total_bytes,
-            "truncated": file_info.truncated,
-            "truncated_by_lines": file_info.truncated_by_lines,
-            "truncated_by_bytes": file_info.truncated_by_bytes,
-            "truncated_by_context": file_info.truncated_by_context,
-            "language": file_info.language,
-            "encoding": file_info.encoding,
-            "syntax_errors": file_info.syntax_errors,
-            "mode": "json"
-        });
-
-        // Add optional fields if they exist
-        if let Some(ref tokens) = file_info.tokens {
-            json_data["identifiers"] = json!(tokens);
-        }
-        json_data["identifier_count"] = json!(file_info.token_count());
-        json_data["identifiers_truncated"] = json!(file_info.tokens_truncated());
-
-        if let Some(ref summary_lines) = file_info.summary_lines {
-            json_data["summary_lines"] = json!(summary_lines);
-        }
-        if let Some(ref hash) = file_info.file_hash {
-            json_data["file_hash"] = json!(hash);
-        }
-        if let Some(estimated) = file_info.estimated_llm_tokens {
-            json_data["estimated_llm_tokens"] = json!(estimated);
-        }
-        if let Some(ref model) = file_info.token_model {
-            json_data["token_model"] = json!(model);
-        }
-        if let Some(ratio) = file_info.compression_ratio {
-            json_data["compression_ratio"] = json!(ratio);
-        }
-
-        if config.pretty_json {
-            serde_json::to_string_pretty(&json_data).map_err(BatlessError::from)
-        } else {
-            serde_json::to_string(&json_data).map_err(BatlessError::from)
-        }
-    }
-
-    /// Format summary output
-    fn format_summary(file_info: &FileInfo, _config: &BatlessConfig) -> BatlessResult<String> {
-        let mut output = Vec::new();
-
-        // File header
-        output.push("=== File Summary ===".to_string());
-        output.push(format!(
-            "Language: {}",
-            file_info.language.as_deref().unwrap_or("Unknown")
-        ));
-        output.push(format!("Encoding: {}", file_info.encoding));
-        let total_lines_display = if file_info.total_lines_exact {
-            file_info.total_lines.to_string()
-        } else {
-            format!("{}+", file_info.total_lines)
-        };
-        output.push(format!("Total Lines: {total_lines_display}"));
-        output.push(format!("Processed Lines: {}", file_info.processed_lines()));
-
-        if file_info.truncated {
-            if let Some(reason) = file_info.truncation_reason() {
-                output.push(format!("Truncated: Yes ({reason})"));
-            } else {
-                output.push("Truncated: Yes".to_string());
-            }
-        }
-
-        output.push(String::new()); // Empty line
-
-        // Summary content
-        if let Some(ref summary_lines) = file_info.summary_lines {
-            output.push("=== Code Structure ===".to_string());
-            for item in summary_lines {
-                output.push(format!("line {}: {}", item.line_number, item.line));
-            }
-        } else {
-            output.push("=== Content ===".to_string());
-            for line in &file_info.lines {
-                output.push(line.clone());
-            }
-        }
-
-        // Token information if available
-        if let Some(ref tokens) = file_info.tokens {
-            output.push(String::new());
-            output.push("=== Tokens ===".to_string());
-            output.push(format!("Token Count: {}", tokens.len()));
-
-            if !tokens.is_empty() {
-                output.push("Sample Tokens:".to_string());
-                for token in tokens.iter().take(20) {
-                    output.push(format!("  {token}"));
-                }
-
-                if tokens.len() > 20 {
-                    output.push(format!("  ... and {} more", tokens.len() - 20));
-                }
-            }
-        }
-
-        // Error information if any
-        if !file_info.syntax_errors.is_empty() {
-            output.push(String::new());
-            output.push("=== Syntax Errors ===".to_string());
-            for error in &file_info.syntax_errors {
-                output.push(format!("  {error}"));
-            }
-        }
-
-        Ok(output.join("\n"))
     }
 
     /// Format for streaming output (line by line)
     pub fn format_line(
         line: &str,
         line_number: usize,
-        file_path: &str,
-        config: &BatlessConfig,
+        _file_path: &str,
+        _config: &BatlessConfig,
         output_mode: OutputMode,
     ) -> BatlessResult<String> {
         match output_mode {
             OutputMode::Plain => Ok(line.to_string()),
-            OutputMode::Highlight => SyntaxHighlighter::highlight_content(line, file_path, config),
             OutputMode::Json => {
                 let json_line = json!({
                     "line_number": line_number,
@@ -231,6 +53,7 @@ impl OutputFormatter {
             }
             OutputMode::Summary => Ok(line.to_string()), // Summary mode doesn't stream
             OutputMode::Index => Ok(line.to_string()),   // Index mode doesn't stream
+            OutputMode::Ast => Ok(line.to_string()),     // Ast mode doesn't stream
         }
     }
 
@@ -271,8 +94,6 @@ impl OutputFormatter {
             BatlessError::FileNotFound { .. } => "file_not_found",
             BatlessError::FileReadError { .. } => "file_read_error",
             BatlessError::PermissionDenied { .. } => "permission_denied",
-            BatlessError::HighlightError { .. } => "highlight_error",
-            BatlessError::ThemeNotFound { .. } => "theme_not_found",
             BatlessError::LanguageNotFound { .. } => "language_not_found",
             BatlessError::LanguageDetectionError { .. } => "language_detection_error",
             BatlessError::EncodingError { .. } => "encoding_error",
@@ -405,11 +226,12 @@ Processing Ratio: {:.2}%",
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputMode {
     Plain,
-    Highlight,
     Json,
     Summary,
     /// Machine-readable symbol index (functions, classes, structs with line ranges)
     Index,
+    /// Raw tree-sitter parse tree as JSON (Rust/Python/JS/TS; null root for others)
+    Ast,
 }
 
 impl OutputMode {
@@ -417,10 +239,10 @@ impl OutputMode {
     pub fn parse_mode(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
             "plain" => Ok(OutputMode::Plain),
-            "highlight" => Ok(OutputMode::Highlight),
             "json" => Ok(OutputMode::Json),
             "summary" => Ok(OutputMode::Summary),
             "index" => Ok(OutputMode::Index),
+            "ast" => Ok(OutputMode::Ast),
             _ => Err(format!("Unknown output mode: {s}")),
         }
     }
@@ -429,10 +251,10 @@ impl OutputMode {
     pub fn all() -> Vec<Self> {
         vec![
             OutputMode::Plain,
-            OutputMode::Highlight,
             OutputMode::Json,
             OutputMode::Summary,
             OutputMode::Index,
+            OutputMode::Ast,
         ]
     }
 
@@ -440,10 +262,10 @@ impl OutputMode {
     pub fn as_str(&self) -> &'static str {
         match self {
             OutputMode::Plain => "plain",
-            OutputMode::Highlight => "highlight",
             OutputMode::Json => "json",
             OutputMode::Summary => "summary",
             OutputMode::Index => "index",
+            OutputMode::Ast => "ast",
         }
     }
 }
@@ -468,7 +290,8 @@ mod tests {
     fn test_format_plain() -> BatlessResult<()> {
         let file_info = create_test_file_info();
         let config = crate::config::BatlessConfig::new();
-        let result = OutputFormatter::format_plain(&file_info, &config)?;
+        let result =
+            OutputFormatter::format_output(&file_info, "test.rs", &config, OutputMode::Plain)?;
 
         assert_eq!(result, "fn main() {\n    println!(\"Hello\");\n}");
         Ok(())
@@ -478,9 +301,9 @@ mod tests {
     fn test_format_json() -> BatlessResult<()> {
         let file_info = create_test_file_info();
         let config = BatlessConfig::default();
-        let result = OutputFormatter::format_json(&file_info, "test.rs", &config)?;
+        let result =
+            OutputFormatter::format_output(&file_info, "test.rs", &config, OutputMode::Json)?;
 
-        // Should be valid JSON
         let parsed: Value = serde_json::from_str(&result)?;
         assert!(parsed["file"].as_str().unwrap() == "test.rs");
         assert_eq!(parsed["processed_lines"].as_u64().unwrap(), 3);
@@ -494,7 +317,8 @@ mod tests {
     fn test_format_summary() -> BatlessResult<()> {
         let file_info = create_test_file_info();
         let config = BatlessConfig::default();
-        let result = OutputFormatter::format_summary(&file_info, &config)?;
+        let result =
+            OutputFormatter::format_output(&file_info, "test.rs", &config, OutputMode::Summary)?;
 
         assert!(result.contains("=== File Summary ==="));
         assert!(result.contains("Language: Rust"));
@@ -532,13 +356,22 @@ mod tests {
     }
 
     #[test]
+    fn test_error_type_name_theme_removed() {
+        // ThemeNotFound is no longer a variant — language_not_found remains
+        let error = BatlessError::LanguageNotFound {
+            language: "xyz".to_string(),
+            suggestions: vec![],
+        };
+        let json_result = OutputFormatter::format_error(&error, "test.txt", OutputMode::Json);
+        assert!(json_result.contains("\"error_type\": \"language_not_found\""));
+    }
+
+    #[test]
     fn test_output_mode_parsing() {
         assert_eq!(OutputMode::parse_mode("plain").unwrap(), OutputMode::Plain);
         assert_eq!(OutputMode::parse_mode("json").unwrap(), OutputMode::Json);
-        assert_eq!(
-            OutputMode::parse_mode("HIGHLIGHT").unwrap(),
-            OutputMode::Highlight
-        );
+        assert_eq!(OutputMode::parse_mode("ast").unwrap(), OutputMode::Ast);
+        assert!(OutputMode::parse_mode("highlight").is_err());
         assert!(OutputMode::parse_mode("invalid").is_err());
     }
 
@@ -546,8 +379,9 @@ mod tests {
     fn test_output_mode_string_conversion() {
         assert_eq!(OutputMode::Plain.as_str(), "plain");
         assert_eq!(OutputMode::Json.as_str(), "json");
-        assert_eq!(OutputMode::Highlight.as_str(), "highlight");
         assert_eq!(OutputMode::Summary.as_str(), "summary");
+        assert_eq!(OutputMode::Index.as_str(), "index");
+        assert_eq!(OutputMode::Ast.as_str(), "ast");
     }
 
     #[test]
@@ -617,11 +451,11 @@ mod tests {
             "file_not_found"
         );
         assert_eq!(
-            OutputFormatter::error_type_name(&BatlessError::ThemeNotFound {
-                theme: "test".to_string(),
+            OutputFormatter::error_type_name(&BatlessError::LanguageNotFound {
+                language: "test".to_string(),
                 suggestions: vec![],
             }),
-            "theme_not_found"
+            "language_not_found"
         );
     }
 }

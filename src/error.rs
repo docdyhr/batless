@@ -15,9 +15,7 @@ pub enum ErrorCode {
     PermissionDenied = 103,
     EncodingError = 104,
 
-    /// Syntax highlighting errors (200-299)
-    HighlightError = 201,
-    ThemeNotFound = 202,
+    /// Language errors (200-299)
     LanguageNotFound = 203,
     LanguageDetectionError = 204,
 
@@ -41,8 +39,6 @@ impl ErrorCode {
             ErrorCode::FileReadError => "E102",
             ErrorCode::PermissionDenied => "E103",
             ErrorCode::EncodingError => "E104",
-            ErrorCode::HighlightError => "E201",
-            ErrorCode::ThemeNotFound => "E202",
             ErrorCode::LanguageNotFound => "E203",
             ErrorCode::LanguageDetectionError => "E204",
             ErrorCode::ProcessingError => "E301",
@@ -71,16 +67,7 @@ pub enum BatlessError {
         help: String,
     },
 
-    /// Syntax highlighting errors
-    HighlightError {
-        message: String,
-        operation: String,
-        source_error: Option<String>,
-    },
-    ThemeNotFound {
-        theme: String,
-        suggestions: Vec<String>,
-    },
+    /// Language errors
     LanguageNotFound {
         language: String,
         suggestions: Vec<String>,
@@ -140,31 +127,6 @@ impl fmt::Display for BatlessError {
                     "[{}] Permission denied: {path}\n\nHelp: {help}",
                     error_code.as_str()
                 )
-            }
-            BatlessError::HighlightError {
-                message,
-                operation,
-                source_error,
-            } => {
-                write!(
-                    f,
-                    "[{}] Syntax highlighting failed during {operation}: {message}",
-                    error_code.as_str()
-                )?;
-                if let Some(source) = source_error {
-                    write!(f, "\n\nUnderlying error: {source}")?;
-                }
-                Ok(())
-            }
-            BatlessError::ThemeNotFound { theme, suggestions } => {
-                write!(f, "[{}] Theme '{theme}' not found", error_code.as_str())?;
-                if !suggestions.is_empty() {
-                    write!(f, "\n\nDid you mean:")?;
-                    for suggestion in suggestions.iter().take(3) {
-                        write!(f, "\n  {suggestion}")?;
-                    }
-                }
-                write!(f, "\n\nUse --list-themes to see all available themes")
             }
             BatlessError::LanguageNotFound {
                 language,
@@ -262,8 +224,6 @@ impl BatlessError {
             BatlessError::FileNotFound { .. } => ErrorCode::FileNotFound,
             BatlessError::FileReadError { .. } => ErrorCode::FileReadError,
             BatlessError::PermissionDenied { .. } => ErrorCode::PermissionDenied,
-            BatlessError::HighlightError { .. } => ErrorCode::HighlightError,
-            BatlessError::ThemeNotFound { .. } => ErrorCode::ThemeNotFound,
             BatlessError::LanguageNotFound { .. } => ErrorCode::LanguageNotFound,
             BatlessError::LanguageDetectionError { .. } => ErrorCode::LanguageDetectionError,
             BatlessError::EncodingError { .. } => ErrorCode::EncodingError,
@@ -279,12 +239,6 @@ impl BatlessError {
     pub fn file_not_found_with_suggestions(path: String) -> Self {
         let suggestions = Self::suggest_similar_files(&path);
         BatlessError::FileNotFound { path, suggestions }
-    }
-
-    /// Create a ThemeNotFound error with theme suggestions
-    pub fn theme_not_found_with_suggestions(theme: String, available_themes: &[String]) -> Self {
-        let suggestions = Self::suggest_similar_strings(&theme, available_themes);
-        BatlessError::ThemeNotFound { theme, suggestions }
     }
 
     /// Create a LanguageNotFound error with language suggestions
@@ -312,28 +266,6 @@ impl BatlessError {
     /// Create a ConfigurationError with helpful suggestions
     pub fn config_error_with_help(message: String, help: Option<String>) -> Self {
         BatlessError::ConfigurationError { message, help }
-    }
-
-    /// Create a HighlightError with context about what operation failed
-    pub fn highlight_error(message: impl Into<String>, operation: impl Into<String>) -> Self {
-        BatlessError::HighlightError {
-            message: message.into(),
-            operation: operation.into(),
-            source_error: None,
-        }
-    }
-
-    /// Create a HighlightError with source error information
-    pub fn highlight_error_with_source(
-        message: impl Into<String>,
-        operation: impl Into<String>,
-        source: impl std::fmt::Display,
-    ) -> Self {
-        BatlessError::HighlightError {
-            message: message.into(),
-            operation: operation.into(),
-            source_error: Some(source.to_string()),
-        }
     }
 
     /// Create a LanguageDetectionError with file path context
@@ -542,14 +474,6 @@ mod tests {
         assert!(display.contains("File not found: test.rs"));
         assert!(display.contains("Did you mean:"));
         assert!(display.contains("test.js"));
-
-        let error = BatlessError::ThemeNotFound {
-            theme: "invalid-theme".to_string(),
-            suggestions: vec!["valid-theme".to_string()],
-        };
-        assert!(error
-            .to_string()
-            .contains("Theme 'invalid-theme' not found"));
     }
 
     #[test]
@@ -625,37 +549,12 @@ mod tests {
         assert_eq!(error.error_code(), ErrorCode::FileNotFound);
         assert_eq!(error.error_code().as_str(), "E101");
 
-        let error = BatlessError::ThemeNotFound {
-            theme: "invalid".to_string(),
+        let error = BatlessError::LanguageNotFound {
+            language: "invalid".to_string(),
             suggestions: vec![],
         };
-        assert_eq!(error.error_code(), ErrorCode::ThemeNotFound);
-        assert_eq!(error.error_code().as_str(), "E202");
-
-        // Test that error codes are included in display output
-        let display = error.to_string();
-        assert!(display.contains("[E202]"));
-        assert!(display.contains("Theme 'invalid' not found"));
-    }
-
-    #[test]
-    fn test_highlight_error_helpers() {
-        // Test simple highlight error
-        let error = BatlessError::highlight_error("failed to parse", "syntax parsing");
-        let display = error.to_string();
-        assert!(display.contains("[E201]"));
-        assert!(display.contains("syntax parsing"));
-        assert!(display.contains("failed to parse"));
-
-        // Test highlight error with source
-        let error = BatlessError::highlight_error_with_source(
-            "failed to highlight",
-            "line highlighting",
-            "underlying syntect error",
-        );
-        let display = error.to_string();
-        assert!(display.contains("line highlighting"));
-        assert!(display.contains("Underlying error: underlying syntect error"));
+        assert_eq!(error.error_code(), ErrorCode::LanguageNotFound);
+        assert_eq!(error.error_code().as_str(), "E203");
     }
 
     #[test]
