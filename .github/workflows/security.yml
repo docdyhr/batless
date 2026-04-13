@@ -66,7 +66,7 @@ jobs:
 
       - name: Run cargo deny
         continue-on-error: true
-        uses: EmbarkStudios/cargo-deny-action@3fd3802e88374d3fe9159b834c7714ec57d6c979 # v2
+        uses: EmbarkStudios/cargo-deny-action@175dc7fd4fb85ec8f46948fb98f44db001149081 # v2
 
       - name: Check for outdated dependencies
         continue-on-error: true
@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload audit results
         if: always()
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: security-audit-results
           path: audit-results.json
@@ -166,7 +166,7 @@ jobs:
 
       - name: Upload SBOM
         if: hashFiles('batless-sbom.json') != ''
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: software-bill-of-materials
           path: batless-sbom.json
@@ -206,7 +206,7 @@ jobs:
 
       - name: Upload license report
         if: hashFiles('licenses.json') != ''
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: license-report
           path: licenses.json
