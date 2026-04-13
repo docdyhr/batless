@@ -2,9 +2,9 @@
 
 <div align="center">
 
-## The Ultimate Non-Blocking Code Viewer
+## Machine-Readable Code Analysis for AI and Automation
 
-Built for automation, AI assistants, and modern CLI workflows
+Symbol indexes, token-estimated context, semantic chunks — structured output that AI assistants can't produce themselves
 
 [![Crates.io](https://img.shields.io/crates/v/batless?logo=rust&logoColor=white)](https://crates.io/crates/batless)
 [![Crates.io Downloads](https://img.shields.io/crates/d/batless?logo=rust&logoColor=white)](https://crates.io/crates/batless)
@@ -26,29 +26,28 @@ Built for automation, AI assistants, and modern CLI workflows
 
 ## 🎯 Why batless?
 
-**Transform code viewing** from blocking interactive pagers to predictable streaming output:
+AI assistants like Claude Code have native tools for reading files, searching, and listing directories. What they **don't** have is structured analysis output:
 
-```text
-❌ Before: bat file.rs → hangs in CI/CD, requires terminal, blocks automation
-✅ After:  batless file.rs → streams immediately, works everywhere, never blocks
+```bash
+# Symbol index — navigate code without loading full content
+batless --mode=index src/main.rs | jq '.symbols[] | "\(.line_start): \(.kind) \(.name)"'
+
+# Token estimation — gate context decisions before loading a file
+batless --mode=json --profile=claude file.py | jq '.estimated_llm_tokens'
+
+# Compressed context — language-aware comment and blank stripping
+batless --mode=json --profile=claude --strip-comments --strip-blank-lines file.py
+
+# Semantic chunks — split large files at declaration boundaries
+batless --mode=json --streaming --chunk-strategy=semantic large_file.rs
+
+# Content hash — detect changes without loading content
+batless --mode=json --hash file.rs | jq '.file_hash'
 ```
 
-**Key Advantages:**
+These are the outputs batless is built for. For plain file viewing, use `cat`, `bat`, or your editor.
 
-- 🚀 **Never Blocks**: Guaranteed non-blocking operation for CI/CD and automation
-- 🤖 **AI-Optimized**: JSON output, summaries, and tokens for LLM processing
-- ⚡ **Blazing Fast**: <5ms typical startup (modern hardware), streaming architecture, ~2MB binary
-- 🔧 **Automation-First**: Clean defaults, predictable behavior, perfect for scripts
-- 📊 **Smart Output**: Multiple modes including summary extraction and token analysis
-
-**batless** is a minimal, blazing-fast syntax viewer that **never blocks, never pages, never hangs**. While [`bat`](https://github.com/sharkdp/bat) is a feature-rich "cat with wings" for human users, `batless` is purpose-built for:
-
-- 🤖 **AI code assistants** that need predictable, streaming output
-- 🔄 **CI/CD pipelines** where interactive pagers would hang forever
-- 📜 **Automation scripts** that require guaranteed non-blocking behavior
-- 🚀 **Modern workflows** where JSON output and code summaries matter more than line numbers
-
-**Core guarantee**: `batless` will NEVER wait for user input or block your pipeline.
+**Core guarantee**: batless will NEVER wait for user input or block your pipeline.
 
 ## 🚀 Quick Start
 
@@ -83,20 +82,20 @@ brew install batless
 ### Basic Usage
 
 ```bash
-# View a file with syntax highlighting
-batless src/main.rs
+# Symbol index — structure without loading full content
+batless --mode=index src/main.rs
 
-# Plain text output (no colors)
+# Token estimation — check size before loading into AI context
+batless --mode=json --profile=claude file.py | jq '.estimated_llm_tokens'
+
+# Compressed AI context
+batless --mode=json --profile=claude --strip-comments --strip-blank-lines src/lib.rs
+
+# Semantic streaming chunks for large files
+batless --mode=json --streaming --chunk-strategy=semantic large_file.rs
+
+# Plain text (for piping to other tools)
 batless --plain file.py
-
-# With line numbers (cat -n compatibility)
-batless -n file.py
-
-# JSON output for structured processing
-batless --mode=json --max-lines=100 src/lib.rs
-
-# Extract code summary (functions, classes, imports)
-batless --mode=summary src/main.rs
 
 # Get version info as JSON
 batless --version-json
@@ -106,15 +105,17 @@ batless --version-json
 
 ### 🏆 Feature Comparison
 
-| Feature | `batless` | `bat` | `cat` |
+| Feature | `batless` | `bat` | `cat` / built-in Read |
 |---------|-----------|-------|-------|
-| **Never Blocks** | ✅ **Guaranteed** | ❌ Uses pager | ✅ Simple output |
-| **Syntax Highlighting** | ✅ 100+ languages | ✅ Rich highlighting | ❌ None |
-| **JSON Output** | ✅ **First-class** | ❌ Not supported | ❌ Not supported |
-| **Summary Mode** | ✅ **AI-optimized** | ❌ Not supported | ❌ Not supported |
-| **Memory Usage** | ✅ **Streaming** | ⚠️ Loads full file | ✅ Streaming |
-| **Binary Size** | ✅ **~2MB** | ⚠️ ~10MB | ✅ System binary |
-| **Startup Time** | ✅ **<5ms (typical)** | ⚠️ ~180ms | ✅ <10ms |
+| **Never Blocks** | ✅ Guaranteed | ❌ Uses pager | ✅ |
+| **Symbol Index (`--mode=index`)** | ✅ AST-backed | ❌ | ❌ |
+| **LLM Token Estimation** | ✅ Per-profile | ❌ | ❌ |
+| **Semantic Chunking** | ✅ tree-sitter | ❌ | ❌ |
+| **Comment/Blank Stripping** | ✅ Language-aware | ❌ | ❌ |
+| **Content Hash** | ✅ SHA-256 | ❌ | ❌ |
+| **JSON Output** | ✅ First-class | ❌ | ❌ |
+| **Syntax Highlighting** | ✅ (deprecated in v0.6) | ✅ Rich | ❌ |
+| **Interactive Human Use** | ❌ Not the goal | ✅ | ✅ |
 
 ### 🚀 Core Capabilities
 
@@ -125,12 +126,11 @@ batless --version-json
 - 🔄 **NEVER hangs in pipes** - safe for `|`, `>`, and subprocess calls
 - 📊 **ALWAYS returns quickly** - even on huge files (streaming architecture)
 
-#### Syntax & Language Support
+#### Language Support
 
-- 🎨 **Syntax highlighting** for 100+ languages via syntect
-- 🔍 **Language auto-detection** with manual override support
-- 🎭 **Theme support** - Multiple color schemes available
-- 🌐 **Universal support** - Works with any text-based file format
+- 🔍 **Language auto-detection** with manual override (`--language`)
+- 🌳 **AST-backed analysis** for Rust, Python, JavaScript, TypeScript (regex fallback for others)
+- 🌐 **Universal plain output** — works with any text-based file format
 
 #### Smart Output Modes
 
@@ -187,8 +187,9 @@ batless --version-json
 ### Our Philosophy
 
 ```text
-Do ONE thing well: Stream code with syntax highlighting, never block.
-Everything else? There's already a better tool for that.
+Do ONE thing well: produce structured, machine-readable code analysis that
+AI assistants can't generate themselves. For everything else — plain viewing,
+searching, interactive use — there's already a better tool.
 ```
 
 ## 📖 Usage Examples

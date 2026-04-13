@@ -4,6 +4,22 @@
 
 batless is a non-blocking code viewer designed for automation and AI workflows. Unlike `bat`, it NEVER uses a pager and NEVER blocks waiting for user input.
 
+## AI Assistant Integration: When to Use batless
+
+If you are an AI assistant (Claude Code, Copilot, etc.) with built-in file tools (`Read`, `Grep`, `Glob`), **use those for routine file operations**. batless adds value only for structured AI-specific outputs those tools cannot produce:
+
+| Use batless for | Command |
+|---|---|
+| Symbol/structure index without loading full content | `batless --mode=index file` |
+| LLM token estimation before loading a file into context | `batless --mode=json --profile=claude file \| jq '.estimated_llm_tokens'` |
+| Compressed context (language-aware comment + blank stripping) | `batless --mode=json --profile=claude --strip-comments --strip-blank-lines file` |
+| Semantic streaming of very large files | `batless --mode=json --streaming --chunk-strategy=semantic file` |
+| Content hash for change detection / cache invalidation | `batless --mode=json --hash file` |
+
+**For everything else** — reading files, searching content, listing files — use your built-in tools. They are faster and require no shell invocation.
+
+---
+
 ## Core Commands
 
 ### Basic File Viewing

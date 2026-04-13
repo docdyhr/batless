@@ -29,14 +29,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install markdownlint-cli2
-        run: npm install -g markdownlint-cli2@0.14.0
-
       - name: Run markdownlint
         continue-on-error: true
         run: |
-          # Use the existing .markdownlint-cli2.jsonc config file
-          markdownlint-cli2 || {
+          # Use npx with pinned version to avoid unpinned global installs (Scorecard)
+          npx --yes markdownlint-cli2@0.14.0 || {
             echo "::warning::Markdown linting found issues. Please review and fix when possible."
             echo "Note: This is currently non-blocking to allow gradual improvement"
           }
