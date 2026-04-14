@@ -223,11 +223,10 @@ jobs:
         env:
           VERSION: ${{ needs.validate.outputs.version }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          SHA_ARM: ${{ env.SHA_ARM }}
-          SHA_X86: ${{ env.SHA_X86 }}
-          SHA_LIN: ${{ env.SHA_LIN }}
+          # SHA_ARM, SHA_X86, SHA_LIN are set via GITHUB_ENV by the previous step
+          # and flow automatically into this step's shell environment.
         run: |
-          # Write the formula to a file to avoid quoting/escaping issues.
+          # Build the formula inline and push it to the tap via the GitHub Contents API.
           python3 - <<'PYEOF'
 import os, base64, json, urllib.request, urllib.error
 
@@ -265,7 +264,7 @@ class Batless < Formula
   end
 
   test do
-    assert_match "batless", shell_output("\#{bin}/batless --version")
+    assert_match "batless", shell_output("#{{bin}}/batless --version")
   end
 end
 """
