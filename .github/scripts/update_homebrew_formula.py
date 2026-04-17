@@ -40,7 +40,7 @@ class Batless < Formula
   end
 
   test do
-    assert_match "batless", shell_output("#{bin}/batless --version")
+    assert_match "batless", shell_output("#{{bin}}/batless --version")
   end
 end
 """
