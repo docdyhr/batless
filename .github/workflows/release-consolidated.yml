@@ -207,6 +207,8 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
       - name: Download release assets and compute SHA256s
         env:
           VERSION: ${{ needs.validate.outputs.version }}
@@ -223,75 +225,7 @@ jobs:
         env:
           VERSION: ${{ needs.validate.outputs.version }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          # SHA_ARM, SHA_X86, SHA_LIN are set via GITHUB_ENV by the previous step
-          # and flow automatically into this step's shell environment.
-        run: |
-          # Build the formula inline and push it to the tap via the GitHub Contents API.
-          python3 - <<'PYEOF'
-import os, base64, json, urllib.request, urllib.error
-
-version  = os.environ["VERSION"]
-sha_arm  = os.environ["SHA_ARM"]
-sha_x86  = os.environ["SHA_X86"]
-sha_lin  = os.environ["SHA_LIN"]
-token    = os.environ["HOMEBREW_TAP_TOKEN"]
-base_url = f"https://github.com/docdyhr/batless/releases/download/v{version}"
-
-formula = f"""\
-class Batless < Formula
-  desc "A non-blocking, LLM-friendly code viewer inspired by bat"
-  homepage "https://github.com/docdyhr/batless"
-  version "{version}"
-  license "MIT"
-
-  on_macos do
-    if Hardware::CPU.arm?
-      url "{base_url}/batless-aarch64-apple-darwin.tar.gz"
-      sha256 "{sha_arm}"
-    else
-      url "{base_url}/batless-x86_64-apple-darwin.tar.gz"
-      sha256 "{sha_x86}"
-    end
-  end
-
-  on_linux do
-    url "{base_url}/batless-x86_64-unknown-linux-gnu.tar.gz"
-    sha256 "{sha_lin}"
-  end
-
-  def install
-    bin.install "batless"
-  end
-
-  test do
-    assert_match "batless", shell_output("#{{bin}}/batless --version")
-  end
-end
-"""
-
-api = "https://api.github.com/repos/docdyhr/homebrew-tap/contents/Formula/batless.rb"
-headers = {
-    "Authorization": f"Bearer {token}",
-    "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-}
-
-# Fetch current file SHA (required by the GitHub Contents API for updates).
-req = urllib.request.Request(api, headers=headers)
-with urllib.request.urlopen(req) as resp:
-    file_sha = json.loads(resp.read())["sha"]
-
-# Push the new formula directly to main (no PR).
-payload = json.dumps({
-    "message": f"chore: update batless to v{version}",
-    "content": base64.b64encode(formula.encode()).decode(),
-    "sha": file_sha,
-}).encode()
-req = urllib.request.Request(api, data=payload, headers=headers, method="PUT")
-with urllib.request.urlopen(req) as resp:
-    commit_sha = json.loads(resp.read())["commit"]["sha"][:8]
-    print(f"Formula updated → commit {commit_sha}")
-PYEOF
+        run: python3 .github/scripts/update_homebrew_formula.py
 
   # Post-release monitoring
   monitor:
