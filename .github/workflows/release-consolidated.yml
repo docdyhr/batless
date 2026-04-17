@@ -270,7 +270,7 @@ jobs:
   tag-after-merge:
     name: Tag After Release PR
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'release')
+    if: github.event.pull_request.merged == true && (startsWith(github.event.pull_request.title, 'release ') || startsWith(github.event.pull_request.title, 'chore(release)'))
     permissions:
       contents: write
     timeout-minutes: 5
