@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use tree_sitter::{ParseOptions, Parser};
 
 /// Maximum time allowed for a tree-sitter parse used for boundary detection.
-const BOUNDARY_PARSE_TIMEOUT: Duration = Duration::from_millis(1000);
+const BOUNDARY_PARSE_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// Finds top-level declaration boundaries in source code using tree-sitter.
 pub struct SemanticBoundaryFinder;
