@@ -1,4 +1,4 @@
-use batless::{highlight_content, process_file, BatlessConfig, LanguageDetector, ThemeManager};
+use batless::{process_file, BatlessConfig, LanguageDetector};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::hint::black_box;
 use std::io::Write;
@@ -27,38 +27,6 @@ fn benchmark_process_file(c: &mut Criterion) {
             &(file.path().to_str().unwrap(), &config),
             |b, (path, config)| b.iter(|| black_box(process_file(path, config).unwrap())),
         );
-    }
-
-    group.finish();
-}
-
-fn benchmark_highlight_content(c: &mut Criterion) {
-    let mut group = c.benchmark_group("highlight_content");
-
-    let test_cases = vec![
-        (
-            "rust",
-            "fn main() {\n    println!(\"Hello, world!\");\n}",
-            "test.rs",
-        ),
-        (
-            "python",
-            "def main():\n    print('Hello, world!')\n",
-            "test.py",
-        ),
-        ("json", r#"{"hello": "world", "number": 42}"#, "test.json"),
-        (
-            "plain",
-            "This is plain text\nwith multiple lines\n",
-            "test.txt",
-        ),
-    ];
-
-    for (lang, content, filename) in test_cases {
-        let config = BatlessConfig::default();
-        group.bench_function(lang, |b| {
-            b.iter(|| black_box(highlight_content(content, filename, &config).unwrap()))
-        });
     }
 
     group.finish();
@@ -140,30 +108,16 @@ fn benchmark_max_lines_limits(c: &mut Criterion) {
 fn benchmark_startup_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("startup_operations");
 
-    // Benchmark operations that should be fast and not load heavy syntax sets
     group.bench_function("list_languages", |b| {
         b.iter(|| black_box(LanguageDetector::list_languages()))
     });
 
-    group.bench_function("list_themes", |b| {
-        b.iter(|| black_box(ThemeManager::list_themes()))
-    });
-
-    // Benchmark config loading with precedence
     group.bench_function("config_default", |b| {
         b.iter(|| black_box(BatlessConfig::default()))
     });
 
     group.bench_function("config_load_with_precedence", |b| {
         b.iter(|| black_box(BatlessConfig::load_with_precedence().unwrap()))
-    });
-
-    // Benchmark validation operations
-    group.bench_function("validate_theme", |b| {
-        b.iter(|| {
-            ThemeManager::validate_theme("base16-ocean.dark").unwrap();
-            black_box(())
-        })
     });
 
     group.bench_function("validate_language", |b| {
@@ -213,7 +167,6 @@ fn benchmark_config_operations(c: &mut Criterion) {
 criterion_group!(
     benches,
     benchmark_process_file,
-    benchmark_highlight_content,
     benchmark_summary_mode,
     benchmark_max_lines_limits,
     benchmark_startup_operations,

@@ -645,11 +645,11 @@ mod tests {
         use std::io::Write;
         use tempfile::NamedTempFile;
 
-        let toml_content = r#"
+        let toml_content = r"
 max_lines = 15000
 use_color = false
 summary_mode = true
-"#;
+";
 
         let mut temp_file = NamedTempFile::new().unwrap();
         temp_file.write_all(toml_content.as_bytes()).unwrap();
