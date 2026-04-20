@@ -136,13 +136,12 @@ fix_dependencies() {
     # For Node.js projects
     if [ -f "package.json" ]; then
         if [ -f "package-lock.json" ]; then
-            # Reproducible install from lockfile (Scorecard: no unpinned installs)
+            # Reproducible install from lockfile (integrity hashes in lockfile satisfy Scorecard)
             npm ci
-            npm audit --audit-level=high  # report without auto-fixing (review manually)
+            npm audit --audit-level=high
         else
-            # No lockfile present — generate one, then audit
-            npm install --ignore-scripts
-            npm audit fix --ignore-scripts
+            log "⚠️  No package-lock.json found — run 'npm install' locally and commit the lockfile" "$YELLOW"
+            log "   Skipping npm dependency check (lockfile required for reproducible installs)" "$YELLOW"
         fi
     fi
 
@@ -202,21 +201,13 @@ check_precommit() {
 
     if ! command -v pre-commit &> /dev/null; then
         log "Installing pre-commit..." "$YELLOW"
-        # Download wheel, verify hash, then install (avoids --require-hashes needing
-        # hashes for all transitive deps while still ensuring the main package integrity)
-        _PC_WHEEL="pre_commit-4.2.0-py2.py3-none-any.whl"
-        _PC_HASH="a009ca7205f1eb497d10b845e52c838a98b6cdd2102a6c8e4540e94ee75c58bd"  # pragma: allowlist secret
-        _PC_DIR="$(mktemp -d)"
-        pip download "pre-commit==4.2.0" --no-deps -d "$_PC_DIR" -q
-        _ACTUAL="$(sha256sum "$_PC_DIR/$_PC_WHEEL" 2>/dev/null | cut -d' ' -f1 || \
-                   shasum -a 256 "$_PC_DIR/$_PC_WHEEL" | cut -d' ' -f1)"
-        if [ "$_ACTUAL" != "$_PC_HASH" ]; then
-            log "Hash mismatch for pre-commit wheel — aborting install" "$RED"
-            rm -rf "$_PC_DIR"
-            return 1
-        fi
-        pip install "$_PC_DIR/$_PC_WHEEL"
-        rm -rf "$_PC_DIR"
+        # --require-hashes pins the wheel by SHA256 (Scorecard-recognised pattern);
+        # --no-deps avoids needing hashes for transitive dependencies.
+        pip install \
+            --no-deps \
+            --require-hashes \
+            --hash=sha256:a009ca7205f1eb497d10b845e52c838a98b6cdd2102a6c8e4540e94ee75c58bd \
+            "pre-commit==4.2.0"  # pragma: allowlist secret
         pre-commit install
     fi
 
