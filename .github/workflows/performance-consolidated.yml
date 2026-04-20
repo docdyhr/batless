@@ -181,12 +181,12 @@ jobs:
           cat plain_bench.md >> benchmark_results.md
           echo "" >> benchmark_results.md
 
-          # Highlight mode benchmark
-          echo "### Highlight Mode" >> benchmark_results.md
+          # AST mode benchmark
+          echo "### AST Mode" >> benchmark_results.md
           hyperfine --warmup 3 --runs 10 \
-            './target/release/batless benchmark_files/medium.rs --mode=highlight' \
-            --export-markdown highlight_bench.md
-          cat highlight_bench.md >> benchmark_results.md
+            './target/release/batless benchmark_files/medium.rs --mode=ast' \
+            --export-markdown ast_bench.md
+          cat ast_bench.md >> benchmark_results.md
           echo "" >> benchmark_results.md
 
           # JSON mode benchmark
