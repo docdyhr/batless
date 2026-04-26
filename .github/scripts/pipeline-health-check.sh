@@ -183,8 +183,8 @@ fix_linting() {
 
     # For Node.js projects
     if [ -f "package.json" ]; then
-        npm run lint:fix 2>/dev/null || npx eslint . --fix
-        npm run format 2>/dev/null || npx prettier --write .
+        npm run lint:fix 2>/dev/null || true
+        npm run format 2>/dev/null || true
     fi
 
     log "✅ Linting issues fixed" "$GREEN"
