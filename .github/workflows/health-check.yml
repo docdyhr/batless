@@ -101,8 +101,10 @@ jobs:
             # This means the same crate has multiple DIFFERENT versions
             ACTUAL_DUPLICATES=$(echo "$CRATE_NAMES" | uniq -d)
 
-            # Filter out known harmless duplicates (bitflags v1/v2 is common and acceptable)
-            CONCERNING_DUPLICATES=$(echo "$ACTUAL_DUPLICATES" | grep -v "^bitflags$" || true)
+            # Filter out known harmless duplicates
+            # bitflags v1/v2: common ecosystem split, harmless
+            # getrandom v0.3/v0.4: rand 0.9 ecosystem migration, both are dev-only deps
+            CONCERNING_DUPLICATES=$(echo "$ACTUAL_DUPLICATES" | grep -v "^bitflags$" | grep -v "^getrandom$" || true)
 
             if [ -n "$CONCERNING_DUPLICATES" ] && [ "$CONCERNING_DUPLICATES" != "" ]; then
               echo "⚠️ Multiple versions of the same dependency found:" >> health-report.md
