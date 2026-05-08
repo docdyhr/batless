@@ -202,30 +202,13 @@ jobs:
   # Update Homebrew tap
   update-homebrew:
     name: Update Homebrew Tap
-    runs-on: ubuntu-latest
     needs: [validate, create-release]
     if: startsWith(github.ref, 'refs/tags/v')
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Download release assets and compute SHA256s
-        env:
-          VERSION: ${{ needs.validate.outputs.version }}
-        run: |
-          BASE="https://github.com/docdyhr/batless/releases/download/v${VERSION}"
-          curl -fsSL "${BASE}/batless-aarch64-apple-darwin.tar.gz"    -o aarch64.tar.gz
-          curl -fsSL "${BASE}/batless-x86_64-apple-darwin.tar.gz"     -o x86_64.tar.gz
-          curl -fsSL "${BASE}/batless-x86_64-unknown-linux-gnu.tar.gz" -o linux.tar.gz
-          echo "SHA_ARM=$(sha256sum aarch64.tar.gz | cut -d' ' -f1)"   >> "$GITHUB_ENV"
-          echo "SHA_X86=$(sha256sum x86_64.tar.gz  | cut -d' ' -f1)"   >> "$GITHUB_ENV"
-          echo "SHA_LIN=$(sha256sum linux.tar.gz   | cut -d' ' -f1)"   >> "$GITHUB_ENV"
-
-      - name: Push updated formula to homebrew-tap
-        env:
-          VERSION: ${{ needs.validate.outputs.version }}
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        run: python3 .github/scripts/update_homebrew_formula.py
+    uses: ./.github/workflows/update-homebrew.yml
+    with:
+      tag: v${{ needs.validate.outputs.version }}
+    secrets:
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
   # Post-release monitoring
   monitor:
