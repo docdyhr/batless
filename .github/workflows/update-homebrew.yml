@@ -1,238 +1,65 @@
 name: Update Homebrew Tap
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
-      version:
-        description: "Version to update (e.g., 0.1.5)"
-        required: true
-        type: string
       tag:
-        description: "Git tag (e.g., v0.1.5)"
+        description: "Release tag (e.g., v0.6.0)"
+        required: true
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag (e.g., v0.6.0)"
         required: true
         type: string
+    secrets:
+      HOMEBREW_TAP_TOKEN:
+        required: true
 
 permissions:
   contents: read
 
 jobs:
-  update-homebrew-tap:
+  update-homebrew:
+    name: Update Homebrew Tap
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout main repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Extract release information
-        id: release-info
+      - name: Download release assets and compute SHA256s
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
-            VERSION="${TAG#v}"
-          else
-            TAG="${{ github.event.inputs.tag }}"
-            VERSION="${{ github.event.inputs.version }}"
-          fi
-
-          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
+          VERSION="${TAG#v}"
+          BASE="https://github.com/docdyhr/batless/releases/download/${TAG}"
+          curl -fsSL --retry 3 --retry-delay 5 "${BASE}/batless-aarch64-apple-darwin.tar.gz"    -o aarch64.tar.gz
+          curl -fsSL --retry 3 --retry-delay 5 "${BASE}/batless-x86_64-apple-darwin.tar.gz"     -o x86_64.tar.gz
+          curl -fsSL --retry 3 --retry-delay 5 "${BASE}/batless-x86_64-unknown-linux-gnu.tar.gz" -o linux.tar.gz
           {
-            echo "## 🍺 Homebrew Tap Update"
-            echo "- **Version:** ${VERSION}"
-            echo "- **Tag:** ${TAG}"
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "VERSION=${VERSION}"
+            echo "SHA_ARM=$(sha256sum aarch64.tar.gz | cut -d' ' -f1)"
+            echo "SHA_X86=$(sha256sum x86_64.tar.gz  | cut -d' ' -f1)"
+            echo "SHA_LIN=$(sha256sum linux.tar.gz   | cut -d' ' -f1)"
+          } >> "$GITHUB_ENV"
 
-      - name: Download and verify source tarball
-        id: download
-        run: |
-          TAG="${{ steps.release-info.outputs.tag }}"
-          VERSION="${{ steps.release-info.outputs.version }}"
-
-          # Download source tarball with retry logic
-          for i in {1..3}; do
-            echo "Attempt $i: Downloading source tarball..."
-            if curl -L --fail "https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz" -o "batless-${VERSION}.tar.gz"; then
-              echo "✅ Download successful"
-              break
-            else
-              echo "❌ Download failed, retrying in 10 seconds..."
-              sleep 10
-            fi
-
-            if [ "$i" -eq 3 ]; then
-              echo "::error::Failed to download source tarball after 3 attempts"
-              exit 1
-            fi
-          done
-
-          # Verify the download
-          if [ ! -f "batless-${VERSION}.tar.gz" ] || [ ! -s "batless-${VERSION}.tar.gz" ]; then
-            echo "::error::Downloaded file is missing or empty"
-            exit 1
-          fi
-
-          # Calculate SHA256
-          SHA256=$(sha256sum "batless-${VERSION}.tar.gz" | cut -d' ' -f1)
-          echo "✅ Calculated SHA256: $SHA256"
-          echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
-
-      - name: Generate updated Homebrew formula
-        id: formula
-        run: |
-          TAG="${{ steps.release-info.outputs.tag }}"
-          # shellcheck disable=SC2034  # VERSION is used in heredoc
-          VERSION="${{ steps.release-info.outputs.version }}"
-          SHA256="${{ steps.download.outputs.sha256 }}"
-
-          # Create the updated formula
-          cat > batless.rb << EOF
-          class Batless < Formula
-            desc "Non-blocking, AI-friendly code viewer inspired by bat"
-            homepage "https://github.com/${{ github.repository }}"
-            url "https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz"
-            sha256 "${SHA256}"
-            license "MIT"
-            head "https://github.com/${{ github.repository }}.git", branch: "main"
-
-            depends_on "rust" => :build
-
-            def install
-              system "cargo", "install", *std_cargo_args
-            end
-
-            test do
-              # Create a simple test file
-              (testpath/"test.rs").write <<~EOS
-                fn main() {
-                    println!("Hello, batless!");
-                }
-              EOS
-
-              # Test basic functionality
-              assert_match "Hello, batless!", shell_output("#{bin}/batless #{testpath}/test.rs")
-
-              # Test version output
-              assert_match version.to_s, shell_output("#{bin}/batless --version")
-
-              # Test help output
-              assert_match "batless", shell_output("#{bin}/batless --help")
-
-              # Test JSON mode
-              json_output = shell_output("#{bin}/batless --mode=json #{testpath}/test.rs")
-              assert_match '"mode": "json"', json_output
-
-              # Test summary mode
-              summary_output = shell_output("#{bin}/batless --mode=summary #{testpath}/test.rs")
-              assert_match "fn main", summary_output
-            end
-          end
-          EOF
-
-          echo "✅ Formula generated successfully"
-
-      - name: Update Homebrew tap repository
+      - name: Push updated formula to homebrew-tap
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-        run: |
-          TAG="${{ steps.release-info.outputs.tag }}"
-          VERSION="${{ steps.release-info.outputs.version }}"
+        run: python3 .github/scripts/update_homebrew_formula.py
 
-          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
-            echo "::error::HOMEBREW_TAP_TOKEN secret is not set"
-            echo "Please add a GitHub Personal Access Token with 'repo' permissions to secrets.HOMEBREW_TAP_TOKEN"
-            exit 1
-          fi
-
-          # Configure git
-          git config --global user.name "batless-bot"
-          git config --global user.email "bot@batless.dev"
-
-          # Clone the homebrew tap repository
-          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-batless.git" homebrew-tap
-          cd homebrew-tap
-
-          # Update the formula
-          cp ../batless.rb Formula/batless.rb
-
-          # Check if there are any changes
-          if git diff --quiet; then
-            echo "✅ No changes needed - formula is already up to date"
-            echo "no_changes=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "📝 Changes detected, updating formula..."
-
-            # Commit and push changes
-            git add Formula/batless.rb
-            git commit -m "feat: update batless to ${VERSION}
-
-          - Update URL to ${TAG} release
-          - Update SHA256 to ${SHA256}
-          - Automated update from batless release workflow
-
-          This update ensures users get the latest version when running:
-          brew install docdyhr/batless/batless"
-
-            git push origin master
-            echo "✅ Successfully updated Homebrew tap!"
-            echo "updated=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Verify formula syntax
-        run: |
-          cd homebrew-tap
-
-          # Basic syntax check
-          ruby -c Formula/batless.rb
-          echo "✅ Formula syntax is valid"
-
-          # Check for common issues
-          if grep -q "PLACEHOLDER" Formula/batless.rb; then
-            echo "::error::Formula still contains placeholder values"
-            exit 1
-          fi
-
-          if ! grep -q "sha256.*[a-f0-9]\{64\}" Formula/batless.rb; then
-            echo "::error::Formula missing valid SHA256"
-            exit 1
-          fi
-
-          echo "✅ Formula validation passed"
-
-      - name: Create summary
+      - name: Job summary
         if: always()
+        env:
+          TAG: ${{ inputs.tag }}
         run: |
-          TAG="${{ steps.release-info.outputs.tag }}"
-          VERSION="${{ steps.release-info.outputs.version }}"
-          SHA256="${{ steps.download.outputs.sha256 }}"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Homebrew Formula Update
 
-          {
-            echo "## 🎉 Homebrew Tap Update Complete"
-            echo ""
-            echo "**Updated Details:**"
-            echo "- **Version:** ${VERSION}"
-            echo "- **Tag:** ${TAG}"
-            echo "- **SHA256:** \`${SHA256}\`"
-            echo ""
-            echo "### 🍺 Installation Commands"
-            echo "\`\`\`bash"
-            echo "# Add the tap (one-time setup)"
-            echo "brew tap ${{ github.repository_owner }}/batless"
-            echo ""
-            echo "# Install or upgrade batless"
-            echo "brew install batless"
-            echo "# or"
-            echo "brew upgrade batless"
-            echo "\`\`\`"
-            echo ""
-            echo "### 🔗 Links"
-            echo "- [Homebrew Tap Repository](https://github.com/${{ github.repository_owner }}/homebrew-batless)"
-            echo "- [Release ${TAG}](https://github.com/${{ github.repository }}/releases/tag/${TAG})"
-            echo "- [Formula File](https://github.com/${{ github.repository_owner }}/homebrew-batless/blob/master/Formula/batless.rb)"
-            echo ""
-            echo "✅ **Users can now install batless ${VERSION} via Homebrew!**"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      # Note: Homebrew installation test removed - this job runs on ubuntu-latest
-      # where brew is not available. Test manually or add a separate macOS job.
+          | | |
+          |---|---|
+          | **Version** | \`${TAG}\` |
+          | **Tap** | \`brew tap docdyhr/tap\` |
+          | **Install** | \`brew install docdyhr/tap/batless\` |
+          | **Formula** | [Formula/batless.rb](https://github.com/docdyhr/homebrew-tap/blob/main/Formula/batless.rb) |
+          EOF

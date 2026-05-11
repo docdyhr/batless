@@ -1,0 +1,15 @@
+# Default owner for everything
+* @docdyhr
+
+# CI/CD and release pipelines
+.github/workflows/ @docdyhr
+.github/scripts/   @docdyhr
+
+# Security and dependency policy
+SECURITY.md        @docdyhr
+deny.toml          @docdyhr
+Cargo.toml         @docdyhr
+Cargo.lock         @docdyhr
+
+# Core library
+src/               @docdyhr
