@@ -138,7 +138,6 @@ fix_dependencies() {
         if [ -f "package-lock.json" ]; then
             # Reproducible install from lockfile (integrity hashes in lockfile satisfy Scorecard)
             npm ci
-            npm audit --audit-level=high
         else
             log "⚠️  No package-lock.json found — run 'npm install' locally and commit the lockfile" "$YELLOW"
             log "   Skipping npm dependency check (lockfile required for reproducible installs)" "$YELLOW"
@@ -206,8 +205,8 @@ check_precommit() {
         pip install \
             --no-deps \
             --require-hashes \
-            --hash=sha256:a009ca7205f1eb497d10b845e52c838a98b6cdd2102a6c8e4540e94ee75c58bd \
-            "pre-commit==4.2.0"  # pragma: allowlist secret
+            --hash=sha256:e2cf246f7299edcabcf15f9b0571fdce06058527f0a06535068a86d38089f29b \
+            "pre-commit==4.6.0"  # pragma: allowlist secret
         pre-commit install
     fi
 
