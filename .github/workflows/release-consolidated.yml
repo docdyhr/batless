@@ -81,6 +81,10 @@ jobs:
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     needs: [validate, test]
+    permissions:
+      attestations: write
+      id-token: write
+      contents: read
     strategy:
       matrix:
         include:
@@ -128,6 +132,11 @@ jobs:
           else
             tar -czf "batless-${{ matrix.target }}.tar.gz" -C "./target/${{ matrix.target }}/release" "$binary_name"
           fi
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: "batless-${{ matrix.target }}.*"
 
       - name: Upload release artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
