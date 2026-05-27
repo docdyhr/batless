@@ -15,7 +15,7 @@ We take security vulnerabilities seriously. If you discover a security issue in 
 ### Reporting Process
 
 1. **Do NOT create a public issue** for security vulnerabilities
-2. Email security concerns to: [security@batless.dev] (or create a private security advisory on GitHub)
+2. **Use GitHub's private vulnerability reporting**: https://github.com/docdyhr/batless/security/advisories/new
 3. Include the following information:
    - Description of the vulnerability
    - Steps to reproduce the issue
@@ -91,9 +91,7 @@ We recognize security researchers who help improve batless security:
 
 ### Contact Information
 
-- **Security Email**: [INSERT EMAIL]
-- **PGP Key**: [INSERT PGP KEY ID if available]
-- **GitHub Security Advisories**: Use GitHub's private vulnerability reporting feature
+- **GitHub Security Advisories**: https://github.com/docdyhr/batless/security/advisories/new
 
 ### Legal
 
