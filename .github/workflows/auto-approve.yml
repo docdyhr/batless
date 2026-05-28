@@ -1,0 +1,17 @@
+name: Auto Approve
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-approve:
+    name: Auto approve owner PRs
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'docdyhr'
+    steps:
+      - name: Approve
+        uses: hmarr/auto-approve-action@f0939ea97e9205ef24d872e76833fa908a770363 # v4.0.0
