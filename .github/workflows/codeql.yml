@@ -1,0 +1,25 @@
+# Caller for the reusable CodeQL workflow in docdyhr/.github.
+# To upgrade across all consumers, re-tag v1 in docdyhr/.github.
+
+name: CodeQL Analysis
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  codeql:
+    uses: docdyhr/.github/.github/workflows/codeql.yml@v1
+    with:
+      languages: '["rust"]'
+    secrets: inherit # pragma: allowlist secret
