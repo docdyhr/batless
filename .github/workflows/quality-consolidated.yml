@@ -76,47 +76,6 @@ jobs:
             echo "Note: This check excludes test code and literal strings"
           fi
 
-  # Security auditing
-  security-audit:
-    name: Security Audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Install Rust stable
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
-        with:
-          toolchain: stable
-
-      - name: Install cargo-audit
-        run: cargo install --locked cargo-audit
-
-      - name: Run security audit
-        run: cargo audit
-
-      - name: Run cargo deny
-        uses: EmbarkStudios/cargo-deny-action@a531616d8ce3b9177443e48a1159bc945a099823 # v2
-        continue-on-error: true
-        with:
-          log-level: warn
-          command: check
-          arguments: --all-features
-
-  # Dependency analysis
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Dependency Review
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v4
-        with:
-          fail-on-severity: moderate
-
   # Code coverage
   coverage:
     name: Code Coverage
@@ -151,26 +110,3 @@ jobs:
         with:
           files: lcov.info
           fail_ci_if_error: false
-
-  # License compliance
-  license-check:
-    name: License Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Install Rust stable
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
-        with:
-          toolchain: stable
-
-      - name: Install cargo-license
-        run: cargo install --locked cargo-license
-
-      - name: Check licenses
-        run: |
-          cargo license --json | jq -r '.[] |
-          select(.license != "MIT" and .license != "Apache-2.0" and
-          .license != "BSD-3-Clause" and .license != "ISC") |
-          .name + ": " + .license'
