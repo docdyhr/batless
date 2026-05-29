@@ -22,15 +22,15 @@ Symbol indexes, token-estimated context, semantic chunks — structured output t
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?logo=opensource&logoColor=white)](https://opensource.org/licenses/MIT)
 [![GitHub Release](https://img.shields.io/github/v/release/docdyhr/batless?include_prereleases&logo=github&logoColor=white)](https://github.com/docdyhr/batless/releases)
 
-[![Health Check](https://github.com/docdyhr/batless/actions/workflows/health-check.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/health-check.yml)
+[![CI](https://github.com/docdyhr/batless/actions/workflows/ci-optimized.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/ci-optimized.yml)
 [![Security](https://github.com/docdyhr/batless/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/security.yml)
+[![CodeQL](https://github.com/docdyhr/batless/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/codeql.yml)
 [![Fuzz Testing](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/fuzz.yml)
+[![Health Check](https://github.com/docdyhr/batless/actions/workflows/health-check.yml/badge.svg?branch=main)](https://github.com/docdyhr/batless/actions/workflows/health-check.yml)
 [![Codecov](https://codecov.io/gh/docdyhr/batless/branch/main/graph/badge.svg?logo=codecov&logoColor=white)](https://codecov.io/gh/docdyhr/batless)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/docdyhr/batless/badge)](https://securityscorecards.dev/viewer/?uri=github.com/docdyhr/batless)
 
 [![Rust](https://img.shields.io/badge/Rust-100%25-orange?logo=rust&logoColor=white)](https://github.com/docdyhr/batless)
-[![Security Tests](https://img.shields.io/badge/security%20tests-passing-brightgreen?logo=shield&logoColor=white)](https://github.com/docdyhr/batless)
-[![Performance](https://img.shields.io/badge/startup-<5ms*-brightgreen?logo=speedtest&logoColor=white)](https://github.com/docdyhr/batless)
 [![Binary Size](https://img.shields.io/badge/binary%20size-~2MB-blue?logo=filetype&logoColor=white)](https://github.com/docdyhr/batless)
 
 </div>
