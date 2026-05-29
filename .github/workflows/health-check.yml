@@ -11,5 +11,5 @@ concurrency:
 
 jobs:
   health-check:
-    uses: docdyhr/.github/.github/workflows/rust-health-check.yml@main
+    uses: docdyhr/.github/.github/workflows/rust-health-check.yml@v1
     secrets: inherit # pragma: allowlist secret

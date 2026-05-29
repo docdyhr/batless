@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: docdyhr/.github/.github/workflows/rust-ci.yml@main
+    uses: docdyhr/.github/.github/workflows/rust-ci.yml@v1
     with:
       binary-name: batless
     secrets: inherit # pragma: allowlist secret

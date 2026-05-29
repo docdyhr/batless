@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test-comprehensive:
-    uses: docdyhr/.github/.github/workflows/rust-test-comprehensive.yml@main
+    uses: docdyhr/.github/.github/workflows/rust-test-comprehensive.yml@v1
     with:
       msrv: "1.85.0"
     secrets: inherit # pragma: allowlist secret
