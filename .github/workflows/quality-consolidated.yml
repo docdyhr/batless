@@ -1,14 +1,7 @@
 name: Code Quality & Security
 
-# CONSOLIDATED: PR/push triggers disabled to avoid overlap with ci-optimized.yml
-# Kept for scheduled weekly security/quality checks only
 on:
-  # pull_request:
-  #   branches: [main]
-  # push:
-  #   branches: [main]
   schedule:
-    # Run security checks weekly
     - cron: "0 2 * * 1"
   workflow_dispatch:
 
@@ -16,97 +9,6 @@ permissions:
   contents: read
 
 jobs:
-  # Markdown linting
-  markdown-lint:
-    name: Markdown Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Run markdownlint
-        continue-on-error: true
-        uses: DavidAnson/markdownlint-cli2-action@ded1f9488f68a970bc66ea5619e13e9b52e601cd # v23.2.0
-        with:
-          globs: "**/*.md"
-
-  # Rust code quality checks
-  rust-quality:
-    name: Rust Quality Checks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Install Rust stable
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
-        with:
-          toolchain: stable
-          components: rustfmt, clippy
-
-      - name: Cache dependencies
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ubuntu-quality-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Run clippy (pedantic)
-        run: cargo clippy --all-targets --all-features -- -W clippy::pedantic -W clippy::nursery -W clippy::cargo
-
-      - name: Check formatting
-        run: cargo fmt -- --check
-
-      - name: Check for TODO/FIXME comments
-        run: |
-          # Check for TODOs but exclude test code and comments about TODOs
-          TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" src/ --exclude-dir=target |
-                       grep -v "// Check for TODO" |
-                       grep -v '"TODO"' |
-                       grep -v "todo_count" |
-                       wc -l)
-          if [ "$TODO_COUNT" -gt 0 ]; then
-            echo "Found $TODO_COUNT TODO/FIXME comments that should be addressed:"
-            grep -r "TODO\|FIXME\|XXX\|HACK" src/ --exclude-dir=target |
-              grep -v "// Check for TODO" |
-              grep -v '"TODO"' |
-              grep -v "todo_count"
-            echo "Note: This check excludes test code and literal strings"
-          fi
-
-  # Code coverage
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Install Rust stable
-        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1
-        with:
-          toolchain: stable
-          components: llvm-tools-preview
-
-      - name: Install cargo-llvm-cov
-        run: cargo install --locked cargo-llvm-cov
-
-      - name: Cache dependencies
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ubuntu-coverage-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Generate coverage report
-        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6
-        with:
-          files: lcov.info
-          fail_ci_if_error: false
+  quality:
+    uses: docdyhr/.github/.github/workflows/rust-quality.yml@v1
+    secrets: inherit # pragma: allowlist secret
