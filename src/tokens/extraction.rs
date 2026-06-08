@@ -370,7 +370,7 @@ struct TokenAccumulator {
 }
 
 impl TokenAccumulator {
-    fn new(max_tokens: usize) -> Self {
+    const fn new(max_tokens: usize) -> Self {
         Self {
             max_tokens,
             tokens: Vec::new(),
@@ -393,7 +393,7 @@ impl TokenAccumulator {
         self.tokens
     }
 
-    fn total_count(&self) -> usize {
+    const fn total_count(&self) -> usize {
         self.total_count
     }
 }

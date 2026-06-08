@@ -89,7 +89,7 @@ impl OutputFormatter {
     }
 
     /// Get a human-readable error type name
-    fn error_type_name(error: &BatlessError) -> &'static str {
+    const fn error_type_name(error: &BatlessError) -> &'static str {
         match error {
             BatlessError::FileNotFound { .. } => "file_not_found",
             BatlessError::FileReadError { .. } => "file_read_error",
@@ -238,11 +238,11 @@ impl OutputMode {
     /// Parse output mode from string
     pub fn parse_mode(s: &str) -> Result<Self, String> {
         match s.to_lowercase().as_str() {
-            "plain" => Ok(OutputMode::Plain),
-            "json" => Ok(OutputMode::Json),
-            "summary" => Ok(OutputMode::Summary),
-            "index" => Ok(OutputMode::Index),
-            "ast" => Ok(OutputMode::Ast),
+            "plain" => Ok(Self::Plain),
+            "json" => Ok(Self::Json),
+            "summary" => Ok(Self::Summary),
+            "index" => Ok(Self::Index),
+            "ast" => Ok(Self::Ast),
             _ => Err(format!("Unknown output mode: {s}")),
         }
     }
@@ -250,22 +250,22 @@ impl OutputMode {
     /// Get all available output modes
     pub fn all() -> Vec<Self> {
         vec![
-            OutputMode::Plain,
-            OutputMode::Json,
-            OutputMode::Summary,
-            OutputMode::Index,
-            OutputMode::Ast,
+            Self::Plain,
+            Self::Json,
+            Self::Summary,
+            Self::Index,
+            Self::Ast,
         ]
     }
 
     /// Get string representation
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
-            OutputMode::Plain => "plain",
-            OutputMode::Json => "json",
-            OutputMode::Summary => "summary",
-            OutputMode::Index => "index",
-            OutputMode::Ast => "ast",
+            Self::Plain => "plain",
+            Self::Json => "json",
+            Self::Summary => "summary",
+            Self::Index => "index",
+            Self::Ast => "ast",
         }
     }
 }

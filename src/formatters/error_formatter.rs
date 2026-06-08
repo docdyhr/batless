@@ -27,7 +27,7 @@ impl ErrorFormatter {
     }
 
     /// Get human-readable error type name
-    fn error_type_name(error: &BatlessError) -> &'static str {
+    const fn error_type_name(error: &BatlessError) -> &'static str {
         match error {
             BatlessError::FileNotFound { .. } => "file not found",
             BatlessError::PermissionDenied { .. } => "permission denied",

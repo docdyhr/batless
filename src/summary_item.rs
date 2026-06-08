@@ -3,9 +3,10 @@
 use serde::{Deserialize, Serialize};
 
 /// A single extracted code structure with its location in the source file.
+///
 /// Used as the element type for `file_info.summary_lines` when summary mode
 /// is active, giving AI consumers exact line references for every symbol.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SummaryItem {
     /// The source line text
     pub line: String,

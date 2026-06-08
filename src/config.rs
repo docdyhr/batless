@@ -90,15 +90,15 @@ pub struct BatlessConfig {
     pub chunk_strategy: ChunkStrategy,
 }
 
-fn default_max_lines() -> usize {
+const fn default_max_lines() -> usize {
     10000
 }
 
-fn default_use_color() -> bool {
+const fn default_use_color() -> bool {
     true
 }
 
-fn default_streaming_chunk_size() -> usize {
+const fn default_streaming_chunk_size() -> usize {
     1000
 }
 
@@ -141,13 +141,13 @@ impl BatlessConfig {
     }
 
     /// Set maximum lines
-    pub fn with_max_lines(mut self, max_lines: usize) -> Self {
+    pub const fn with_max_lines(mut self, max_lines: usize) -> Self {
         self.max_lines = max_lines;
         self
     }
 
     /// Set maximum bytes
-    pub fn with_max_bytes(mut self, max_bytes: Option<usize>) -> Self {
+    pub const fn with_max_bytes(mut self, max_bytes: Option<usize>) -> Self {
         self.max_bytes = max_bytes;
         self
     }
@@ -159,25 +159,25 @@ impl BatlessConfig {
     }
 
     /// Set ANSI stripping
-    pub fn with_strip_ansi(mut self, strip_ansi: bool) -> Self {
+    pub const fn with_strip_ansi(mut self, strip_ansi: bool) -> Self {
         self.strip_ansi = strip_ansi;
         self
     }
 
     /// Set color usage
-    pub fn with_use_color(mut self, use_color: bool) -> Self {
+    pub const fn with_use_color(mut self, use_color: bool) -> Self {
         self.use_color = use_color;
         self
     }
 
     /// Set token inclusion
-    pub fn with_include_tokens(mut self, include_tokens: bool) -> Self {
+    pub const fn with_include_tokens(mut self, include_tokens: bool) -> Self {
         self.include_tokens = include_tokens;
         self
     }
 
     /// Set summary mode
-    pub fn with_summary_mode(mut self, summary_mode: bool) -> Self {
+    pub const fn with_summary_mode(mut self, summary_mode: bool) -> Self {
         self.summary_mode = summary_mode;
         // For backward compatibility, map boolean to SummaryLevel
         if summary_mode {
@@ -189,7 +189,7 @@ impl BatlessConfig {
     }
 
     /// Set summary level
-    pub fn with_summary_level(mut self, summary_level: SummaryLevel) -> Self {
+    pub const fn with_summary_level(mut self, summary_level: SummaryLevel) -> Self {
         // Update deprecated summary_mode for backward compatibility
         self.summary_mode = summary_level.is_enabled();
         self.summary_level = summary_level;
@@ -197,19 +197,19 @@ impl BatlessConfig {
     }
 
     /// Enable streaming JSON output
-    pub fn with_streaming_json(mut self, streaming_json: bool) -> Self {
+    pub const fn with_streaming_json(mut self, streaming_json: bool) -> Self {
         self.streaming_json = streaming_json;
         self
     }
 
     /// Set streaming chunk size
-    pub fn with_streaming_chunk_size(mut self, chunk_size: usize) -> Self {
+    pub const fn with_streaming_chunk_size(mut self, chunk_size: usize) -> Self {
         self.streaming_chunk_size = chunk_size;
         self
     }
 
     /// Enable resume capability
-    pub fn with_enable_resume(mut self, enable_resume: bool) -> Self {
+    pub const fn with_enable_resume(mut self, enable_resume: bool) -> Self {
         self.enable_resume = enable_resume;
         self
     }
@@ -221,55 +221,58 @@ impl BatlessConfig {
     }
 
     /// Enable debug mode
-    pub fn with_debug(mut self, debug: bool) -> Self {
+    pub const fn with_debug(mut self, debug: bool) -> Self {
         self.debug = debug;
         self
     }
 
     /// Enable line numbering (cat -n compatibility)
-    pub fn with_show_line_numbers(mut self, show_line_numbers: bool) -> Self {
+    pub const fn with_show_line_numbers(mut self, show_line_numbers: bool) -> Self {
         self.show_line_numbers = show_line_numbers;
         self
     }
 
     /// Enable line numbering for non-blank lines only (cat -b compatibility)
-    pub fn with_show_line_numbers_nonblank(mut self, show_line_numbers_nonblank: bool) -> Self {
+    pub const fn with_show_line_numbers_nonblank(
+        mut self,
+        show_line_numbers_nonblank: bool,
+    ) -> Self {
         self.show_line_numbers_nonblank = show_line_numbers_nonblank;
         self
     }
 
     /// Enable pretty JSON output
-    pub fn with_pretty_json(mut self, pretty: bool) -> Self {
+    pub const fn with_pretty_json(mut self, pretty: bool) -> Self {
         self.pretty_json = pretty;
         self
     }
 
     /// Include 1-based line numbers in JSON output lines array
-    pub fn with_json_line_numbers(mut self, enabled: bool) -> Self {
+    pub const fn with_json_line_numbers(mut self, enabled: bool) -> Self {
         self.json_line_numbers = enabled;
         self
     }
 
     /// Compute and include SHA-256 file hash in JSON output
-    pub fn with_hash(mut self, enabled: bool) -> Self {
+    pub const fn with_hash(mut self, enabled: bool) -> Self {
         self.hash = enabled;
         self
     }
 
     /// Strip comment-only lines from output
-    pub fn with_strip_comments(mut self, enabled: bool) -> Self {
+    pub const fn with_strip_comments(mut self, enabled: bool) -> Self {
         self.strip_comments = enabled;
         self
     }
 
     /// Strip blank lines from output
-    pub fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
+    pub const fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
         self.strip_blank_lines = enabled;
         self
     }
 
     /// Set streaming chunk strategy
-    pub fn with_chunk_strategy(mut self, strategy: ChunkStrategy) -> Self {
+    pub const fn with_chunk_strategy(mut self, strategy: ChunkStrategy) -> Self {
         self.chunk_strategy = strategy;
         self
     }
@@ -294,22 +297,22 @@ impl BatlessConfig {
     }
 
     /// Check if color output should be used based on configuration and environment
-    pub fn should_use_color(&self, is_terminal: bool) -> bool {
+    pub const fn should_use_color(&self, is_terminal: bool) -> bool {
         self.use_color && is_terminal
     }
 
     /// Get the effective maximum lines (considering both line and byte limits)
-    pub fn effective_max_lines(&self) -> usize {
+    pub const fn effective_max_lines(&self) -> usize {
         self.max_lines
     }
 
     /// Check if byte limiting is enabled
-    pub fn has_byte_limit(&self) -> bool {
+    pub const fn has_byte_limit(&self) -> bool {
         self.max_bytes.is_some()
     }
 
     /// Get byte limit if set
-    pub fn get_byte_limit(&self) -> Option<usize> {
+    pub const fn get_byte_limit(&self) -> Option<usize> {
         self.max_bytes
     }
 
@@ -326,7 +329,7 @@ impl BatlessConfig {
             )
         })?;
 
-        let config: BatlessConfig = toml::from_str(&content).map_err(|e| {
+        let config: Self = toml::from_str(&content).map_err(|e| {
             BatlessError::config_error_with_help(
                 format!(
                     "Failed to parse config file '{}': {}",
@@ -354,7 +357,7 @@ impl BatlessConfig {
             )
         })?;
 
-        let config: BatlessConfig = serde_json::from_str(&content).map_err(|e| {
+        let config: Self = serde_json::from_str(&content).map_err(|e| {
             BatlessError::config_error_with_help(
                 format!(
                     "Failed to parse config file '{}': {}",

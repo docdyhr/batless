@@ -349,14 +349,7 @@ impl FileProcessor {
             Ok("UTF-8".to_string())
         } else {
             // Try to detect other common encodings
-            match Self::detect_alternative_encoding(&buffer) {
-                Some(encoding) => Ok(encoding),
-                None => {
-                    // Return Unknown but log the issue - this is a soft failure
-                    // that allows processing to continue with best-effort decoding
-                    Ok("Unknown".to_string())
-                }
-            }
+            Self::detect_alternative_encoding(&buffer).map_or_else(|| Ok("Unknown".to_string()), Ok)
         }
     }
 
