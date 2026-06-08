@@ -178,20 +178,20 @@ impl LanguageDetection for LanguageDetector {
     }
 
     fn detect_from_content(&self, content: &str, file_path: Option<&str>) -> Option<String> {
-        if let Some(path) = file_path {
-            Self::detect_language(path)
-        } else {
-            // Simple content-based detection for common patterns
-            if content.contains("fn main()") || content.contains("pub fn") {
-                Some("Rust".to_string())
-            } else if content.contains("function ") || content.contains("const ") {
-                Some("JavaScript".to_string())
-            } else if content.contains("def ") || content.contains("import ") {
-                Some("Python".to_string())
-            } else {
-                None
-            }
-        }
+        file_path.map_or_else(
+            || {
+                if content.contains("fn main()") || content.contains("pub fn") {
+                    Some("Rust".to_string())
+                } else if content.contains("function ") || content.contains("const ") {
+                    Some("JavaScript".to_string())
+                } else if content.contains("def ") || content.contains("import ") {
+                    Some("Python".to_string())
+                } else {
+                    None
+                }
+            },
+            Self::detect_language,
+        )
     }
 }
 

@@ -33,19 +33,19 @@ pub enum ErrorCode {
 
 impl ErrorCode {
     /// Get the error code as a string for display
-    pub fn as_str(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
-            ErrorCode::FileNotFound => "E101",
-            ErrorCode::FileReadError => "E102",
-            ErrorCode::PermissionDenied => "E103",
-            ErrorCode::EncodingError => "E104",
-            ErrorCode::LanguageNotFound => "E203",
-            ErrorCode::LanguageDetectionError => "E204",
-            ErrorCode::ProcessingError => "E301",
-            ErrorCode::ConfigurationError => "E302",
-            ErrorCode::JsonSerializationError => "E401",
-            ErrorCode::OutputError => "E402",
-            ErrorCode::IoError => "E501",
+            Self::FileNotFound => "E101",
+            Self::FileReadError => "E102",
+            Self::PermissionDenied => "E103",
+            Self::EncodingError => "E104",
+            Self::LanguageNotFound => "E203",
+            Self::LanguageDetectionError => "E204",
+            Self::ProcessingError => "E301",
+            Self::ConfigurationError => "E302",
+            Self::JsonSerializationError => "E401",
+            Self::OutputError => "E402",
+            Self::IoError => "E501",
         }
     }
 }
@@ -104,7 +104,7 @@ impl fmt::Display for BatlessError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let error_code = self.error_code();
         match self {
-            BatlessError::FileNotFound { path, suggestions } => {
+            Self::FileNotFound { path, suggestions } => {
                 write!(f, "[{}] File not found: {path}", error_code.as_str())?;
                 if !suggestions.is_empty() {
                     write!(f, "\n\nDid you mean:")?;
@@ -114,21 +114,21 @@ impl fmt::Display for BatlessError {
                 }
                 Ok(())
             }
-            BatlessError::FileReadError { path, source } => {
+            Self::FileReadError { path, source } => {
                 write!(
                     f,
                     "[{}] Failed to read file '{path}': {source}",
                     error_code.as_str()
                 )
             }
-            BatlessError::PermissionDenied { path, help } => {
+            Self::PermissionDenied { path, help } => {
                 write!(
                     f,
                     "[{}] Permission denied: {path}\n\nHelp: {help}",
                     error_code.as_str()
                 )
             }
-            BatlessError::LanguageNotFound {
+            Self::LanguageNotFound {
                 language,
                 suggestions,
             } => {
@@ -145,21 +145,21 @@ impl fmt::Display for BatlessError {
                 }
                 write!(f, "\n\nUse --list-languages to see all available languages")
             }
-            BatlessError::LanguageDetectionError { path, details } => {
+            Self::LanguageDetectionError { path, details } => {
                 write!(
                     f,
                     "[{}] Language detection failed for '{path}': {details}",
                     error_code.as_str()
                 )
             }
-            BatlessError::EncodingError { path, details } => {
+            Self::EncodingError { path, details } => {
                 write!(
                     f,
                     "[{}] Encoding error in file '{path}': {details}",
                     error_code.as_str()
                 )
             }
-            BatlessError::ProcessingError {
+            Self::ProcessingError {
                 message,
                 path,
                 help,
@@ -178,7 +178,7 @@ impl fmt::Display for BatlessError {
                 }
                 Ok(())
             }
-            BatlessError::ConfigurationError { message, help } => {
+            Self::ConfigurationError { message, help } => {
                 write!(
                     f,
                     "[{}] Configuration error: {message}",
@@ -189,17 +189,17 @@ impl fmt::Display for BatlessError {
                 }
                 Ok(())
             }
-            BatlessError::JsonSerializationError(err) => {
+            Self::JsonSerializationError(err) => {
                 write!(
                     f,
                     "[{}] JSON serialization failed: {err}",
                     error_code.as_str()
                 )
             }
-            BatlessError::OutputError(msg) => {
+            Self::OutputError(msg) => {
                 write!(f, "[{}] Output error: {msg}", error_code.as_str())
             }
-            BatlessError::IoError(err) => {
+            Self::IoError(err) => {
                 write!(f, "[{}] I/O error: {err}", error_code.as_str())
             }
         }
@@ -209,9 +209,9 @@ impl fmt::Display for BatlessError {
 impl std::error::Error for BatlessError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            BatlessError::FileReadError { source, .. } => Some(source),
-            BatlessError::JsonSerializationError(err) => Some(err),
-            BatlessError::IoError(err) => Some(err),
+            Self::FileReadError { source, .. } => Some(source),
+            Self::JsonSerializationError(err) => Some(err),
+            Self::IoError(err) => Some(err),
             _ => None,
         }
     }
@@ -219,26 +219,26 @@ impl std::error::Error for BatlessError {
 
 impl BatlessError {
     /// Get the error code for this error
-    pub fn error_code(&self) -> ErrorCode {
+    pub const fn error_code(&self) -> ErrorCode {
         match self {
-            BatlessError::FileNotFound { .. } => ErrorCode::FileNotFound,
-            BatlessError::FileReadError { .. } => ErrorCode::FileReadError,
-            BatlessError::PermissionDenied { .. } => ErrorCode::PermissionDenied,
-            BatlessError::LanguageNotFound { .. } => ErrorCode::LanguageNotFound,
-            BatlessError::LanguageDetectionError { .. } => ErrorCode::LanguageDetectionError,
-            BatlessError::EncodingError { .. } => ErrorCode::EncodingError,
-            BatlessError::ProcessingError { .. } => ErrorCode::ProcessingError,
-            BatlessError::ConfigurationError { .. } => ErrorCode::ConfigurationError,
-            BatlessError::JsonSerializationError(_) => ErrorCode::JsonSerializationError,
-            BatlessError::OutputError(_) => ErrorCode::OutputError,
-            BatlessError::IoError(_) => ErrorCode::IoError,
+            Self::FileNotFound { .. } => ErrorCode::FileNotFound,
+            Self::FileReadError { .. } => ErrorCode::FileReadError,
+            Self::PermissionDenied { .. } => ErrorCode::PermissionDenied,
+            Self::LanguageNotFound { .. } => ErrorCode::LanguageNotFound,
+            Self::LanguageDetectionError { .. } => ErrorCode::LanguageDetectionError,
+            Self::EncodingError { .. } => ErrorCode::EncodingError,
+            Self::ProcessingError { .. } => ErrorCode::ProcessingError,
+            Self::ConfigurationError { .. } => ErrorCode::ConfigurationError,
+            Self::JsonSerializationError(_) => ErrorCode::JsonSerializationError,
+            Self::OutputError(_) => ErrorCode::OutputError,
+            Self::IoError(_) => ErrorCode::IoError,
         }
     }
 
     /// Create a FileNotFound error with file suggestions
     pub fn file_not_found_with_suggestions(path: String) -> Self {
         let suggestions = Self::suggest_similar_files(&path);
-        BatlessError::FileNotFound { path, suggestions }
+        Self::FileNotFound { path, suggestions }
     }
 
     /// Create a LanguageNotFound error with language suggestions
@@ -247,7 +247,7 @@ impl BatlessError {
         available_languages: &[String],
     ) -> Self {
         let suggestions = Self::suggest_similar_strings(&language, available_languages);
-        BatlessError::LanguageNotFound {
+        Self::LanguageNotFound {
             language,
             suggestions,
         }
@@ -260,17 +260,17 @@ impl BatlessError {
         } else {
             format!("Try running with appropriate permissions or check if the file exists:\n  ls -la {path}")
         };
-        BatlessError::PermissionDenied { path, help }
+        Self::PermissionDenied { path, help }
     }
 
     /// Create a ConfigurationError with helpful suggestions
-    pub fn config_error_with_help(message: String, help: Option<String>) -> Self {
-        BatlessError::ConfigurationError { message, help }
+    pub const fn config_error_with_help(message: String, help: Option<String>) -> Self {
+        Self::ConfigurationError { message, help }
     }
 
     /// Create a LanguageDetectionError with file path context
     pub fn language_detection_error(path: impl Into<String>, details: impl Into<String>) -> Self {
-        BatlessError::LanguageDetectionError {
+        Self::LanguageDetectionError {
             path: path.into(),
             details: details.into(),
         }
@@ -278,7 +278,7 @@ impl BatlessError {
 
     /// Create a ProcessingError with context
     pub fn processing_error(message: impl Into<String>) -> Self {
-        BatlessError::ProcessingError {
+        Self::ProcessingError {
             message: message.into(),
             path: None,
             help: None,
@@ -287,7 +287,7 @@ impl BatlessError {
 
     /// Create a ProcessingError with file path context
     pub fn processing_error_for_path(path: impl Into<String>, message: impl Into<String>) -> Self {
-        BatlessError::ProcessingError {
+        Self::ProcessingError {
             message: message.into(),
             path: Some(path.into()),
             help: None,
@@ -300,7 +300,7 @@ impl BatlessError {
         message: impl Into<String>,
         help: impl Into<String>,
     ) -> Self {
-        BatlessError::ProcessingError {
+        Self::ProcessingError {
             message: message.into(),
             path,
             help: Some(help.into()),
@@ -309,7 +309,7 @@ impl BatlessError {
 
     /// Create an EncodingError for a file
     pub fn encoding_error(path: impl Into<String>, details: impl Into<String>) -> Self {
-        BatlessError::EncodingError {
+        Self::EncodingError {
             path: path.into(),
             details: details.into(),
         }
@@ -326,59 +326,61 @@ impl BatlessError {
         match err.kind() {
             std::io::ErrorKind::NotFound => Self::file_not_found_with_suggestions(path),
             std::io::ErrorKind::PermissionDenied => Self::permission_denied_with_help(path),
-            _ => BatlessError::FileReadError { path, source: err },
+            _ => Self::FileReadError { path, source: err },
         }
     }
 
     /// Suggest similar files in the current directory
     fn suggest_similar_files(target: &str) -> Vec<String> {
         let target_path = Path::new(target);
-        let dir = if let Some(parent) = target_path.parent() {
-            if !parent.as_os_str().is_empty() {
-                parent
-            } else {
-                Path::new(".")
-            }
-        } else {
-            Path::new(".")
-        };
+        let dir = target_path.parent().map_or_else(
+            || Path::new("."),
+            |parent| {
+                if !parent.as_os_str().is_empty() {
+                    parent
+                } else {
+                    Path::new(".")
+                }
+            },
+        );
         let filename = target_path
             .file_name()
             .unwrap_or_default()
             .to_string_lossy();
 
-        if let Ok(entries) = std::fs::read_dir(dir) {
-            let mut suggestions = Vec::new();
-            for entry in entries.flatten() {
-                if let Some(entry_name) = entry.file_name().to_str() {
-                    if Self::is_similar(&filename, entry_name) {
-                        let full_path = if dir == Path::new(".") {
-                            entry_name.to_string()
-                        } else {
-                            dir.join(entry_name).to_string_lossy().to_string()
-                        };
-                        suggestions.push(full_path);
+        std::fs::read_dir(dir).map_or_else(
+            |_| Vec::new(),
+            |entries| {
+                let mut suggestions = Vec::new();
+                for entry in entries.flatten() {
+                    if let Some(entry_name) = entry.file_name().to_str() {
+                        if Self::is_similar(&filename, entry_name) {
+                            let full_path = if dir == Path::new(".") {
+                                entry_name.to_string()
+                            } else {
+                                dir.join(entry_name).to_string_lossy().to_string()
+                            };
+                            suggestions.push(full_path);
+                        }
                     }
                 }
-            }
-            suggestions.sort_by(|a, b| {
-                let a_name = Path::new(a)
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("");
-                let b_name = Path::new(b)
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("");
+                suggestions.sort_by(|a, b| {
+                    let a_name = Path::new(a)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("");
+                    let b_name = Path::new(b)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("");
 
-                Self::levenshtein_distance(&filename, a_name)
-                    .cmp(&Self::levenshtein_distance(&filename, b_name))
-            });
-            suggestions.truncate(3);
-            suggestions
-        } else {
-            Vec::new()
-        }
+                    Self::levenshtein_distance(&filename, a_name)
+                        .cmp(&Self::levenshtein_distance(&filename, b_name))
+                });
+                suggestions.truncate(3);
+                suggestions
+            },
+        )
     }
 
     /// Suggest similar strings from a list
@@ -446,13 +448,13 @@ impl BatlessError {
 
 impl From<std::io::Error> for BatlessError {
     fn from(err: std::io::Error) -> Self {
-        BatlessError::IoError(err)
+        Self::IoError(err)
     }
 }
 
 impl From<serde_json::Error> for BatlessError {
     fn from(err: serde_json::Error) -> Self {
-        BatlessError::JsonSerializationError(err)
+        Self::JsonSerializationError(err)
     }
 }
 

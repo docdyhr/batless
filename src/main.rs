@@ -211,7 +211,7 @@ fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathB
         }
     };
     let mut entries: Vec<_> = entries.flatten().collect();
-    entries.sort_by_key(|e| e.path());
+    entries.sort_by_key(std::fs::DirEntry::path);
     for entry in entries {
         let path = entry.path();
         // Use symlink_metadata so symlinks are never followed — prevents cycles.
@@ -231,8 +231,7 @@ fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathB
             if path
                 .file_name()
                 .and_then(|n| n.to_str())
-                .map(|n| n.starts_with('.'))
-                .unwrap_or(false)
+                .is_some_and(|n| n.starts_with('.'))
             {
                 continue;
             }

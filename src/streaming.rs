@@ -323,7 +323,7 @@ impl StreamingProcessorIterator {
             Vec::new()
         };
 
-        Ok(StreamingProcessorIterator::File {
+        Ok(Self::File {
             reader,
             config: config.clone(),
             file_metadata,
@@ -348,7 +348,7 @@ impl StreamingProcessorIterator {
             total_bytes: 0, // Unknown for stdin
         };
 
-        Ok(StreamingProcessorIterator::Stdin {
+        Ok(Self::Stdin {
             reader,
             config: config.clone(),
             stdin_metadata,
@@ -393,7 +393,7 @@ impl Iterator for StreamingProcessorIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            StreamingProcessorIterator::File {
+            Self::File {
                 reader,
                 config,
                 file_metadata,
@@ -488,10 +488,7 @@ impl Iterator for StreamingProcessorIterator {
                 }
 
                 let end_line = *current_line - 1;
-                let is_final = match reader.fill_buf() {
-                    Ok(buf) => buf.is_empty(),
-                    Err(_) => true,
-                };
+                let is_final = reader.fill_buf().map_or(true, <[u8]>::is_empty);
 
                 if is_final {
                     *finished = true;
@@ -529,7 +526,7 @@ impl Iterator for StreamingProcessorIterator {
                 *chunk_number += 1;
                 Some(Ok(chunk))
             }
-            StreamingProcessorIterator::Stdin {
+            Self::Stdin {
                 reader,
                 config,
                 stdin_metadata,
@@ -583,10 +580,7 @@ impl Iterator for StreamingProcessorIterator {
                 let end_line = *current_line - 1;
 
                 // Check if we've hit EOF by trying to peek at the buffer
-                let is_final = match reader.fill_buf() {
-                    Ok(buf) => buf.is_empty(), // EOF if buffer is empty
-                    Err(_) => true,            // Assume EOF on error
-                };
+                let is_final = reader.fill_buf().map_or(true, <[u8]>::is_empty);
 
                 if is_final {
                     *finished = true;

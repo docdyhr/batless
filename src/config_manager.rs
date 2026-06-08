@@ -218,34 +218,34 @@ pub enum AiProfile {
 }
 
 impl AiProfile {
-    pub fn apply_to_config(self, config: BatlessConfig) -> BatlessConfig {
+    pub const fn apply_to_config(self, config: BatlessConfig) -> BatlessConfig {
         match self {
-            AiProfile::Claude => config
+            Self::Claude => config
                 .with_max_lines(20_000)
                 .with_summary_level(SummaryLevel::Standard)
                 .with_include_tokens(false)
                 .with_use_color(false),
-            AiProfile::ClaudeMax => config
+            Self::ClaudeMax => config
                 .with_max_lines(150_000)
                 .with_summary_level(SummaryLevel::None)
                 .with_include_tokens(false)
                 .with_use_color(false),
-            AiProfile::Copilot => config
+            Self::Copilot => config
                 .with_max_lines(2000)
                 .with_include_tokens(true)
                 .with_summary_level(SummaryLevel::None)
                 .with_use_color(false),
-            AiProfile::Chatgpt => config
+            Self::Chatgpt => config
                 .with_max_lines(3000)
                 .with_include_tokens(true)
                 .with_summary_level(SummaryLevel::None)
                 .with_use_color(false),
-            AiProfile::Gemini => config
+            Self::Gemini => config
                 .with_max_lines(8000)
                 .with_include_tokens(true)
                 .with_summary_level(SummaryLevel::None)
                 .with_use_color(false),
-            AiProfile::Assistant => config
+            Self::Assistant => config
                 .with_max_lines(5000)
                 .with_include_tokens(false)
                 .with_summary_level(SummaryLevel::Detailed)
@@ -253,24 +253,24 @@ impl AiProfile {
         }
     }
 
-    pub fn get_output_mode(self) -> OutputMode {
+    pub const fn get_output_mode(self) -> OutputMode {
         match self {
-            AiProfile::Claude => OutputMode::Summary,
-            AiProfile::ClaudeMax => OutputMode::Json,
-            AiProfile::Copilot => OutputMode::Json,
-            AiProfile::Chatgpt => OutputMode::Json,
-            AiProfile::Gemini => OutputMode::Json,
-            AiProfile::Assistant => OutputMode::Summary,
+            Self::Claude => OutputMode::Summary,
+            Self::ClaudeMax => OutputMode::Json,
+            Self::Copilot => OutputMode::Json,
+            Self::Chatgpt => OutputMode::Json,
+            Self::Gemini => OutputMode::Json,
+            Self::Assistant => OutputMode::Summary,
         }
     }
 
     /// Return the AI model to use for LLM token estimation
-    pub fn get_ai_model(self) -> AiModel {
+    pub const fn get_ai_model(self) -> AiModel {
         match self {
-            AiProfile::Claude | AiProfile::ClaudeMax => AiModel::Claude,
-            AiProfile::Copilot | AiProfile::Chatgpt => AiModel::Gpt4,
-            AiProfile::Gemini => AiModel::Gemini,
-            AiProfile::Assistant => AiModel::Generic,
+            Self::Claude | Self::ClaudeMax => AiModel::Claude,
+            Self::Copilot | Self::Chatgpt => AiModel::Gpt4,
+            Self::Gemini => AiModel::Gemini,
+            Self::Assistant => AiModel::Generic,
         }
     }
 }
@@ -278,11 +278,11 @@ impl AiProfile {
 impl From<CliOutputMode> for OutputMode {
     fn from(mode: CliOutputMode) -> Self {
         match mode {
-            CliOutputMode::Plain => OutputMode::Plain,
-            CliOutputMode::Json => OutputMode::Json,
-            CliOutputMode::Summary => OutputMode::Summary,
-            CliOutputMode::Index => OutputMode::Index,
-            CliOutputMode::Ast => OutputMode::Ast,
+            CliOutputMode::Plain => Self::Plain,
+            CliOutputMode::Json => Self::Json,
+            CliOutputMode::Summary => Self::Summary,
+            CliOutputMode::Index => Self::Index,
+            CliOutputMode::Ast => Self::Ast,
         }
     }
 }
@@ -292,11 +292,11 @@ impl FromStr for OutputMode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "plain" => Ok(OutputMode::Plain),
-            "json" => Ok(OutputMode::Json),
-            "summary" => Ok(OutputMode::Summary),
-            "index" => Ok(OutputMode::Index),
-            "ast" => Ok(OutputMode::Ast),
+            "plain" => Ok(Self::Plain),
+            "json" => Ok(Self::Json),
+            "summary" => Ok(Self::Summary),
+            "index" => Ok(Self::Index),
+            "ast" => Ok(Self::Ast),
             _ => Err(BatlessError::ConfigurationError {
                 message: format!("Invalid output mode: {s}"),
                 help: Some("Valid modes are: plain, json, summary, index, ast".to_string()),
@@ -327,10 +327,10 @@ pub enum CliSummaryLevel {
 impl From<CliSummaryLevel> for SummaryLevel {
     fn from(level: CliSummaryLevel) -> Self {
         match level {
-            CliSummaryLevel::None => SummaryLevel::None,
-            CliSummaryLevel::Minimal => SummaryLevel::Minimal,
-            CliSummaryLevel::Standard => SummaryLevel::Standard,
-            CliSummaryLevel::Detailed => SummaryLevel::Detailed,
+            CliSummaryLevel::None => Self::None,
+            CliSummaryLevel::Minimal => Self::Minimal,
+            CliSummaryLevel::Standard => Self::Standard,
+            CliSummaryLevel::Detailed => Self::Detailed,
         }
     }
 }
@@ -358,14 +358,14 @@ pub enum CliAiModel {
 impl From<CliAiModel> for AiModel {
     fn from(model: CliAiModel) -> Self {
         match model {
-            CliAiModel::Gpt4 => AiModel::Gpt4,
-            CliAiModel::Gpt4Turbo => AiModel::Gpt4Turbo,
-            CliAiModel::Gpt35 => AiModel::Gpt35,
-            CliAiModel::Claude => AiModel::Claude,
-            CliAiModel::ClaudeSonnet => AiModel::ClaudeSonnet,
-            CliAiModel::Gemini => AiModel::Gemini,
-            CliAiModel::GeminiFlash => AiModel::GeminiFlash,
-            CliAiModel::Generic => AiModel::Generic,
+            CliAiModel::Gpt4 => Self::Gpt4,
+            CliAiModel::Gpt4Turbo => Self::Gpt4Turbo,
+            CliAiModel::Gpt35 => Self::Gpt35,
+            CliAiModel::Claude => Self::Claude,
+            CliAiModel::ClaudeSonnet => Self::ClaudeSonnet,
+            CliAiModel::Gemini => Self::Gemini,
+            CliAiModel::GeminiFlash => Self::GeminiFlash,
+            CliAiModel::Generic => Self::Generic,
         }
     }
 }
@@ -433,35 +433,38 @@ impl ConfigManager {
     }
 
     /// Returns a reference to the parsed command-line arguments.
-    pub fn args(&self) -> &Args {
+    pub const fn args(&self) -> &Args {
         &self.args
     }
 
     /// Returns a reference to the final, merged `BatlessConfig`.
-    pub fn config(&self) -> &BatlessConfig {
+    pub const fn config(&self) -> &BatlessConfig {
         &self.config
     }
 
     /// Returns the determined `OutputMode`.
-    pub fn output_mode(&self) -> OutputMode {
+    pub const fn output_mode(&self) -> OutputMode {
         self.output_mode
     }
 
     /// Determines the file path to process, handling stdin as well.
     pub fn file_path(&self) -> BatlessResult<String> {
-        if let Some(file) = self.args.file.as_ref() {
-            Ok(file.clone())
-        } else if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
-            Ok("-".to_string())
-        } else {
-            Err(BatlessError::config_error_with_help(
-                "File path required".to_string(),
-                Some(
-                    "Specify a file to view, pipe input via stdin, or use --help for more options."
-                        .to_string(),
-                ),
-            ))
-        }
+        self.args.file.as_ref().map_or_else(
+            || {
+                if !std::io::IsTerminal::is_terminal(&std::io::stdin()) {
+                    Ok("-".to_string())
+                } else {
+                    Err(BatlessError::config_error_with_help(
+                        "File path required".to_string(),
+                        Some(
+                            "Specify a file to view, pipe input via stdin, or use --help for more options."
+                                .to_string(),
+                        ),
+                    ))
+                }
+            },
+            |file| Ok(file.clone()),
+        )
     }
 
     /// Loads configuration from files, applies command-line arguments,
@@ -583,11 +586,9 @@ impl ConfigManager {
                 .unwrap_or_else(|| self.args.mode.map_or(OutputMode::Plain, Into::into))
         } else if let Some(profile) = self.args.profile {
             self.config = profile.apply_to_config(std::mem::take(&mut self.config));
-            if let Some(explicit_mode) = self.args.mode {
-                explicit_mode.into()
-            } else {
-                profile.get_output_mode()
-            }
+            self.args
+                .mode
+                .map_or_else(|| profile.get_output_mode(), Into::into)
         } else {
             self.args.mode.map_or(OutputMode::Plain, Into::into)
         };

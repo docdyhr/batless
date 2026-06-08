@@ -76,7 +76,7 @@ impl FileInfo {
     }
 
     /// Create a FileInfo with basic metadata
-    pub fn with_metadata(
+    pub const fn with_metadata(
         total_lines: usize,
         total_bytes: usize,
         language: Option<String>,
@@ -112,7 +112,12 @@ impl FileInfo {
     }
 
     /// Set truncation information
-    pub fn with_truncation(mut self, truncated: bool, by_lines: bool, by_bytes: bool) -> Self {
+    pub const fn with_truncation(
+        mut self,
+        truncated: bool,
+        by_lines: bool,
+        by_bytes: bool,
+    ) -> Self {
         self.truncated = truncated;
         self.truncated_by_lines = by_lines;
         self.truncated_by_bytes = by_bytes;
@@ -120,7 +125,7 @@ impl FileInfo {
     }
 
     /// Set context-based truncation
-    pub fn with_context_truncation(mut self, truncated: bool) -> Self {
+    pub const fn with_context_truncation(mut self, truncated: bool) -> Self {
         self.truncated = truncated;
         self.truncated_by_context = truncated;
         self
@@ -138,7 +143,7 @@ impl FileInfo {
     }
 
     /// Store the total number of tokens identified
-    pub fn with_token_total(mut self, total: Option<usize>) -> Self {
+    pub const fn with_token_total(mut self, total: Option<usize>) -> Self {
         self.token_total = total;
         self
     }
@@ -157,7 +162,7 @@ impl FileInfo {
     }
 
     /// Set compression ratio (original lines / stripped lines)
-    pub fn with_compression_ratio(mut self, ratio: Option<f64>) -> Self {
+    pub const fn with_compression_ratio(mut self, ratio: Option<f64>) -> Self {
         self.compression_ratio = ratio;
         self
     }
@@ -175,7 +180,7 @@ impl FileInfo {
     }
 
     /// Mark whether total_lines is exact
-    pub fn with_total_lines_exact(mut self, exact: bool) -> Self {
+    pub const fn with_total_lines_exact(mut self, exact: bool) -> Self {
         self.total_lines_exact = exact;
         self
     }

@@ -64,10 +64,9 @@ impl SummaryExtractor {
             if Self::is_summary_worthy(trimmed, language, level) {
                 // Avoid duplicate patterns in summary
                 let pattern_key = Self::extract_pattern_key(trimmed);
-                if !seen_patterns.contains(&pattern_key) {
+                if seen_patterns.insert(pattern_key) {
                     let kind = Self::infer_kind(trimmed);
                     summary.push(SummaryItem::new(line, line_number, None, kind));
-                    seen_patterns.insert(pattern_key);
                 }
             }
 

@@ -161,7 +161,7 @@ impl CustomProfile {
             )
         })?;
 
-        let profile: CustomProfile = if path.extension().and_then(|s| s.to_str()) == Some("toml") {
+        let profile: Self = if path.extension().and_then(|s| s.to_str()) == Some("toml") {
             toml::from_str(&content).map_err(|e| {
                 BatlessError::config_error_with_help(
                     format!("Failed to parse TOML profile '{}': {}", path.display(), e),
