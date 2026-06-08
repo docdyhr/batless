@@ -20,7 +20,7 @@ class User:
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
-    println!("Summary: {:?}", summary);
+    println!("Summary: {summary:?}");
 
     // Check for function definitions
     assert!(summary.iter().any(|l| l.line.contains("def main")));
@@ -41,7 +41,7 @@ class User:
 
 #[test]
 fn test_python_ast_minimal_level() {
-    let code = r#"
+    let code = r"
 import os
 
 def hello():
@@ -49,7 +49,7 @@ def hello():
 
 class World:
     pass
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Minimal);
 
@@ -63,7 +63,7 @@ class World:
 
 #[test]
 fn test_python_ast_decorators() {
-    let code = r#"
+    let code = r"
 @staticmethod
 def static_method():
     pass
@@ -75,11 +75,11 @@ def class_method(cls):
 @property
 def my_property(self):
     return self._value
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
-    println!("Decorator summary: {:?}", summary);
+    println!("Decorator summary: {summary:?}");
 
     // Should capture decorated functions
     assert!(summary.iter().any(|l| l.line.contains("@staticmethod")));
@@ -89,18 +89,18 @@ def my_property(self):
 
 #[test]
 fn test_python_ast_async_functions() {
-    let code = r#"
+    let code = r"
 async def fetch_data():
     await get_data()
 
 async def process():
     result = await fetch_data()
     return result
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
-    println!("Async summary: {:?}", summary);
+    println!("Async summary: {summary:?}");
 
     // Should capture async functions
     assert!(summary
@@ -114,18 +114,18 @@ async def process():
 
 #[test]
 fn test_python_ast_from_imports() {
-    let code = r#"
+    let code = r"
 from os import path
 from typing import List, Dict, Optional
 from .models import User, Post
 
 def process_user(user: User) -> Dict:
     return user.to_dict()
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
-    println!("From import summary: {:?}", summary);
+    println!("From import summary: {summary:?}");
 
     // Should capture from imports
     assert!(summary.iter().any(|l| l.line.contains("from os import")));
@@ -142,7 +142,7 @@ def process_user(user: User) -> Dict:
 
 #[test]
 fn test_python_ast_nested_classes() {
-    let code = r#"
+    let code = r"
 class Outer:
     class Inner:
         def inner_method(self):
@@ -150,11 +150,11 @@ class Outer:
 
     def outer_method(self):
         pass
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
-    println!("Nested class summary: {:?}", summary);
+    println!("Nested class summary: {summary:?}");
 
     // Should capture both outer and inner classes
     assert!(summary.iter().any(|l| l.line.contains("class Outer")));
@@ -165,13 +165,13 @@ class Outer:
 
 #[test]
 fn test_python_ast_lambda_ignored() {
-    let code = r#"
+    let code = r"
 def regular_function():
     mapper = lambda x: x * 2
     return mapper
 
 square = lambda x: x ** 2
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
@@ -221,7 +221,7 @@ class MyClass:
 
 #[test]
 fn test_python_ast_detailed_level() {
-    let code = r#"
+    let code = r"
 import os
 
 MAX_SIZE = 1000
@@ -230,11 +230,11 @@ def process():
     global MAX_SIZE
     local_var = 42
     return local_var
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Detailed);
 
-    println!("Detailed summary: {:?}", summary);
+    println!("Detailed summary: {summary:?}");
 
     // Detailed should include imports, functions, and module-level assignments
     assert!(summary.iter().any(|l| l.line.contains("import os")));
@@ -245,10 +245,10 @@ def process():
 
 #[test]
 fn test_python_ast_none_level() {
-    let code = r#"
+    let code = r"
 def my_function():
     pass
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::None);
 
@@ -257,7 +257,7 @@ def my_function():
 
 #[test]
 fn test_python_ast_complex_decorators() {
-    let code = r#"
+    let code = r"
 @app.route('/api/users')
 @login_required
 @cache(timeout=300)
@@ -269,11 +269,11 @@ def get_users():
 class Config:
     debug: bool
     port: int
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("Python"), SummaryLevel::Standard);
 
-    println!("Complex decorator summary: {:?}", summary);
+    println!("Complex decorator summary: {summary:?}");
 
     // Should capture first decorator of each decorated definition and the definition itself
     assert!(summary.iter().any(|l| l.line.contains("@app.route")));

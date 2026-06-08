@@ -5,7 +5,7 @@ use batless::summary::SummaryLevel;
 
 #[test]
 fn test_javascript_basic_summary() {
-    let code = r#"
+    let code = r"
 import React from 'react';
 import { useState } from 'react';
 
@@ -25,11 +25,11 @@ class Counter {
 }
 
 export default App;
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
-    println!("JS Summary: {:?}", summary);
+    println!("JS Summary: {summary:?}");
 
     // Should capture imports
     assert!(summary.iter().any(|l| l.line.contains("import React")));
@@ -50,7 +50,7 @@ export default App;
 
 #[test]
 fn test_javascript_arrow_functions() {
-    let code = r#"
+    let code = r"
 const add = (a, b) => a + b;
 
 const multiply = (x, y) => {
@@ -60,11 +60,11 @@ const multiply = (x, y) => {
 const Component = () => {
     return <div>Hello</div>;
 };
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
-    println!("Arrow function summary: {:?}", summary);
+    println!("Arrow function summary: {summary:?}");
 
     // Arrow functions should be captured
     assert!(summary.iter().any(|l| l.line.contains("=>")));
@@ -72,7 +72,7 @@ const Component = () => {
 
 #[test]
 fn test_javascript_es6_classes() {
-    let code = r#"
+    let code = r"
 class Animal {
     constructor(name) {
         this.name = name;
@@ -88,7 +88,7 @@ class Dog extends Animal {
         console.log(`${this.name} barks`);
     }
 }
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
@@ -99,7 +99,7 @@ class Dog extends Animal {
 
 #[test]
 fn test_javascript_async_await() {
-    let code = r#"
+    let code = r"
 async function fetchData() {
     const response = await fetch('/api/data');
     return response.json();
@@ -109,11 +109,11 @@ const processData = async () => {
     const data = await fetchData();
     return data;
 };
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
-    println!("Async JS summary: {:?}", summary);
+    println!("Async JS summary: {summary:?}");
 
     assert!(summary
         .iter()
@@ -123,12 +123,12 @@ const processData = async () => {
 
 #[test]
 fn test_javascript_exports() {
-    let code = r#"
+    let code = r"
 export function helper() {}
 export const API_KEY = 'secret'; // pragma: allowlist secret
 export default class Main {}
 export { utils };
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Standard);
 
@@ -140,7 +140,7 @@ export { utils };
 
 #[test]
 fn test_typescript_basic_summary() {
-    let code = r#"
+    let code = r"
 import { Component } from 'react';
 
 interface User {
@@ -167,11 +167,11 @@ function processUser(user: User): string {
 }
 
 export { UserService, processUser };
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
-    println!("TS Summary: {:?}", summary);
+    println!("TS Summary: {summary:?}");
 
     // Should capture imports
     assert!(summary.iter().any(|l| l.line.contains("import")));
@@ -198,7 +198,7 @@ export { UserService, processUser };
 
 #[test]
 fn test_typescript_interfaces() {
-    let code = r#"
+    let code = r"
 interface Animal {
     name: string;
     age: number;
@@ -214,7 +214,7 @@ interface Cat extends Animal {
     indoor: boolean;
     meow(): void;
 }
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
@@ -225,7 +225,7 @@ interface Cat extends Animal {
 
 #[test]
 fn test_typescript_enums() {
-    let code = r#"
+    let code = r"
 enum Color {
     Red,
     Green,
@@ -241,11 +241,11 @@ enum Status {
 function getColor(): Color {
     return Color.Red;
 }
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Detailed);
 
-    println!("Enum summary: {:?}", summary);
+    println!("Enum summary: {summary:?}");
 
     assert!(summary.iter().any(|l| l.line.contains("enum Color")));
     assert!(summary.iter().any(|l| l.line.contains("enum Status")));
@@ -254,7 +254,7 @@ function getColor(): Color {
 
 #[test]
 fn test_typescript_generics() {
-    let code = r#"
+    let code = r"
 interface Box<T> {
     value: T;
 }
@@ -274,7 +274,7 @@ class Container<T> {
 function identity<T>(arg: T): T {
     return arg;
 }
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
@@ -286,7 +286,7 @@ function identity<T>(arg: T): T {
 
 #[test]
 fn test_typescript_decorators() {
-    let code = r#"
+    let code = r"
 function Component(target: any) {
     // decorator logic
 }
@@ -306,11 +306,11 @@ class MyComponent {
         this.value = newValue;
     }
 }
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
-    println!("Decorator summary: {:?}", summary);
+    println!("Decorator summary: {summary:?}");
 
     assert!(summary
         .iter()
@@ -320,7 +320,7 @@ class MyComponent {
 
 #[test]
 fn test_typescript_react_component() {
-    let code = r#"
+    let code = r"
 import React, { FC, useState } from 'react';
 
 interface Props {
@@ -340,7 +340,7 @@ const Counter: FC<Props> = ({ title, count = 0 }) => {
 };
 
 export default Counter;
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Standard);
 
@@ -352,13 +352,13 @@ export default Counter;
 
 #[test]
 fn test_javascript_minimal_level() {
-    let code = r#"
+    let code = r"
 import utils from './utils';
 
 function main() {}
 class App {}
 const handler = () => {};
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("JavaScript"), SummaryLevel::Minimal);
 
@@ -373,13 +373,13 @@ const handler = () => {};
 
 #[test]
 fn test_typescript_minimal_level() {
-    let code = r#"
+    let code = r"
 import { User } from './types';
 
 interface Config {}
 class Service {}
 function process() {}
-"#;
+";
 
     let summary = AstSummarizer::extract_summary(code, Some("TypeScript"), SummaryLevel::Minimal);
 

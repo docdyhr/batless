@@ -22,7 +22,7 @@ impl User {
     let summary = AstSummarizer::extract_summary(code, Some("Rust"), SummaryLevel::Standard);
 
     // Debug output
-    println!("Summary: {:?}", summary);
+    println!("Summary: {summary:?}");
 
     assert!(summary.iter().any(|l| l.line.contains("fn main")));
     assert!(summary.iter().any(|l| l.line.contains("struct User")));
