@@ -14,7 +14,7 @@ fn benchmark_process_file(c: &mut Criterion) {
     let mut group = c.benchmark_group("process_file");
 
     // Test with different file sizes
-    let sizes = vec![1000, 10000, 100000];
+    let sizes = vec![1000, 10_000, 100_000];
 
     for size in sizes {
         let content = "fn main() {\n    println!(\"Hello, world!\");\n}\n".repeat(size / 50);
@@ -75,11 +75,11 @@ fn main() {
     };
 
     c.bench_function("summary_mode_enabled", |b| {
-        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &summary_config).unwrap()))
+        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &summary_config).unwrap()));
     });
 
     c.bench_function("summary_mode_disabled", |b| {
-        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &regular_config).unwrap()))
+        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &regular_config).unwrap()));
     });
 }
 
@@ -89,7 +89,7 @@ fn benchmark_max_lines_limits(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("max_lines");
 
-    for max_lines in [100, 1000, 5000, 10000].iter() {
+    for max_lines in &[100, 1000, 5000, 10000] {
         let config = BatlessConfig {
             max_lines: *max_lines,
             ..Default::default()
@@ -109,22 +109,22 @@ fn benchmark_startup_operations(c: &mut Criterion) {
     let mut group = c.benchmark_group("startup_operations");
 
     group.bench_function("list_languages", |b| {
-        b.iter(|| black_box(LanguageDetector::list_languages()))
+        b.iter(|| black_box(LanguageDetector::list_languages()));
     });
 
     group.bench_function("config_default", |b| {
-        b.iter(|| black_box(BatlessConfig::default()))
+        b.iter(|| black_box(BatlessConfig::default()));
     });
 
     group.bench_function("config_load_with_precedence", |b| {
-        b.iter(|| black_box(BatlessConfig::load_with_precedence().unwrap()))
+        b.iter(|| black_box(BatlessConfig::load_with_precedence().unwrap()));
     });
 
     group.bench_function("validate_language", |b| {
         b.iter(|| {
             LanguageDetector::validate_language("rust").unwrap();
-            black_box(())
-        })
+            black_box(());
+        });
     });
 
     group.finish();
@@ -156,8 +156,8 @@ fn benchmark_config_operations(c: &mut Criterion) {
         group.bench_function(name, |b| {
             b.iter(|| {
                 config.validate().unwrap();
-                black_box(())
-            })
+                black_box(());
+            });
         });
     }
 

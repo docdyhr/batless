@@ -1,5 +1,5 @@
 //! Additional streaming functionality tests to improve coverage for streaming.rs
-//! Focuses on StreamingCheckpoint functionality and edge cases
+//! Focuses on `StreamingCheckpoint` functionality and edge cases
 
 use batless::{BatlessConfig, StreamingCheckpoint};
 use std::io::Write;
@@ -144,8 +144,7 @@ fn test_streaming_processor_with_stdin() {
     if let Err(error) = result {
         assert!(
             error.to_string().contains("Resume/checkpoint") || error.to_string().contains("stdin"),
-            "Error should mention checkpoint/stdin incompatibility: {}",
-            error
+            "Error should mention checkpoint/stdin incompatibility: {error}"
         );
     }
 }
@@ -169,8 +168,7 @@ fn test_streaming_processor_checkpoint_file_mismatch() {
     if let Err(error) = result {
         assert!(
             error.to_string().contains("file path") || error.to_string().contains("doesn't match"),
-            "Error should mention file path mismatch: {}",
-            error
+            "Error should mention file path mismatch: {error}"
         );
     }
 }
@@ -195,8 +193,7 @@ fn test_streaming_processor_incompatible_checkpoint() {
         assert!(
             error.to_string().contains("incompatible")
                 || error.to_string().contains("configuration"),
-            "Error should mention incompatibility: {}",
-            error
+            "Error should mention incompatibility: {error}"
         );
     }
 }
@@ -253,7 +250,7 @@ fn test_streaming_checkpoint_serialization() {
         json_str.contains("1024"),
         "JSON should contain bytes processed"
     );
-    assert!(json_str.contains("5"), "JSON should contain chunk number");
+    assert!(json_str.contains('5'), "JSON should contain chunk number");
 
     // Test deserialization from JSON
     let deserialized: StreamingCheckpoint =
@@ -323,14 +320,13 @@ fn test_chunk_strategy_line_default() {
     // Collect all lines across chunks and verify the full file is covered
     let total_lines_in_chunks: usize = chunks
         .iter()
-        .map(|c| c["lines"].as_array().map(|a| a.len()).unwrap_or(0))
+        .map(|c| c["lines"].as_array().map_or(0, std::vec::Vec::len))
         .sum();
 
     let file_total_lines = content.lines().count();
     assert_eq!(
         total_lines_in_chunks, file_total_lines,
-        "All file lines should appear across chunks: expected {}, got {}",
-        file_total_lines, total_lines_in_chunks
+        "All file lines should appear across chunks: expected {file_total_lines}, got {total_lines_in_chunks}"
     );
 }
 
@@ -369,7 +365,7 @@ fn test_chunk_strategy_semantic() {
     // to avoid splitting in the middle of a declaration
     let any_extended = chunks
         .iter()
-        .any(|c| c["lines"].as_array().map(|a| a.len() > 5).unwrap_or(false));
+        .any(|c| c["lines"].as_array().is_some_and(|a| a.len() > 5));
     assert!(
         any_extended,
         "At least one semantic chunk should extend beyond the nominal chunk size of 5"
@@ -378,21 +374,20 @@ fn test_chunk_strategy_semantic() {
     // All file lines should still be covered
     let total_lines_in_chunks: usize = chunks
         .iter()
-        .map(|c| c["lines"].as_array().map(|a| a.len()).unwrap_or(0))
+        .map(|c| c["lines"].as_array().map_or(0, std::vec::Vec::len))
         .sum();
 
     let file_total_lines = content.lines().count();
     assert_eq!(
         total_lines_in_chunks, file_total_lines,
-        "All file lines should appear across semantic chunks: expected {}, got {}",
-        file_total_lines, total_lines_in_chunks
+        "All file lines should appear across semantic chunks: expected {file_total_lines}, got {total_lines_in_chunks}"
     );
 }
 
 #[test]
 fn test_chunk_strategy_unsupported_language_falls_back() {
     // Plain text — no AST support, should fall back to line-based chunking
-    let lines: Vec<String> = (1..=20).map(|i| format!("plain text line {}", i)).collect();
+    let lines: Vec<String> = (1..=20).map(|i| format!("plain text line {i}")).collect();
     let content = lines.join("\n") + "\n";
     let file = create_streaming_test_file(&content, ".txt");
     let path = file.path().to_str().unwrap();
@@ -428,13 +423,12 @@ fn test_chunk_strategy_unsupported_language_falls_back() {
     // All lines should be covered
     let total_lines_in_chunks: usize = chunks
         .iter()
-        .map(|c| c["lines"].as_array().map(|a| a.len()).unwrap_or(0))
+        .map(|c| c["lines"].as_array().map_or(0, std::vec::Vec::len))
         .sum();
 
     let file_total_lines = lines.len();
     assert_eq!(
         total_lines_in_chunks, file_total_lines,
-        "All text lines should appear across fallback chunks: expected {}, got {}",
-        file_total_lines, total_lines_in_chunks
+        "All text lines should appear across fallback chunks: expected {file_total_lines}, got {total_lines_in_chunks}"
     );
 }

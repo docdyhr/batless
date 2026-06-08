@@ -350,7 +350,7 @@ mod tests {
             .with_original_lines(Some(lines.clone()))
             .with_total_lines_exact(false)
             .with_tokens(Some(tokens.clone()))
-            .with_summary_lines(Some(summary.clone()));
+            .with_summary_lines(Some(summary));
 
         assert_eq!(info.lines, lines);
         assert!(info.truncated);

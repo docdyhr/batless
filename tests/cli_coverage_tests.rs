@@ -1,4 +1,4 @@
-//! Additional CLI integration tests to improve coverage for main.rs and config_manager.rs
+//! Additional CLI integration tests to improve coverage for main.rs and `config_manager.rs`
 //! Focuses on edge cases, error handling, and command combinations not covered elsewhere
 
 use std::io::Write;
@@ -176,7 +176,7 @@ fn test_streaming_json_with_checkpoints() {
     let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
     // Create a larger file for streaming
     for i in 0..100 {
-        writeln!(temp_file, "Line number {} with some content", i).expect("Failed to write");
+        writeln!(temp_file, "Line number {i} with some content").expect("Failed to write");
     }
     let temp_path = temp_file.path().to_str().expect("Invalid temp path");
 
@@ -223,7 +223,7 @@ fn test_fit_context_with_prompt_tokens() {
     let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
     // Create a very large file to test context fitting
     for i in 0..1000 {
-        writeln!(temp_file, "This is line {} with substantial content to test context window fitting and truncation behavior.", i).expect("Failed to write");
+        writeln!(temp_file, "This is line {i} with substantial content to test context window fitting and truncation behavior.").expect("Failed to write");
     }
     let temp_path = temp_file.path().to_str().expect("Invalid temp path");
 
