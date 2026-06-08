@@ -299,7 +299,7 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     }
 
     if args.count_tokens {
-        print_token_analysis(&file_info, args.ai_model.into())?;
+        print_token_analysis(&file_info, args.ai_model.into());
     }
 
     let file_info = if args.fit_context {
@@ -319,13 +319,16 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     };
 
     // Attach estimated LLM token count when a profile or explicit model is active
-    let effective_model: Option<AiModel> = if let Some(profile) = args.profile {
-        Some(profile.get_ai_model())
-    } else if args.ai_model != CliAiModel::Generic {
-        Some(args.ai_model.into())
-    } else {
-        None
-    };
+    let effective_model: Option<AiModel> = args.profile.map_or_else(
+        || {
+            if args.ai_model == CliAiModel::Generic {
+                None
+            } else {
+                Some(args.ai_model.into())
+            }
+        },
+        |profile| Some(profile.get_ai_model()),
+    );
     let final_file_info = if let Some(model) = effective_model {
         let counter = TokenCounter::new(model);
         let token_count = counter.count_tokens(&file_info.lines.join("\n"));
@@ -364,7 +367,7 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     Ok(())
 }
 
-fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) -> BatlessResult<()> {
+fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) {
     let content = file_info.lines.join("\n");
     let counter = TokenCounter::new(model);
     let token_count = counter.count_tokens(&content);
@@ -383,7 +386,6 @@ fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) -> Batles
     };
     println!("  Fits in context: {fits}");
     println!();
-    Ok(())
 }
 
 fn validate_json_output(json_output: &str) -> BatlessResult<()> {

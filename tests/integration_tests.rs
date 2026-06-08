@@ -148,7 +148,7 @@ fn test_max_lines_limit() {
 
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
-    let lines: Vec<&str> = stdout.trim().split('\n').collect();
+    let lines: Vec<&str> = stdout.lines().collect();
 
     // Should have 3 content lines + 1 truncation message
     assert_eq!(lines.len(), 4);
@@ -371,7 +371,7 @@ fn test_total_lines_exact_flag() {
 
 #[test]
 fn test_token_sampling_reports_truncation() {
-    let repeated_tokens: Vec<String> = (0..3_000).map(|i| format!("token{}", i)).collect();
+    let repeated_tokens: Vec<String> = (0..3_000).map(|i| format!("token{i}")).collect();
     let content = repeated_tokens.join(" ");
     let file = create_test_file(&content, ".rs");
 
@@ -389,7 +389,7 @@ fn test_token_sampling_reports_truncation() {
     let token_count = json["identifier_count"].as_u64().expect("token_count");
 
     assert!(
-        token_count as usize > tokens.len(),
+        usize::try_from(token_count).expect("token_count fits in usize") > tokens.len(),
         "Reported count should exceed sampled tokens"
     );
     assert_eq!(json["identifiers_truncated"], true);
@@ -475,8 +475,7 @@ fn test_ai_profile_copilot() {
     // Should be JSON output with tokens
     assert!(
         stdout.contains("\"language\": \"Rust\"") || stdout.contains("\"language\":\"Rust\""),
-        "Expected language Rust field in JSON output, got: {}",
-        stdout
+        "Expected language Rust field in JSON output, got: {stdout}"
     );
     assert!(stdout.contains("\"identifiers\":"));
 }
@@ -491,8 +490,7 @@ fn test_ai_profile_chatgpt() {
     // Should be JSON output with tokens
     assert!(
         stdout.contains("\"language\": \"Python\"") || stdout.contains("\"language\":\"Python\""),
-        "Expected language Python field in JSON output, got: {}",
-        stdout
+        "Expected language Python field in JSON output, got: {stdout}"
     );
     assert!(stdout.contains("\"identifiers\":"));
 }
@@ -522,7 +520,7 @@ fn test_explicit_mode_overrides_profile() {
     assert!(output.status.success());
     let stdout = String::from_utf8(output.stdout).unwrap();
     // Explicit --mode=json should win over claude profile's summary default
-    assert!(stdout.starts_with("{"));
+    assert!(stdout.starts_with('{'));
     assert!(!stdout.contains("=== File Summary ==="));
 }
 
@@ -535,7 +533,7 @@ fn test_profile_default_mode_used_without_explicit_mode() {
     let stdout = String::from_utf8(output.stdout).unwrap();
     // Without explicit --mode, claude profile's summary default applies
     assert!(stdout.contains("=== File Summary ==="));
-    assert!(!stdout.starts_with("{"));
+    assert!(!stdout.starts_with('{'));
 }
 
 #[test]
@@ -593,8 +591,7 @@ fn test_stdin_processing() {
     assert!(stdout.contains("test line 2"));
     assert!(
         stdout.contains("file\": \"-") || stdout.contains("file\":\"-"),
-        "Expected file path '-' marker in JSON output, got: {}",
-        stdout
+        "Expected file path '-' marker in JSON output, got: {stdout}"
     );
 }
 
@@ -930,8 +927,7 @@ fn test_strip_compression_ratio_in_json() {
         .expect("compression_ratio should be a float");
     assert!(
         ratio > 1.0,
-        "compression_ratio should be > 1.0 when content was stripped, got {}",
-        ratio
+        "compression_ratio should be > 1.0 when content was stripped, got {ratio}"
     );
 }
 
