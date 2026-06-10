@@ -9,6 +9,10 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   health-check:
     uses: docdyhr/.github/.github/workflows/rust-health-check.yml@v1
