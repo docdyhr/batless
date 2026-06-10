@@ -13,7 +13,9 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
+  attestations: write
+  id-token: write
 
 jobs:
   release:
