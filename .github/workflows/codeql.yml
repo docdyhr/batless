@@ -3,10 +3,7 @@
 
 name: CodeQL Analysis
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+permissions: read-all
 
 on:
   push:
@@ -19,7 +16,11 @@ on:
 
 jobs:
   codeql:
-    uses: docdyhr/.github/.github/workflows/codeql.yml@v1
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    uses: docdyhr/.github/.github/workflows/codeql.yml@6cd3461708816bc6918c0efebd720d1fee435be0 # v1
     with:
       languages: '["rust"]'
     secrets: inherit # pragma: allowlist secret

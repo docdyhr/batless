@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   cross-platform:
-    uses: docdyhr/.github/.github/workflows/rust-cross-platform.yml@v1
+    uses: docdyhr/.github/.github/workflows/rust-cross-platform.yml@6cd3461708816bc6918c0efebd720d1fee435be0 # v1
     with:
       binary-name: batless
       test-type: ${{ inputs.test_type || 'full' }}
