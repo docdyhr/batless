@@ -305,7 +305,7 @@ mod tests {
             OutputFormatter::format_output(&file_info, "test.rs", &config, OutputMode::Json)?;
 
         let parsed: Value = serde_json::from_str(&result)?;
-        assert!(parsed["file"].as_str().unwrap() == "test.rs");
+        assert_eq!(parsed["file"].as_str().unwrap(), "test.rs");
         assert_eq!(parsed["processed_lines"].as_u64().unwrap(), 3);
         assert_eq!(parsed["total_lines"].as_u64().unwrap(), 10);
         assert!(parsed["lines"].is_array());
@@ -334,8 +334,8 @@ mod tests {
 
         // Should be valid JSON but more compact
         let parsed: Value = serde_json::from_str(&result)?;
-        assert!(parsed["path"].as_str().unwrap() == "test.rs");
-        assert!(parsed["lines"].as_u64().unwrap() == 10);
+        assert_eq!(parsed["path"].as_str().unwrap(), "test.rs");
+        assert_eq!(parsed["lines"].as_u64().unwrap(), 10);
 
         Ok(())
     }
@@ -390,8 +390,8 @@ mod tests {
         let result = OutputFormatter::format_metadata_only(&file_info, "test.rs")?;
 
         let parsed: Value = serde_json::from_str(&result)?;
-        assert!(parsed["file_path"].as_str().unwrap() == "test.rs");
-        assert!(parsed["total_lines"].as_u64().unwrap() == 10);
+        assert_eq!(parsed["file_path"].as_str().unwrap(), "test.rs");
+        assert_eq!(parsed["total_lines"].as_u64().unwrap(), 10);
         // Should not contain actual content
         assert!(parsed["content"].is_null());
 
