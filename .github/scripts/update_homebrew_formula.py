@@ -69,6 +69,8 @@ headers = {
 }
 
 req = urllib.request.Request(api, headers=headers)
+# nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
+# `api` is the hardcoded GitHub Contents API URL above, not user/external input.
 with urllib.request.urlopen(req) as resp:
     data = json.loads(resp.read())
     file_sha = data["sha"]
@@ -78,12 +80,16 @@ if current_content == formula:
     print("Formula already up-to-date, no changes needed.")
     sys.exit(0)
 
-payload = json.dumps({
-    "message": f"chore: update batless to v{version}",
-    "content": base64.b64encode(formula.encode()).decode(),
-    "sha": file_sha,
-}).encode()
+payload = json.dumps(
+    {
+        "message": f"chore: update batless to v{version}",
+        "content": base64.b64encode(formula.encode()).decode(),
+        "sha": file_sha,
+    }
+).encode()
 req = urllib.request.Request(api, data=payload, headers=headers, method="PUT")
+# nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
+# `api` is the hardcoded GitHub Contents API URL above, not user/external input.
 with urllib.request.urlopen(req) as resp:
     commit_sha = json.loads(resp.read())["commit"]["sha"][:8]
     print(f"Formula updated → commit {commit_sha}")
