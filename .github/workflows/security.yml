@@ -15,5 +15,9 @@ permissions:
 
 jobs:
   security:
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
     uses: docdyhr/.github/.github/workflows/rust-security.yml@45a390baa5d5e6b3cd058b0d16023410297ede84 # v1
     secrets: inherit # pragma: allowlist secret
