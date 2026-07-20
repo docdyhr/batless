@@ -70,7 +70,7 @@ headers = {
 
 req = urllib.request.Request(api, headers=headers)
 # `api` is the hardcoded GitHub Contents API URL above, not user/external input.
-with urllib.request.urlopen(req) as resp:  # nosemgrep
+with urllib.request.urlopen(req, timeout=30) as resp:  # nosemgrep
     data = json.loads(resp.read())
     file_sha = data["sha"]
     current_content = base64.b64decode(data["content"]).decode()
