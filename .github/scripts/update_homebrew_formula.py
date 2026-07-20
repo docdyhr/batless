@@ -88,6 +88,6 @@ payload = json.dumps(
 ).encode()
 req = urllib.request.Request(api, data=payload, headers=headers, method="PUT")
 # `api` is the hardcoded GitHub Contents API URL above, not user/external input.
-with urllib.request.urlopen(req) as resp:  # nosemgrep
+with urllib.request.urlopen(req, timeout=30) as resp:  # nosemgrep
     commit_sha = json.loads(resp.read())["commit"]["sha"][:8]
     print(f"Formula updated → commit {commit_sha}")
