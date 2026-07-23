@@ -12,7 +12,6 @@ pub fn validate_config(config: &BatlessConfig) -> BatlessResult<()> {
     validate_max_bytes(config)?;
     validate_language(config)?;
     validate_limits_combination(config)?;
-    validate_streaming(config)?;
     validate_schema_version(config)?;
     validate_logical_combinations(config)?;
     Ok(())
@@ -115,44 +114,6 @@ fn validate_limits_combination(config: &BatlessConfig) -> BatlessResult<()> {
                 ),
             ));
         }
-    }
-
-    Ok(())
-}
-
-fn validate_streaming(config: &BatlessConfig) -> BatlessResult<()> {
-    if config.streaming_chunk_size == 0 {
-        return Err(BatlessError::config_error_with_help(
-            "streaming_chunk_size must be greater than 0".to_string(),
-            Some("Try using a value like 1000 for good streaming performance".to_string()),
-        ));
-    }
-
-    if config.streaming_chunk_size > 10000 {
-        return Err(BatlessError::config_error_with_help(
-            format!(
-                "streaming_chunk_size is unusually large ({}). This may cause memory issues",
-                config.streaming_chunk_size
-            ),
-            Some(
-                "Consider using a smaller value like 1000-5000 for better memory usage".to_string(),
-            ),
-        ));
-    }
-
-    // Validate streaming options combination
-    if config.streaming_json
-        && config.enable_resume
-        && config.max_lines < config.streaming_chunk_size
-    {
-        return Err(BatlessError::config_error_with_help(
-            "When using streaming with resume, max_lines should be larger than chunk_size"
-                .to_string(),
-            Some(format!(
-                "Try increasing --max-lines to at least {} or reducing --streaming-chunk-size",
-                config.streaming_chunk_size
-            )),
-        ));
     }
 
     Ok(())
@@ -285,31 +246,6 @@ mod tests {
     }
 
     #[test]
-    fn test_validation_zero_streaming_chunk_size() {
-        let config = BatlessConfig {
-            streaming_chunk_size: 0,
-            ..BatlessConfig::default()
-        };
-        let result = validate_config(&config);
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("streaming_chunk_size must be greater than 0"));
-    }
-
-    #[test]
-    fn test_validation_large_streaming_chunk_size() {
-        let config = BatlessConfig {
-            streaming_chunk_size: 20000,
-            ..BatlessConfig::default()
-        };
-        let result = validate_config(&config);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("unusually large"));
-    }
-
-    #[test]
     fn test_validation_invalid_schema_version() {
         let config = BatlessConfig {
             schema_version: "2.1@beta".to_string(),
@@ -321,20 +257,5 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("Invalid schema version"));
-    }
-
-    #[test]
-    fn test_validation_streaming_resume_mismatch() {
-        let config = BatlessConfig::default()
-            .with_streaming_json(true)
-            .with_enable_resume(true)
-            .with_max_lines(500)
-            .with_streaming_chunk_size(1000);
-        let result = validate_config(&config);
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("max_lines should be larger than chunk_size"));
     }
 }

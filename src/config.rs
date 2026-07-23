@@ -8,17 +8,6 @@ use crate::error::{BatlessError, BatlessResult};
 use crate::summary::SummaryLevel;
 use serde::{Deserialize, Serialize};
 
-/// Strategy for splitting streaming chunks
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "lowercase")]
-pub enum ChunkStrategy {
-    /// Split at fixed line counts (default)
-    #[default]
-    Line,
-    /// Split at top-level declaration boundaries using tree-sitter (falls back to line-based for
-    /// unsupported languages)
-    Semantic,
-}
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -49,15 +38,6 @@ pub struct BatlessConfig {
     /// Whether to enable summary mode (deprecated, use summary_level)
     #[serde(default)]
     pub summary_mode: bool,
-    /// Enable streaming JSON output for large files
-    #[serde(default)]
-    pub streaming_json: bool,
-    /// Chunk size for streaming output (in lines)
-    #[serde(default = "default_streaming_chunk_size")]
-    pub streaming_chunk_size: usize,
-    /// Enable resume capability with checkpoint support
-    #[serde(default)]
-    pub enable_resume: bool,
     /// Schema version for JSON output compatibility
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -85,9 +65,6 @@ pub struct BatlessConfig {
     /// Strip blank lines from output
     #[serde(default)]
     pub strip_blank_lines: bool,
-    /// Strategy for splitting streaming chunks
-    #[serde(default)]
-    pub chunk_strategy: ChunkStrategy,
 }
 
 const fn default_max_lines() -> usize {
@@ -96,10 +73,6 @@ const fn default_max_lines() -> usize {
 
 const fn default_use_color() -> bool {
     true
-}
-
-const fn default_streaming_chunk_size() -> usize {
-    1000
 }
 
 fn default_schema_version() -> String {
@@ -117,9 +90,6 @@ impl Default for BatlessConfig {
             include_tokens: false,
             summary_level: SummaryLevel::None,
             summary_mode: false,
-            streaming_json: false,
-            streaming_chunk_size: default_streaming_chunk_size(),
-            enable_resume: false,
             schema_version: default_schema_version(),
             debug: false,
             show_line_numbers: false,
@@ -129,7 +99,6 @@ impl Default for BatlessConfig {
             hash: false,
             strip_comments: false,
             strip_blank_lines: false,
-            chunk_strategy: ChunkStrategy::Line,
         }
     }
 }
@@ -196,24 +165,6 @@ impl BatlessConfig {
         self
     }
 
-    /// Enable streaming JSON output
-    pub const fn with_streaming_json(mut self, streaming_json: bool) -> Self {
-        self.streaming_json = streaming_json;
-        self
-    }
-
-    /// Set streaming chunk size
-    pub const fn with_streaming_chunk_size(mut self, chunk_size: usize) -> Self {
-        self.streaming_chunk_size = chunk_size;
-        self
-    }
-
-    /// Enable resume capability
-    pub const fn with_enable_resume(mut self, enable_resume: bool) -> Self {
-        self.enable_resume = enable_resume;
-        self
-    }
-
     /// Set schema version
     pub fn with_schema_version(mut self, version: String) -> Self {
         self.schema_version = version;
@@ -268,12 +219,6 @@ impl BatlessConfig {
     /// Strip blank lines from output
     pub const fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
         self.strip_blank_lines = enabled;
-        self
-    }
-
-    /// Set streaming chunk strategy
-    pub const fn with_chunk_strategy(mut self, strategy: ChunkStrategy) -> Self {
-        self.chunk_strategy = strategy;
         self
     }
 
@@ -465,15 +410,6 @@ impl BatlessConfig {
         if other.summary_level != default.summary_level {
             self.summary_level = other.summary_level;
         }
-        if other.streaming_json != default.streaming_json {
-            self.streaming_json = other.streaming_json;
-        }
-        if other.streaming_chunk_size != default.streaming_chunk_size {
-            self.streaming_chunk_size = other.streaming_chunk_size;
-        }
-        if other.enable_resume != default.enable_resume {
-            self.enable_resume = other.enable_resume;
-        }
         if other.schema_version != default.schema_version {
             self.schema_version = other.schema_version;
         }
@@ -500,9 +436,6 @@ impl BatlessConfig {
         }
         if other.strip_blank_lines != default.strip_blank_lines {
             self.strip_blank_lines = other.strip_blank_lines;
-        }
-        if other.chunk_strategy != default.chunk_strategy {
-            self.chunk_strategy = other.chunk_strategy;
         }
 
         self
@@ -606,9 +539,6 @@ mod tests {
         let override_config = BatlessConfig::default()
             .with_max_lines(2000)
             .with_summary_level(SummaryLevel::Detailed)
-            .with_streaming_json(true)
-            .with_streaming_chunk_size(42)
-            .with_enable_resume(true)
             .with_schema_version("9.9".to_string())
             .with_debug(true)
             .with_show_line_numbers(true)
@@ -618,9 +548,6 @@ mod tests {
         let merged = base.merge_with(override_config);
         assert_eq!(merged.max_lines, 2000);
         assert_eq!(merged.summary_level, SummaryLevel::Detailed);
-        assert!(merged.streaming_json);
-        assert_eq!(merged.streaming_chunk_size, 42);
-        assert!(merged.enable_resume);
         assert_eq!(merged.schema_version, "9.9");
         assert!(merged.debug);
         assert!(merged.show_line_numbers);

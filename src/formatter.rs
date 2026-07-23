@@ -21,16 +21,14 @@ impl OutputFormatter {
     ) -> BatlessResult<String> {
         use crate::formatters::Formatter;
         use crate::formatters::{
-            ast_formatter::AstFormatter, index_formatter::IndexFormatter,
-            json_formatter::JsonFormatter, plain_formatter::PlainFormatter,
-            summary_formatter::SummaryFormatter,
+            index_formatter::IndexFormatter, json_formatter::JsonFormatter,
+            plain_formatter::PlainFormatter, summary_formatter::SummaryFormatter,
         };
         match output_mode {
             OutputMode::Plain => PlainFormatter.format(file_info, file_path, config),
             OutputMode::Json => JsonFormatter.format(file_info, file_path, config),
             OutputMode::Summary => SummaryFormatter.format(file_info, file_path, config),
             OutputMode::Index => IndexFormatter.format(file_info, file_path, config),
-            OutputMode::Ast => AstFormatter.format(file_info, file_path, config),
         }
     }
 
@@ -53,7 +51,6 @@ impl OutputFormatter {
             }
             OutputMode::Summary => Ok(line.to_string()), // Summary mode doesn't stream
             OutputMode::Index => Ok(line.to_string()),   // Index mode doesn't stream
-            OutputMode::Ast => Ok(line.to_string()),     // Ast mode doesn't stream
         }
     }
 
@@ -230,8 +227,6 @@ pub enum OutputMode {
     Summary,
     /// Machine-readable symbol index (functions, classes, structs with line ranges)
     Index,
-    /// Raw tree-sitter parse tree as JSON (Rust/Python/JS/TS; null root for others)
-    Ast,
 }
 
 impl OutputMode {
@@ -242,20 +237,13 @@ impl OutputMode {
             "json" => Ok(Self::Json),
             "summary" => Ok(Self::Summary),
             "index" => Ok(Self::Index),
-            "ast" => Ok(Self::Ast),
             _ => Err(format!("Unknown output mode: {s}")),
         }
     }
 
     /// Get all available output modes
     pub fn all() -> Vec<Self> {
-        vec![
-            Self::Plain,
-            Self::Json,
-            Self::Summary,
-            Self::Index,
-            Self::Ast,
-        ]
+        vec![Self::Plain, Self::Json, Self::Summary, Self::Index]
     }
 
     /// Get string representation
@@ -265,7 +253,6 @@ impl OutputMode {
             Self::Json => "json",
             Self::Summary => "summary",
             Self::Index => "index",
-            Self::Ast => "ast",
         }
     }
 }
@@ -370,8 +357,8 @@ mod tests {
     fn test_output_mode_parsing() {
         assert_eq!(OutputMode::parse_mode("plain").unwrap(), OutputMode::Plain);
         assert_eq!(OutputMode::parse_mode("json").unwrap(), OutputMode::Json);
-        assert_eq!(OutputMode::parse_mode("ast").unwrap(), OutputMode::Ast);
         assert!(OutputMode::parse_mode("highlight").is_err());
+        assert!(OutputMode::parse_mode("ast").is_err());
         assert!(OutputMode::parse_mode("invalid").is_err());
     }
 
@@ -381,7 +368,6 @@ mod tests {
         assert_eq!(OutputMode::Json.as_str(), "json");
         assert_eq!(OutputMode::Summary.as_str(), "summary");
         assert_eq!(OutputMode::Index.as_str(), "index");
-        assert_eq!(OutputMode::Ast.as_str(), "ast");
     }
 
     #[test]

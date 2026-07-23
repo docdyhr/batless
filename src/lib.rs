@@ -23,8 +23,6 @@
 #![allow(clippy::unused_self)] // Some methods need self for trait consistency
 #![allow(clippy::match_same_arms)] // Sometimes clearer to have explicit arms
 
-pub mod ast_summarizer;
-pub mod chunker;
 pub mod config;
 pub mod config_manager;
 pub mod config_validation;
@@ -32,11 +30,9 @@ pub mod error;
 pub mod file_info;
 pub mod formatter;
 pub mod formatters;
-pub mod json_schema;
 pub mod language;
 pub mod processor;
 pub mod profile;
-pub mod streaming;
 pub mod summarizer;
 pub mod summary;
 pub mod summary_item;
@@ -51,11 +47,9 @@ pub use config::BatlessConfig;
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};
-pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValidator};
 pub use language::LanguageDetector;
 pub use processor::FileProcessor;
 pub use profile::CustomProfile;
-pub use streaming::{StreamingCheckpoint, StreamingChunk, StreamingProcessor};
 pub use summary::SummaryLevel;
 pub use tokens::{AiModel, TokenCount, TokenCounter};
 

@@ -4,7 +4,6 @@
 //! Useful for AI agents that want to build a project-wide symbol index
 //! without reading every line of every file.
 
-use crate::ast_summarizer::AstSummarizer;
 use crate::config::BatlessConfig;
 use crate::error::BatlessResult;
 use crate::file_info::FileInfo;
@@ -126,20 +125,10 @@ impl Formatter for IndexFormatter {
         _config: &BatlessConfig,
     ) -> BatlessResult<String> {
         let language = file_info.language.as_deref();
-        let content = file_info.lines.join("\n");
 
         // Use detailed summary level to capture the most symbols
-        let mut items: Vec<SummaryItem> =
-            AstSummarizer::extract_summary(&content, language, SummaryLevel::Detailed);
-
-        // Fall back to regex-based summarizer for unsupported languages
-        if items.is_empty() {
-            items = SummaryExtractor::extract_summary(
-                &file_info.lines,
-                language,
-                SummaryLevel::Detailed,
-            );
-        }
+        let items: Vec<SummaryItem> =
+            SummaryExtractor::extract_summary(&file_info.lines, language, SummaryLevel::Detailed);
 
         let symbols: Vec<Value> = items
             .iter()

@@ -47,74 +47,6 @@ fn test_version_json_command() {
 }
 
 #[test]
-fn test_get_schema_file_info() {
-    let output = run_batless_args(&["--get-schema", "file_info"]);
-    assert!(output.status.success(), "Command should succeed");
-
-    let stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
-    assert!(
-        stdout_str.contains("\"$schema\""),
-        "Should contain schema field"
-    );
-
-    // Verify it's valid JSON
-    let _parsed: serde_json::Value =
-        serde_json::from_str(&stdout_str).expect("Output should be valid JSON schema");
-}
-
-#[test]
-fn test_get_schema_json_output() {
-    let output = run_batless_args(&["--get-schema", "json_output"]);
-    assert!(output.status.success(), "Command should succeed");
-
-    let stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
-    assert!(
-        stdout_str.contains("\"$schema\""),
-        "Should contain schema field"
-    );
-}
-
-#[test]
-fn test_get_schema_token_count() {
-    let output = run_batless_args(&["--get-schema", "token_count"]);
-    assert!(output.status.success(), "Command should succeed");
-
-    let stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
-    assert!(
-        stdout_str.contains("\"$schema\""),
-        "Should contain schema field"
-    );
-}
-
-#[test]
-fn test_get_schema_processing_stats() {
-    let output = run_batless_args(&["--get-schema", "processing_stats"]);
-    assert!(output.status.success(), "Command should succeed");
-
-    let stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
-    assert!(
-        stdout_str.contains("\"$schema\""),
-        "Should contain schema field"
-    );
-}
-
-#[test]
-fn test_get_schema_invalid() {
-    let output = run_batless_args(&["--get-schema", "invalid_schema"]);
-    assert!(!output.status.success(), "Command should fail");
-
-    let stderr_str = String::from_utf8(output.stderr).expect("Valid UTF-8 output");
-    assert!(
-        stderr_str.contains("Unknown schema format"),
-        "Should show error message"
-    );
-    assert!(
-        stderr_str.contains("Available schemas:"),
-        "Should show available options"
-    );
-}
-
-#[test]
 fn test_cli_with_max_lines_zero() {
     let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
     writeln!(temp_file, "line1\nline2\nline3").expect("Failed to write to temp file");
@@ -169,30 +101,6 @@ fn test_cli_with_invalid_language() {
         stderr_str.contains("Language not found") || stderr_str.contains("language"),
         "Should show language-related error"
     );
-}
-
-#[test]
-fn test_streaming_json_with_checkpoints() {
-    let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
-    // Create a larger file for streaming
-    for i in 0..100 {
-        writeln!(temp_file, "Line number {i} with some content").expect("Failed to write");
-    }
-    let temp_path = temp_file.path().to_str().expect("Invalid temp path");
-
-    let output = run_batless_args(&[
-        "--mode",
-        "json",
-        "--streaming-json",
-        "--enable-resume",
-        "--streaming-chunk-size",
-        "10",
-        temp_path,
-    ]);
-    assert!(output.status.success(), "Streaming command should succeed");
-
-    let stdout_str = String::from_utf8(output.stdout).expect("Valid UTF-8 output");
-    assert!(!stdout_str.is_empty(), "Should produce streaming output");
 }
 
 #[test]
@@ -318,16 +226,6 @@ fn test_error_message_formatting() {
         stderr_str.len() > 10,
         "Should contain meaningful error message"
     );
-}
-
-#[test]
-fn test_validate_json_flag() {
-    let mut temp_file = NamedTempFile::new().expect("Failed to create temp file");
-    writeln!(temp_file, "{{\"key\": \"value\"}}").expect("Failed to write to temp file");
-    let temp_path = temp_file.path().to_str().expect("Invalid temp path");
-
-    let output = run_batless_args(&["--mode", "json", "--validate-json", temp_path]);
-    assert!(output.status.success(), "JSON validation should succeed");
 }
 
 #[test]

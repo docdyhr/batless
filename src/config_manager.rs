@@ -81,14 +81,6 @@ pub struct Args {
     #[arg(long, default_value = "500")]
     pub prompt_tokens: usize,
 
-    /// Validate JSON output against schema
-    #[arg(long)]
-    pub validate_json: bool,
-
-    /// Get JSON schema for specified output format
-    #[arg(long)]
-    pub get_schema: Option<String>,
-
     /// Generate shell completions for the specified shell
     #[arg(long, value_enum)]
     pub generate_completions: Option<Shell>,
@@ -104,26 +96,6 @@ pub struct Args {
     /// Configuration file path (defaults to auto-discovery)
     #[arg(long)]
     pub config: Option<String>,
-
-    /// Enable streaming JSON output for large files
-    #[arg(long)]
-    pub streaming_json: bool,
-
-    /// Chunk size for streaming output (in lines)
-    #[arg(long)]
-    pub streaming_chunk_size: Option<usize>,
-
-    /// Streaming chunk strategy: line (fixed line count) or semantic (top-level declaration boundaries)
-    #[arg(long, value_name = "STRATEGY")]
-    pub chunk_strategy: Option<CliChunkStrategy>,
-
-    /// Enable resume capability with checkpoint support
-    #[arg(long)]
-    pub enable_resume: bool,
-
-    /// Checkpoint file path for resuming
-    #[arg(long)]
-    pub checkpoint: Option<String>,
 
     /// Enable debug mode with detailed processing information
     #[arg(long)]
@@ -181,14 +153,6 @@ pub enum CliOutputMode {
     Summary,
     /// Machine-readable symbol index with line ranges
     Index,
-    /// Raw tree-sitter parse tree as JSON
-    Ast,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum CliChunkStrategy {
-    Line,
-    Semantic,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -282,7 +246,6 @@ impl From<CliOutputMode> for OutputMode {
             CliOutputMode::Json => Self::Json,
             CliOutputMode::Summary => Self::Summary,
             CliOutputMode::Index => Self::Index,
-            CliOutputMode::Ast => Self::Ast,
         }
     }
 }
@@ -296,10 +259,9 @@ impl FromStr for OutputMode {
             "json" => Ok(Self::Json),
             "summary" => Ok(Self::Summary),
             "index" => Ok(Self::Index),
-            "ast" => Ok(Self::Ast),
             _ => Err(BatlessError::ConfigurationError {
                 message: format!("Invalid output mode: {s}"),
-                help: Some("Valid modes are: plain, json, summary, index, ast".to_string()),
+                help: Some("Valid modes are: plain, json, summary, index".to_string()),
             }),
         }
     }
@@ -532,9 +494,6 @@ impl ConfigManager {
         if self.args.include_identifiers || self.args.include_tokens {
             new_config = new_config.with_include_tokens(true);
         }
-        if self.args.streaming_json {
-            new_config = new_config.with_streaming_json(self.args.streaming_json);
-        }
         if self.args.json_pretty {
             new_config = new_config.with_pretty_json(true);
         }
@@ -549,19 +508,6 @@ impl ConfigManager {
         }
         if self.args.strip_blank_lines {
             new_config = new_config.with_strip_blank_lines(true);
-        }
-        if let Some(chunk_size) = self.args.streaming_chunk_size {
-            new_config = new_config.with_streaming_chunk_size(chunk_size);
-        }
-        if let Some(strategy) = self.args.chunk_strategy {
-            use crate::config::ChunkStrategy;
-            new_config = new_config.with_chunk_strategy(match strategy {
-                CliChunkStrategy::Line => ChunkStrategy::Line,
-                CliChunkStrategy::Semantic => ChunkStrategy::Semantic,
-            });
-        }
-        if self.args.enable_resume {
-            new_config = new_config.with_enable_resume(self.args.enable_resume);
         }
         if self.args.debug {
             new_config = new_config.with_debug(self.args.debug);
@@ -768,24 +714,6 @@ mod tests {
     fn test_json_pretty() {
         let mgr = make_manager(&["--json-pretty", "--mode=json", "Cargo.toml"]);
         assert!(mgr.config().pretty_json);
-    }
-
-    #[test]
-    fn test_streaming_json() {
-        let mgr = make_manager(&["--streaming-json", "Cargo.toml"]);
-        assert!(mgr.config().streaming_json);
-    }
-
-    #[test]
-    fn test_streaming_chunk_size() {
-        let mgr = make_manager(&["--streaming-chunk-size=500", "Cargo.toml"]);
-        assert_eq!(mgr.config().streaming_chunk_size, 500);
-    }
-
-    #[test]
-    fn test_enable_resume() {
-        let mgr = make_manager(&["--enable-resume", "Cargo.toml"]);
-        assert!(mgr.config().enable_resume);
     }
 
     #[test]

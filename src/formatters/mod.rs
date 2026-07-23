@@ -3,7 +3,6 @@
 //! This module provides the `Formatter` trait and all output formatters.
 //! `src/formatter.rs` is a thin dispatcher that routes through these.
 
-pub mod ast_formatter;
 pub mod error_formatter;
 pub mod index_formatter;
 pub mod json_formatter;

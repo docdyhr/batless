@@ -4,7 +4,6 @@
 //! detecting encoding, handling truncation limits, and coordinating with other
 //! modules for language detection, summarization, and tokenization.
 
-use crate::ast_summarizer::AstSummarizer;
 use crate::config::BatlessConfig;
 use crate::error::{BatlessError, BatlessResult};
 use crate::file_info::FileInfo;
@@ -83,22 +82,14 @@ impl FileProcessor {
         lines: &[String],
         config: &BatlessConfig,
     ) -> FileInfo {
-        // Process summary if requested — try AST first, fall back to regex
+        // Process summary if requested
         let summary_level = config.effective_summary_level();
         if summary_level.is_enabled() {
-            let content = lines.join("\n");
-            let mut summary_lines = AstSummarizer::extract_summary(
-                &content,
+            let summary_lines = SummaryExtractor::extract_summary(
+                lines,
                 file_info.language.as_deref(),
                 summary_level,
             );
-            if summary_lines.is_empty() {
-                summary_lines = SummaryExtractor::extract_summary(
-                    lines,
-                    file_info.language.as_deref(),
-                    summary_level,
-                );
-            }
             let summary_text: Vec<String> = summary_lines.iter().map(|s| s.line.clone()).collect();
             file_info = file_info
                 .with_original_lines(Some(lines.to_vec()))

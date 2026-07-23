@@ -1,6 +1,5 @@
 use batless::{
-    config_manager::ConfigManager, AiModel, BatlessError, BatlessResult, JsonSchemaValidator,
-    OutputMode, TokenCounter,
+    config_manager::ConfigManager, AiModel, BatlessError, BatlessResult, OutputMode, TokenCounter,
 };
 use clap::CommandFactory;
 use clap_complete::generate;
@@ -73,7 +72,6 @@ fn main() {
 fn run() -> BatlessResult<()> {
     let config_manager = ConfigManager::new()?;
     let args = config_manager.args();
-    let config = config_manager.config();
     let output_mode = config_manager.output_mode();
 
     // Handle commands that don't require file processing
@@ -86,10 +84,6 @@ fn run() -> BatlessResult<()> {
     // Directory input with index mode: walk and emit NDJSON
     if output_mode == OutputMode::Index && std::path::Path::new(&file_path).is_dir() {
         return handle_directory_index(&file_path, &config_manager);
-    }
-
-    if config.streaming_json && output_mode == OutputMode::Json {
-        return handle_streaming_json(&file_path, &config_manager);
     }
 
     handle_normal_processing(&file_path, &config_manager)
@@ -133,22 +127,6 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
         return Ok(true);
     }
 
-    if let Some(format) = &args.get_schema {
-        let validator = JsonSchemaValidator::new();
-        let schema = validator.get_schema(format).ok_or_else(|| {
-            BatlessError::config_error_with_help(
-                format!("Unknown schema format '{format}'"),
-                Some(
-                    "Available schemas: file_info, json_output, token_count, processing_stats, streaming_chunk"
-                        .to_string(),
-                ),
-            )
-        })?;
-        let pretty = serde_json::to_string_pretty(schema)?; // pretty JSON already created
-        println!("{pretty}");
-        return Ok(true);
-    }
-
     if args.list_languages {
         for language in batless::LanguageDetector::list_languages() {
             println!("{language}");
@@ -157,49 +135,6 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
     }
 
     Ok(false)
-}
-
-fn handle_streaming_json(file_path: &str, manager: &ConfigManager) -> BatlessResult<()> {
-    use batless::StreamingProcessor;
-
-    let config = manager.config();
-    let args = manager.args();
-
-    let checkpoint = if config.enable_resume {
-        args.checkpoint
-            .as_ref()
-            .and_then(|path| {
-                if std::path::Path::new(path).exists() {
-                    Some(StreamingProcessor::load_checkpoint(std::path::Path::new(
-                        path,
-                    )))
-                } else {
-                    None
-                }
-            })
-            .transpose()?
-    } else {
-        None
-    };
-
-    let chunks = StreamingProcessor::process_streaming(file_path, config, checkpoint)?;
-
-    for chunk_result in chunks {
-        let chunk = chunk_result?;
-        // NDJSON: one compact JSON object per line, no separator needed
-        let json_output = serde_json::to_string(&chunk)?;
-        println!("{json_output}");
-
-        if config.enable_resume && !chunk.is_final {
-            if let Some(checkpoint_path) = &args.checkpoint {
-                StreamingProcessor::save_checkpoint(
-                    &chunk.checkpoint,
-                    std::path::Path::new(checkpoint_path),
-                )?;
-            }
-        }
-    }
-    Ok(())
 }
 
 fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
@@ -346,10 +281,6 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     let formatted_output =
         batless::format_output(&final_file_info, file_path, config, output_mode)?;
 
-    if args.validate_json && output_mode == OutputMode::Json {
-        validate_json_output(&formatted_output)?;
-    }
-
     println!("{formatted_output}");
 
     if output_mode != OutputMode::Json {
@@ -386,15 +317,6 @@ fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) {
     };
     println!("  Fits in context: {fits}");
     println!();
-}
-
-fn validate_json_output(json_output: &str) -> BatlessResult<()> {
-    let validator = JsonSchemaValidator::new();
-    let json_value: serde_json::Value = serde_json::from_str(json_output)?;
-    if let Err(e) = validator.validate("json_output", &json_value) {
-        eprintln!("⚠️  JSON validation warning: {e}. Output may not be fully AI-compatible.");
-    }
-    Ok(())
 }
 
 // Helpful error messages for unsupported features

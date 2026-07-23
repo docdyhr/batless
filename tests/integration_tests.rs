@@ -750,33 +750,6 @@ fn test_memory_efficiency_string_handling() {
 }
 
 #[test]
-fn test_schema_validation() {
-    // Test JSON schema validation functionality
-    let output = run_batless(&["--get-schema", "json_output"]);
-    assert!(output.status.success());
-
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let schema: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-
-    assert_eq!(schema["type"].as_str().unwrap(), "object");
-    let properties = schema["properties"]
-        .as_object()
-        .expect("properties should be an object");
-    assert!(
-        properties.contains_key("identifier_count"),
-        "schema should expose identifier_count"
-    );
-    assert!(
-        properties.contains_key("identifiers_truncated"),
-        "schema should expose identifiers_truncated"
-    );
-    assert!(
-        properties.contains_key("total_lines_exact"),
-        "schema should expose total_lines_exact"
-    );
-}
-
-#[test]
 fn test_language_validation() {
     let output = run_batless(&["--list-languages"]);
     assert!(output.status.success());
