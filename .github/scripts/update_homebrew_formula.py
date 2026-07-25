@@ -16,7 +16,7 @@ base_url = f"https://github.com/docdyhr/batless/releases/download/v{version}"
 
 formula = f"""\
 class Batless < Formula
-  desc "Non-blocking, LLM-friendly code viewer inspired by bat"
+  desc "Fast, non-blocking code and text viewer inspired by bat"
   homepage "https://github.com/docdyhr/batless"
   version "{version}"
   license "MIT"
@@ -55,8 +55,8 @@ class Batless < Formula
     assert_match(/"mode":\\s*"json"/, json_output)
     assert_match(/"language":\\s*"Rust"/, json_output)
 
-    summary_output = shell_output("#{{bin}}/batless --mode=summary #{{testpath}}/test.rs")
-    assert_match "main", summary_output
+    index_output = shell_output("#{{bin}}/batless --mode=index #{{testpath}}/test.rs")
+    assert_match "main", index_output
   end
 end
 """

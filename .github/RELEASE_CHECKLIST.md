@@ -75,9 +75,9 @@ Quick smoke tests:
 
 - [ ] `batless --version` shows correct version
 - [ ] `batless --help` displays help text
-- [ ] Basic syntax highlighting works: `batless src/main.rs`
+- [ ] Basic plain-text viewing works: `batless src/main.rs`
 - [ ] JSON mode works: `batless --mode=json src/main.rs`
-- [ ] Summary mode works: `batless --mode=summary src/main.rs`
+- [ ] Index mode works: `batless --mode=index src/main.rs`
 
 ## Communication
 

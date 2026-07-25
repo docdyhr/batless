@@ -206,7 +206,7 @@ docker run --rm -v $(pwd):/workspace batless/batless /workspace/src/main.rs
 FROM batless/batless:alpine
 COPY . /app
 WORKDIR /app
-RUN batless --mode=summary src/main.rs
+RUN batless --mode=index src/main.rs
 ```
 
 ---

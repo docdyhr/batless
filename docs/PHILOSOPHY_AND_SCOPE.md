@@ -2,7 +2,7 @@
 
 ## Core Philosophy: Do One Thing Well
 
-**batless exists to VIEW code files in a non-blocking, AI-friendly way.**
+**batless exists to VIEW code and text files in a non-blocking way — fast, predictable, and honest about what it does.**
 
 Following the Unix philosophy, batless intentionally maintains a narrow, focused scope:
 
@@ -11,26 +11,24 @@ Following the Unix philosophy, batless intentionally maintains a narrow, focused
 
 ## What batless IS
 
-✅ **A non-blocking code viewer**
+✅ **A fast, non-blocking cat/bat alternative**
 
-- Views individual files with syntax highlighting
-- Provides multiple output modes (plain, highlight, json, summary)
-- Never blocks or waits for user input
-- Optimized for automation and AI workflows
-- Memory-efficient streaming for large files
+- Views individual files via `--mode=plain` (the default), `--mode=json`, or `--mode=index`
+- Never blocks or waits for user input — no pager, ever
+- Predictable, scriptable output whether run in a terminal or a pipe
+- Drop-in replacement for `cat`, with `cat -n`/`cat -b` compatibility (`-n`, `-b`) and `PAGER` compatibility (`--plain`, `-u`, `--no-title`)
 
-✅ **An AI-friendly formatter**
+✅ **Scoped by real usage data, not guesswork**
 
-- JSON output with structured metadata
-- Token counting for context estimation
-- AI model profiles (Claude, GPT, Copilot)
-- Summary mode for code structure extraction
+- Usage telemetry (batless-stats logs, ~475 calls over 3.5 months of real usage) showed plain-mode viewing at 84.4% of all invocations, with `--mode=index` — a machine-readable symbol table — a distant but real second at 10.5%
+- Features that measured 0-1.5% usage or none at all (tree-sitter AST mode, streaming/checkpointing, JSON schema validation, AI model profiles, LLM token estimation, `--mode=summary`, `--hash`) were removed rather than kept "just in case"
+- The result is a smaller, more honest tool built around what people actually run, not around what sounded good on paper
 
-✅ **A cat/bat alternative**
+✅ **Still useful in scripts and pipelines**
 
-- Drop-in replacement for `cat` with highlighting
-- Compatible with pipelines and scripts
-- Predictable, scriptable output
+- `--mode=json` for structured metadata; `--mode=index` for a symbol table (functions, classes, structs with line ranges) without loading full file content
+- `--strip-comments` / `--strip-blank-lines` for general-purpose text filtering, in the spirit of `cat -s` — not AI-specific
+- Full stdin support, encoding detection, and shell completions (bash/zsh/fish/PowerShell)
 
 ## What batless IS NOT
 
@@ -139,10 +137,10 @@ grep -l "TODO" src/*.rs | xargs batless -n
 # View specific ranges from multiple files
 find . -name "*.py" -exec sh -c 'echo "=== {} ==="; sed -n "1,50p" {} | batless --language=python' \;
 
-# AI workflow: search, extract, analyze
+# Automation workflow: search, then extract structure
 rg -l "async fn" src/ | while read f; do
-  batless --mode=json --summary "$f"
-done | jq -s '[.[] | {file: .file, async_functions: .summary_lines}]'
+  batless --mode=index "$f"
+done | jq -s '[.[] | {file: .file, async_functions: [.symbols[] | select(.signature | contains("async fn"))]}]'
 ```
 
 ### 4. ✅ Man Page / Help Examples
@@ -162,10 +160,10 @@ COMMON PATTERNS
     grep -l "pattern" src/* | xargs batless
 
   List files in directory (use ls/fd):
-    fd -e py | xargs batless --mode=summary
+    fd -e py | xargs batless
 
-  AI workflow - extract structure:
-    batless --mode=json --summary src/*.rs | jq '.summary_lines'
+  Extract code structure (symbol index):
+    batless --mode=index src/*.rs | jq '.symbols'
 ```
 
 ## Implementation Recommendation
@@ -304,4 +302,4 @@ This philosophy guide ensures batless remains:
 
 ---
 
-*Last Updated: October 14, 2025*
+*Last Updated: July 25, 2026*

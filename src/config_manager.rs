@@ -82,7 +82,7 @@ pub struct Args {
     #[arg(long)]
     pub version_json: bool,
 
-    /// Pretty-print JSON output (when --mode=json); does not affect streaming
+    /// Pretty-print JSON output (when --mode=json)
     #[arg(long)]
     pub json_pretty: bool,
 
