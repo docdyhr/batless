@@ -4,13 +4,13 @@ version = "0.6.0"
 edition = "2021"
 rust-version = "1.85.0"
 authors = ["Thomas <thomas@docdyhr.com>"]
-description = "A non-blocking, LLM-friendly code viewer inspired by bat"
+description = "A fast, non-blocking code and text viewer inspired by bat"
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/docdyhr/batless"
 repository = "https://github.com/docdyhr/batless"
 documentation = "https://docs.rs/batless"
-keywords = ["cli", "syntax-highlighting", "code-viewer", "ai", "automation"]
+keywords = ["cli", "code-viewer", "cat", "pager", "viewer"]
 categories = ["command-line-utilities", "development-tools", "text-processing"]
 exclude = [
     "target/",

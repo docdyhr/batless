@@ -24,7 +24,7 @@ fn test_help_command() {
     assert!(output.status.success());
 
     let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("A non-blocking, LLM-friendly code viewer"));
+    assert!(stdout.contains("A fast, non-blocking code and text viewer"));
     assert!(stdout.contains("--mode <MODE>"));
     assert!(stdout.contains("--max-lines"));
 }
