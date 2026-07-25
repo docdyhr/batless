@@ -146,7 +146,7 @@ cargo run -- src/main.rs
 cargo run --release -- src/main.rs
 
 # With specific options
-cargo run -- --mode=summary --max-lines=50 src/lib.rs
+cargo run -- --mode=index --max-lines=50 src/lib.rs
 ```
 
 ### Testing

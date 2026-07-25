@@ -2,12 +2,12 @@ name: Test Formula
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   schedule:
     # Test weekly to catch upstream changes
-    - cron: '0 12 * * 1'
+    - cron: "0 12 * * 1"
 
 jobs:
   test-formula:
@@ -52,7 +52,7 @@ jobs:
           echo 'fn main() { println!("test"); }' > test.rs
           batless test.rs
           batless --mode=json test.rs
-          batless --mode=summary test.rs
+          batless --mode=index test.rs
           rm test.rs
 
       - name: Test uninstall
