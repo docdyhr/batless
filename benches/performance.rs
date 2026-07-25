@@ -146,10 +146,6 @@ fn benchmark_config_operations(c: &mut Criterion) {
             "with_summary",
             BatlessConfig::default().with_summary_mode(true),
         ),
-        (
-            "with_tokens",
-            BatlessConfig::default().with_include_tokens(true),
-        ),
     ];
 
     for (name, config) in configs {

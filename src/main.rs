@@ -1,12 +1,10 @@
-use batless::{
-    config_manager::ConfigManager, AiModel, BatlessError, BatlessResult, OutputMode, TokenCounter,
-};
+use batless::{config_manager::ConfigManager, BatlessError, BatlessResult, OutputMode};
 use clap::CommandFactory;
 use clap_complete::generate;
 use std::io::{self, Write};
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use batless::config_manager::{Args, CliAiModel, Shell};
+use batless::config_manager::{Args, Shell};
 
 fn print_error(error: &BatlessError) {
     let mut stderr = StandardStream::stderr(ColorChoice::Auto);
@@ -216,7 +214,6 @@ fn handle_directory_index(dir_path: &str, manager: &ConfigManager) -> BatlessRes
 
 fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> BatlessResult<()> {
     let config = manager.config();
-    let args = manager.args();
     let output_mode = manager.output_mode();
 
     let start_time = std::time::Instant::now();
@@ -224,7 +221,7 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         eprintln!("🔍 DEBUG: Starting file processing for {file_path}");
     }
 
-    let file_info = batless::process_file(file_path, config)?;
+    let final_file_info = batless::process_file(file_path, config)?;
 
     if config.debug {
         eprintln!(
@@ -232,46 +229,6 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
             start_time.elapsed()
         );
     }
-
-    if args.count_tokens {
-        print_token_analysis(&file_info, args.ai_model.into());
-    }
-
-    let file_info = if args.fit_context {
-        let counter = TokenCounter::new(args.ai_model.into());
-        let (truncated_content, was_truncated) =
-            counter.truncate_to_fit(&file_info.lines.join("\n"), args.prompt_tokens);
-        if was_truncated {
-            eprintln!("📐 Context Fitting Applied");
-            file_info
-                .with_lines(truncated_content.lines().map(String::from).collect())
-                .with_context_truncation(true)
-        } else {
-            file_info
-        }
-    } else {
-        file_info
-    };
-
-    // Attach estimated LLM token count when a profile or explicit model is active
-    let effective_model: Option<AiModel> = args.profile.map_or_else(
-        || {
-            if args.ai_model == CliAiModel::Generic {
-                None
-            } else {
-                Some(args.ai_model.into())
-            }
-        },
-        |profile| Some(profile.get_ai_model()),
-    );
-    let final_file_info = if let Some(model) = effective_model {
-        let counter = TokenCounter::new(model);
-        let token_count = counter.count_tokens(&file_info.lines.join("\n"));
-        let model_name = format!("{model:?}");
-        file_info.with_estimated_llm_tokens(Some(token_count.tokens as u64), Some(model_name))
-    } else {
-        file_info
-    };
 
     if output_mode == OutputMode::Summary && final_file_info.summary_line_count() == 0 {
         eprintln!("// No summary-worthy code structures found");
@@ -296,27 +253,6 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
     }
 
     Ok(())
-}
-
-fn print_token_analysis(file_info: &batless::FileInfo, model: AiModel) {
-    let content = file_info.lines.join("\n");
-    let counter = TokenCounter::new(model);
-    let token_count = counter.count_tokens(&content);
-
-    println!("Token Count Analysis:");
-    let model_str = token_count.model.as_str();
-    println!("  Model: {model_str}");
-    let tokens = token_count.tokens;
-    println!("  Tokens: {tokens}");
-    let context_window = token_count.model.context_window();
-    println!("  Context window: {context_window}");
-    let fits = if token_count.fits_in_context {
-        "✓"
-    } else {
-        "✗"
-    };
-    println!("  Fits in context: {fits}");
-    println!();
 }
 
 // Helpful error messages for unsupported features

@@ -32,15 +32,10 @@ pub mod formatter;
 pub mod formatters;
 pub mod language;
 pub mod processor;
-pub mod profile;
 pub mod summarizer;
 pub mod summary;
 pub mod summary_item;
-pub mod tokens;
 pub mod traits;
-
-// Re-export for fuzzing and external use
-pub use tokens::TokenExtractor;
 
 // Re-export commonly used types
 pub use config::BatlessConfig;
@@ -49,9 +44,7 @@ pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};
 pub use language::LanguageDetector;
 pub use processor::FileProcessor;
-pub use profile::CustomProfile;
 pub use summary::SummaryLevel;
-pub use tokens::{AiModel, TokenCount, TokenCounter};
 
 /// Main entry point for processing a file with batless
 pub fn process_file(file_path: &str, config: &BatlessConfig) -> BatlessResult<FileInfo> {
@@ -174,19 +167,6 @@ mod tests {
     }
 
     #[test]
-    fn test_include_tokens() -> BatlessResult<()> {
-        let file = create_test_file("fn main() { println!(\"Hello\"); }");
-        let config = BatlessConfig::default().with_include_tokens(true);
-
-        let result = process_file(file.path().to_str().unwrap(), &config)?;
-
-        assert!(result.has_tokens());
-        assert!(result.token_count() > 0);
-
-        Ok(())
-    }
-
-    #[test]
     fn test_encoding_detection() -> BatlessResult<()> {
         let file = create_test_file("Hello, 世界!");
         let config = BatlessConfig::default();
@@ -205,7 +185,6 @@ mod tests {
         assert_eq!(config.language, None);
         assert!(!config.strip_ansi);
         assert!(config.use_color);
-        assert!(!config.include_tokens);
         assert!(!config.summary_mode);
     }
 

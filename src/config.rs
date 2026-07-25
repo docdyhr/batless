@@ -29,9 +29,6 @@ pub struct BatlessConfig {
     /// Whether to use color output
     #[serde(default = "default_use_color")]
     pub use_color: bool,
-    /// Whether to include tokens in JSON output
-    #[serde(default)]
-    pub include_tokens: bool,
     /// Summary extraction level
     #[serde(default)]
     pub summary_level: SummaryLevel,
@@ -87,7 +84,6 @@ impl Default for BatlessConfig {
             language: None,
             strip_ansi: false,
             use_color: true,
-            include_tokens: false,
             summary_level: SummaryLevel::None,
             summary_mode: false,
             schema_version: default_schema_version(),
@@ -136,12 +132,6 @@ impl BatlessConfig {
     /// Set color usage
     pub const fn with_use_color(mut self, use_color: bool) -> Self {
         self.use_color = use_color;
-        self
-    }
-
-    /// Set token inclusion
-    pub const fn with_include_tokens(mut self, include_tokens: bool) -> Self {
-        self.include_tokens = include_tokens;
         self
     }
 
@@ -401,9 +391,6 @@ impl BatlessConfig {
         if other.use_color != default.use_color {
             self.use_color = other.use_color;
         }
-        if other.include_tokens != default.include_tokens {
-            self.include_tokens = other.include_tokens;
-        }
         if other.summary_mode != default.summary_mode {
             self.summary_mode = other.summary_mode;
         }
@@ -445,7 +432,7 @@ impl BatlessConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{profile::CustomProfile, summary::SummaryLevel};
+    use crate::summary::SummaryLevel;
 
     #[test]
     fn test_default_config() {
@@ -455,7 +442,6 @@ mod tests {
         assert_eq!(config.language, None);
         assert!(!config.strip_ansi);
         assert!(config.use_color);
-        assert!(!config.include_tokens);
         assert!(!config.summary_mode);
     }
 
@@ -467,7 +453,6 @@ mod tests {
             .with_language(Some("rust".to_string()))
             .with_strip_ansi(true)
             .with_use_color(false)
-            .with_include_tokens(true)
             .with_summary_mode(true);
 
         assert_eq!(config.max_lines, 5000);
@@ -475,7 +460,6 @@ mod tests {
         assert_eq!(config.language, Some("rust".to_string()));
         assert!(config.strip_ansi);
         assert!(!config.use_color);
-        assert!(config.include_tokens);
         assert!(config.summary_mode);
     }
 
@@ -523,14 +507,11 @@ mod tests {
 
     #[test]
     fn test_json_serialization() {
-        let config = BatlessConfig::default()
-            .with_max_lines(3000)
-            .with_include_tokens(true);
+        let config = BatlessConfig::default().with_max_lines(3000);
 
         let json_str = serde_json::to_string_pretty(&config).unwrap();
         let deserialized: BatlessConfig = serde_json::from_str(&json_str).unwrap();
         assert_eq!(deserialized.max_lines, 3000);
-        assert!(deserialized.include_tokens);
     }
 
     #[test]
@@ -597,7 +578,6 @@ summary_mode = true
 
         let json_content = r#"{
   "max_lines": 8000,
-  "include_tokens": true,
   "strip_ansi": true
 }"#;
 
@@ -606,7 +586,6 @@ summary_mode = true
 
         let config = BatlessConfig::from_json_file(temp_file.path()).unwrap();
         assert_eq!(config.max_lines, 8000);
-        assert!(config.include_tokens);
         assert!(config.strip_ansi);
     }
 
@@ -637,163 +616,5 @@ max_lines = "not_a_number"
 
         let loaded_config = BatlessConfig::from_file(temp_file.path()).unwrap();
         assert_eq!(loaded_config.max_lines, 7000);
-    }
-
-    // Custom Profile Tests
-    #[test]
-    fn test_custom_profile_creation() {
-        let profile = CustomProfile::new(
-            "test-profile".to_string(),
-            Some("A test profile for unit testing".to_string()),
-        );
-
-        assert_eq!(profile.name, "test-profile");
-        assert_eq!(
-            profile.description,
-            Some("A test profile for unit testing".to_string())
-        );
-        assert_eq!(profile.version, "1.0");
-        assert!(profile.max_lines.is_none());
-        assert!(profile.max_bytes.is_none());
-        assert!(profile.tags.is_empty());
-    }
-
-    #[test]
-    fn test_custom_profile_apply_to_config() {
-        let profile = CustomProfile {
-            name: "coding-profile".to_string(),
-            description: None,
-            version: "1.0".to_string(),
-            max_lines: Some(2500),
-            max_bytes: Some(50000),
-            language: Some("rust".to_string()),
-            strip_ansi: Some(true),
-            use_color: Some(false),
-            include_tokens: Some(true),
-            summary_level: Some(SummaryLevel::Standard),
-            output_mode: Some("json".to_string()),
-            ai_model: Some("gpt4-turbo".to_string()),
-            streaming_json: Some(false),
-            streaming_chunk_size: Some(1000),
-            enable_resume: Some(false),
-            debug: Some(false),
-            tags: vec!["coding".to_string(), "development".to_string()],
-            created_at: None,
-            updated_at: None,
-        };
-
-        let base_config = BatlessConfig::default();
-        let applied_config = profile.apply_to_config(base_config);
-
-        assert_eq!(applied_config.max_lines, 2500);
-        assert_eq!(applied_config.max_bytes, Some(50000));
-        assert_eq!(applied_config.language, Some("rust".to_string()));
-        assert!(applied_config.strip_ansi);
-        assert!(!applied_config.use_color);
-        assert!(applied_config.include_tokens);
-        assert_eq!(applied_config.summary_level, SummaryLevel::Standard);
-    }
-
-    #[test]
-    fn test_custom_profile_partial_application() {
-        let profile = CustomProfile {
-            name: "minimal-profile".to_string(),
-            description: None,
-            version: "1.0".to_string(),
-            max_lines: Some(1000),
-            max_bytes: None,
-            language: None,
-            strip_ansi: None,
-            use_color: None,
-            include_tokens: None,
-            summary_level: None,
-            output_mode: None,
-            ai_model: None,
-            streaming_json: None,
-            streaming_chunk_size: None,
-            enable_resume: None,
-            debug: None,
-            tags: Vec::new(),
-            created_at: None,
-            updated_at: None,
-        };
-
-        let base_config = BatlessConfig::default().with_use_color(false);
-
-        let applied_config = profile.apply_to_config(base_config);
-
-        // Profile should only override max_lines
-        assert_eq!(applied_config.max_lines, 1000);
-        assert!(!applied_config.use_color); // Unchanged
-    }
-
-    #[test]
-    fn test_custom_profile_validation() {
-        // Valid profile
-        let valid_profile = CustomProfile::new(
-            "valid-profile".to_string(),
-            Some("A valid profile".to_string()),
-        );
-        assert!(valid_profile.validate().is_ok());
-
-        // Empty name
-        let empty_name_profile = CustomProfile::new(String::new(), None);
-        assert!(empty_name_profile.validate().is_err());
-
-        // Name too long
-        let long_name_profile = CustomProfile::new("a".repeat(60), None);
-        assert!(long_name_profile.validate().is_err());
-    }
-
-    #[test]
-    fn test_custom_profile_output_mode_preference() {
-        let profile = CustomProfile {
-            name: "test".to_string(),
-            description: None,
-            version: "1.0".to_string(),
-            max_lines: None,
-            max_bytes: None,
-            language: None,
-            strip_ansi: None,
-            use_color: None,
-            include_tokens: None,
-            summary_level: None,
-            output_mode: Some("summary".to_string()),
-            ai_model: Some("claude35-sonnet".to_string()),
-            streaming_json: None,
-            streaming_chunk_size: None,
-            enable_resume: None,
-            debug: None,
-            tags: Vec::new(),
-            created_at: None,
-            updated_at: None,
-        };
-
-        assert_eq!(profile.get_output_mode(), Some("summary"));
-        assert_eq!(profile.get_ai_model(), Some("claude35-sonnet"));
-    }
-
-    #[test]
-    fn test_custom_profile_json_serialization() {
-        let profile = CustomProfile::new(
-            "test-profile".to_string(),
-            Some("Test description".to_string()),
-        );
-
-        let json_str = serde_json::to_string_pretty(&profile).unwrap();
-        let deserialized: CustomProfile = serde_json::from_str(&json_str).unwrap();
-
-        assert_eq!(deserialized.name, profile.name);
-        assert_eq!(deserialized.description, profile.description);
-        assert_eq!(deserialized.version, profile.version);
-    }
-
-    #[test]
-    fn test_custom_profile_discover_profiles() {
-        // This test just ensures the function runs without panicking
-        // In a real environment, it would find actual profile files
-        let profiles = CustomProfile::discover_profiles();
-        // Should return a Vec (even if empty, which is fine for testing)
-        assert!(profiles.is_empty() || !profiles.is_empty());
     }
 }

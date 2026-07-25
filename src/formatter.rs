@@ -115,8 +115,6 @@ impl OutputFormatter {
             "truncation_reason": file_info.truncation_reason(),
             "has_syntax_errors": !file_info.syntax_errors.is_empty(),
             "error_count": file_info.syntax_errors.len(),
-            "token_count": file_info.token_count(),
-            "tokens_truncated": file_info.tokens_truncated(),
             "summary_line_count": file_info.summary_line_count(),
             "processing_ratio": file_info.processing_ratio()
         });
@@ -145,8 +143,6 @@ Total Bytes: {}
 Processing Time: {}ms
 Truncated: {}
 Syntax Errors: {}
-Tokens: {}
-Tokens Truncated: {}
 Summary Lines: {}
 Processing Ratio: {:.2}%",
             file_path,
@@ -159,8 +155,6 @@ Processing Ratio: {:.2}%",
             processing_time_ms,
             if stats.truncated { "Yes" } else { "No" },
             stats.error_count,
-            stats.token_count,
-            if stats.tokens_truncated { "Yes" } else { "No" },
             stats.summary_line_count,
             file_info.processing_ratio() * 100.0
         )
@@ -264,13 +258,13 @@ mod tests {
     use serde_json::Value;
 
     fn create_test_file_info() -> FileInfo {
-        FileInfo::with_metadata(10, 256, Some("Rust".to_string()), "UTF-8".to_string())
-            .with_lines(vec![
+        FileInfo::with_metadata(10, 256, Some("Rust".to_string()), "UTF-8".to_string()).with_lines(
+            vec![
                 "fn main() {".to_string(),
                 "    println!(\"Hello\");".to_string(),
                 "}".to_string(),
-            ])
-            .with_tokens(Some(vec!["fn".to_string(), "main".to_string()]))
+            ],
+        )
     }
 
     #[test]

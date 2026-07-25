@@ -33,18 +33,10 @@ pub struct FileInfo {
     pub encoding: String,
     /// Syntax errors encountered during processing
     pub syntax_errors: Vec<String>,
-    /// Extracted tokens (if requested)
-    pub tokens: Option<Vec<String>>,
-    /// Total number of tokens extracted (including truncated samples)
-    pub token_total: Option<usize>,
     /// Summary items with line numbers (if in summary mode)
     pub summary_lines: Option<Vec<SummaryItem>>,
     /// SHA-256 hex digest of file content (only populated when --hash is passed)
     pub file_hash: Option<String>,
-    /// Estimated LLM token count for the output content (heuristic)
-    pub estimated_llm_tokens: Option<u64>,
-    /// AI model used for token estimation (e.g. "Claude", "Gpt4")
-    pub token_model: Option<String>,
     /// Ratio of original line count to stripped line count (set when strip_comments or strip_blank_lines is active)
     pub compression_ratio: Option<f64>,
 }
@@ -65,12 +57,8 @@ impl FileInfo {
             language: None,
             encoding: "UTF-8".to_string(),
             syntax_errors: Vec::new(),
-            tokens: None,
-            token_total: None,
             summary_lines: None,
             file_hash: None,
-            estimated_llm_tokens: None,
-            token_model: None,
             compression_ratio: None,
         }
     }
@@ -95,12 +83,8 @@ impl FileInfo {
             language,
             encoding,
             syntax_errors: Vec::new(),
-            tokens: None,
-            token_total: None,
             summary_lines: None,
             file_hash: None,
-            estimated_llm_tokens: None,
-            token_model: None,
             compression_ratio: None,
         }
     }
@@ -136,28 +120,9 @@ impl FileInfo {
         self.syntax_errors.push(error);
     }
 
-    /// Set tokens
-    pub fn with_tokens(mut self, tokens: Option<Vec<String>>) -> Self {
-        self.tokens = tokens;
-        self
-    }
-
-    /// Store the total number of tokens identified
-    pub const fn with_token_total(mut self, total: Option<usize>) -> Self {
-        self.token_total = total;
-        self
-    }
-
     /// Set file hash
     pub fn with_file_hash(mut self, hash: Option<String>) -> Self {
         self.file_hash = hash;
-        self
-    }
-
-    /// Set estimated LLM token count and the model used for estimation
-    pub fn with_estimated_llm_tokens(mut self, tokens: Option<u64>, model: Option<String>) -> Self {
-        self.estimated_llm_tokens = tokens;
-        self.token_model = model;
         self
     }
 
@@ -204,29 +169,9 @@ impl FileInfo {
         }
     }
 
-    /// Check if any tokens were extracted
-    pub fn has_tokens(&self) -> bool {
-        self.tokens.as_ref().is_some_and(|t| !t.is_empty())
-    }
-
     /// Check if summary was generated
     pub fn has_summary(&self) -> bool {
         self.summary_lines.as_ref().is_some_and(|s| !s.is_empty())
-    }
-
-    /// Get the number of tokens (if any)
-    pub fn token_count(&self) -> usize {
-        self.token_total
-            .or_else(|| self.tokens.as_ref().map(Vec::len))
-            .unwrap_or(0)
-    }
-
-    /// Check if the displayed token list was truncated
-    pub fn tokens_truncated(&self) -> bool {
-        matches!(
-            (&self.token_total, &self.tokens),
-            (Some(total), Some(tokens)) if *total > tokens.len()
-        )
     }
 
     /// Get the number of summary lines (if any)
@@ -271,8 +216,6 @@ impl FileInfo {
             error_count: self.syntax_errors.len(),
             language: self.language.clone(),
             encoding: self.encoding.clone(),
-            token_count: self.token_count(),
-            tokens_truncated: self.tokens_truncated(),
             summary_line_count: self.summary_line_count(),
         }
     }
@@ -297,8 +240,6 @@ pub struct ProcessingStats {
     pub error_count: usize,
     pub language: Option<String>,
     pub encoding: String,
-    pub token_count: usize,
-    pub tokens_truncated: bool,
     pub summary_line_count: usize,
 }
 
@@ -321,8 +262,6 @@ mod tests {
         assert_eq!(info.language, None);
         assert_eq!(info.encoding, "UTF-8");
         assert_eq!(info.syntax_errors.len(), 0);
-        assert_eq!(info.tokens, None);
-        assert!(info.token_total.is_none());
         assert_eq!(info.summary_lines, None);
     }
 
@@ -341,7 +280,6 @@ mod tests {
     fn test_builder_pattern() {
         use crate::summary_item::SummaryItem;
         let lines = vec!["line1".to_string(), "line2".to_string()];
-        let tokens = vec!["token1".to_string(), "token2".to_string()];
         let summary = vec![SummaryItem::new("fn main()", 1, Some(3), "function")];
 
         let info = FileInfo::new()
@@ -349,14 +287,12 @@ mod tests {
             .with_truncation(true, true, false)
             .with_original_lines(Some(lines.clone()))
             .with_total_lines_exact(false)
-            .with_tokens(Some(tokens.clone()))
             .with_summary_lines(Some(summary));
 
         assert_eq!(info.lines, lines);
         assert!(info.truncated);
         assert!(info.truncated_by_lines);
         assert!(!info.truncated_by_bytes);
-        assert_eq!(info.tokens, Some(tokens));
         assert!(!info.total_lines_exact);
         assert_eq!(info.summary_lines.as_ref().map(Vec::len), Some(1));
     }
@@ -403,20 +339,13 @@ mod tests {
         info.add_syntax_error("test error".to_string());
         assert!(!info.is_success());
 
-        // Test token and summary checks
-        assert!(!info.has_tokens());
+        // Test summary checks
         assert!(!info.has_summary());
-        assert_eq!(info.token_count(), 0);
         assert_eq!(info.summary_line_count(), 0);
 
-        info.tokens = Some(vec!["token".to_string()]);
-        info.token_total = Some(5);
         info.summary_lines = Some(vec![SummaryItem::new("summary", 1, None, "other")]);
 
-        assert!(info.has_tokens());
-        assert!(info.tokens_truncated());
         assert!(info.has_summary());
-        assert_eq!(info.token_count(), 5);
         assert_eq!(info.summary_line_count(), 1);
     }
 
@@ -429,8 +358,6 @@ mod tests {
         info.truncated_by_lines = true;
         info.total_lines_exact = false;
         info.add_syntax_error("test error".to_string());
-        info.tokens = Some(vec!["token1".to_string(), "token2".to_string()]);
-        info.token_total = Some(5);
 
         let stats = info.get_stats_summary();
         assert_eq!(stats.total_lines, 100);
@@ -443,8 +370,6 @@ mod tests {
         assert_eq!(stats.error_count, 1);
         assert_eq!(stats.language, Some("rust".to_string()));
         assert_eq!(stats.encoding, "UTF-8");
-        assert_eq!(stats.token_count, 5);
-        assert!(stats.tokens_truncated);
         assert_eq!(stats.summary_line_count, 0);
     }
 }

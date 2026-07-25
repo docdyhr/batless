@@ -148,12 +148,6 @@ impl Formatter for IndexFormatter {
         if let Some(ref hash) = file_info.file_hash {
             output["file_hash"] = json!(hash);
         }
-        if let Some(tokens) = file_info.estimated_llm_tokens {
-            output["estimated_llm_tokens"] = json!(tokens);
-        }
-        if let Some(ref model) = file_info.token_model {
-            output["token_model"] = json!(model);
-        }
 
         Ok(serde_json::to_string_pretty(&output)?)
     }

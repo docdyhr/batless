@@ -9,7 +9,6 @@ use crate::error::{BatlessError, BatlessResult};
 use crate::file_info::FileInfo;
 use crate::language::LanguageDetector;
 use crate::summarizer::SummaryExtractor;
-use crate::tokens::TokenExtractor;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
@@ -95,19 +94,6 @@ impl FileProcessor {
                 .with_original_lines(Some(lines.to_vec()))
                 .with_summary_lines(Some(summary_lines));
             file_info.lines = summary_text;
-        }
-
-        // Extract identifiers if requested
-        if config.include_tokens {
-            let content = file_info.lines.join("\n");
-            let token_result = TokenExtractor::extract_tokens_with_limit(
-                &content,
-                "<content>",
-                TokenExtractor::MAX_SAMPLE_SIZE,
-            );
-            file_info = file_info
-                .with_tokens(Some(token_result.tokens))
-                .with_token_total(Some(token_result.total_count));
         }
 
         // Strip comments and/or blank lines if requested
@@ -636,19 +622,6 @@ mod tests {
         let result = FileProcessor::process_file(file.path().to_str().unwrap(), &config)?;
 
         assert!(result.has_summary());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_process_file_with_tokens() -> BatlessResult<()> {
-        let file = create_test_file("fn main() { println!(\"Hello\"); }");
-        let config = BatlessConfig::default().with_include_tokens(true);
-
-        let result = FileProcessor::process_file(file.path().to_str().unwrap(), &config)?;
-
-        assert!(result.has_tokens());
-        assert!(result.token_count() > 0);
 
         Ok(())
     }

@@ -53,22 +53,6 @@ impl Formatter for SummaryFormatter {
             }
         }
 
-        if let Some(ref tokens) = file_info.tokens {
-            output.push(String::new());
-            output.push("=== Tokens ===".to_string());
-            output.push(format!("Token Count: {}", tokens.len()));
-
-            if !tokens.is_empty() {
-                output.push("Sample Tokens:".to_string());
-                for token in tokens.iter().take(20) {
-                    output.push(format!("  {token}"));
-                }
-                if tokens.len() > 20 {
-                    output.push(format!("  ... and {} more", tokens.len() - 20));
-                }
-            }
-        }
-
         if !file_info.syntax_errors.is_empty() {
             output.push(String::new());
             output.push("=== Syntax Errors ===".to_string());

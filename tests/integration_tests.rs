@@ -108,8 +108,6 @@ fn test_json_mode() {
     assert!(json["total_lines"].is_number());
     assert!(json["total_lines_exact"].is_boolean());
     assert!(json["total_bytes"].is_number());
-    assert!(json["identifier_count"].is_number());
-    assert!(json["identifiers_truncated"].is_boolean());
 }
 
 #[test]
@@ -370,79 +368,6 @@ fn test_total_lines_exact_flag() {
 }
 
 #[test]
-fn test_token_sampling_reports_truncation() {
-    let repeated_tokens: Vec<String> = (0..3_000).map(|i| format!("token{i}")).collect();
-    let content = repeated_tokens.join(" ");
-    let file = create_test_file(&content, ".rs");
-
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=json",
-        "--include-tokens",
-    ]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-
-    let tokens = json["identifiers"].as_array().expect("tokens array");
-    let token_count = json["identifier_count"].as_u64().expect("token_count");
-
-    assert!(
-        usize::try_from(token_count).expect("token_count fits in usize") > tokens.len(),
-        "Reported count should exceed sampled tokens"
-    );
-    assert_eq!(json["identifiers_truncated"], true);
-}
-
-#[test]
-fn test_include_tokens() {
-    let content = "fn main() {\n    println!(\"Hello\");\n}\n";
-    let file = create_test_file(content, ".rs");
-
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=json",
-        "--include-tokens",
-    ]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-
-    assert!(json["identifiers"].is_array());
-    let tokens = json["identifiers"].as_array().unwrap();
-    assert!(!tokens.is_empty());
-}
-
-#[test]
-fn test_enhanced_json_output() {
-    let content = "def hello():\n    print('world')\n";
-    let file = create_test_file(content, ".py");
-
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=json",
-        "--include-tokens",
-    ]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-
-    // Check new fields
-    assert!(json["encoding"].is_string());
-    assert!(json["syntax_errors"].is_array());
-    assert!(json["truncated_by_lines"].is_boolean());
-    assert!(json["truncated_by_bytes"].is_boolean());
-    assert!(json["processed_lines"].is_number());
-    assert!(json["total_lines"].is_number());
-    assert!(json["identifiers"].is_array());
-    assert!(json["identifier_count"].is_number());
-    assert!(json["identifiers_truncated"].is_boolean());
-}
-
-#[test]
 fn test_summary_with_no_important_lines() {
     let content = "// Just comments\n// Nothing important\n// More comments\n";
     let file = create_test_file(content, ".rs");
@@ -452,88 +377,6 @@ fn test_summary_with_no_important_lines() {
     assert!(output.status.success());
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(stderr.contains("// No summary-worthy code structures found"));
-}
-
-#[test]
-fn test_ai_profile_claude() {
-    let test_file = create_test_file("fn main() {\n    println!(\"hello\");\n}\n", ".rs");
-    let output = run_batless(&["--profile", "claude", test_file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("=== File Summary ==="));
-    assert!(stdout.contains("Language: Rust"));
-}
-
-#[test]
-fn test_ai_profile_copilot() {
-    let test_file = create_test_file("fn main() {\n    println!(\"hello\");\n}\n", ".rs");
-    let output = run_batless(&["--profile", "copilot", test_file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    // Should be JSON output with tokens
-    assert!(
-        stdout.contains("\"language\": \"Rust\"") || stdout.contains("\"language\":\"Rust\""),
-        "Expected language Rust field in JSON output, got: {stdout}"
-    );
-    assert!(stdout.contains("\"identifiers\":"));
-}
-
-#[test]
-fn test_ai_profile_chatgpt() {
-    let test_file = create_test_file("def hello():\n    print('world')\n", ".py");
-    let output = run_batless(&["--profile", "chatgpt", test_file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    // Should be JSON output with tokens
-    assert!(
-        stdout.contains("\"language\": \"Python\"") || stdout.contains("\"language\":\"Python\""),
-        "Expected language Python field in JSON output, got: {stdout}"
-    );
-    assert!(stdout.contains("\"identifiers\":"));
-}
-
-#[test]
-fn test_ai_profile_assistant() {
-    let test_file = create_test_file("class Test {\n    public void run() {}\n}\n", ".java");
-    let output = run_batless(&["--profile", "assistant", test_file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    // Should be summary output
-    assert!(stdout.contains("=== File Summary ==="));
-}
-
-#[test]
-fn test_explicit_mode_overrides_profile() {
-    let test_file = create_test_file("fn main() {}\n", ".rs");
-    let output = run_batless(&[
-        "--profile",
-        "claude",
-        "--mode",
-        "json", // Explicit --mode wins over profile default
-        test_file.path().to_str().unwrap(),
-    ]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    // Explicit --mode=json should win over claude profile's summary default
-    assert!(stdout.starts_with('{'));
-    assert!(!stdout.contains("=== File Summary ==="));
-}
-
-#[test]
-fn test_profile_default_mode_used_without_explicit_mode() {
-    let test_file = create_test_file("fn main() {}\n", ".rs");
-    let output = run_batless(&["--profile", "claude", test_file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    // Without explicit --mode, claude profile's summary default applies
-    assert!(stdout.contains("=== File Summary ==="));
-    assert!(!stdout.starts_with('{'));
 }
 
 #[test]
@@ -725,28 +568,6 @@ fn test_configuration_validation_edge_cases() {
     assert!(!output.status.success());
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(stderr.contains("E302") || stderr.contains("Configuration error"));
-}
-
-#[test]
-fn test_memory_efficiency_string_handling() {
-    // Test that string operations are memory efficient
-    let content =
-        "use std::collections::HashMap;\n\nfn main() {\n    let map = HashMap::new();\n}\n";
-    let file = create_test_file(content, ".rs");
-
-    let output = run_batless(&[
-        file.path().to_str().unwrap(),
-        "--mode=json",
-        "--include-tokens",
-    ]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-
-    // Verify tokens are properly included without excessive memory usage
-    assert!(json["identifiers"].is_array());
-    assert!(!json["identifiers"].as_array().unwrap().is_empty());
 }
 
 #[test]

@@ -13,7 +13,6 @@ pub fn validate_config(config: &BatlessConfig) -> BatlessResult<()> {
     validate_language(config)?;
     validate_limits_combination(config)?;
     validate_schema_version(config)?;
-    validate_logical_combinations(config)?;
     Ok(())
 }
 
@@ -134,17 +133,6 @@ fn validate_schema_version(config: &BatlessConfig) -> BatlessResult<()> {
     Ok(())
 }
 
-fn validate_logical_combinations(config: &BatlessConfig) -> BatlessResult<()> {
-    if config.include_tokens && config.summary_mode {
-        return Err(BatlessError::config_error_with_help(
-            "include_tokens and summary_mode cannot both be enabled".to_string(),
-            Some("Choose either token extraction or summary mode, not both".to_string()),
-        ));
-    }
-
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -221,19 +209,6 @@ mod tests {
             .unwrap_err()
             .to_string()
             .contains("much larger than what max_bytes"));
-    }
-
-    #[test]
-    fn test_validation_conflicting_modes() {
-        let config = BatlessConfig::default()
-            .with_include_tokens(true)
-            .with_summary_mode(true);
-        let result = validate_config(&config);
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("cannot both be enabled"));
     }
 
     #[test]
