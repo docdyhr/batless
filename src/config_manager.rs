@@ -4,7 +4,6 @@
 use crate::config::BatlessConfig;
 use crate::error::{BatlessError, BatlessResult};
 use crate::formatter::OutputMode;
-use crate::summary::SummaryLevel;
 use clap::{CommandFactory, FromArgMatches, Parser, ValueEnum};
 use is_terminal::IsTerminal;
 use std::str::FromStr;
@@ -46,14 +45,6 @@ pub struct Args {
     /// List all supported languages
     #[arg(long)]
     pub list_languages: bool,
-
-    /// Summary mode: show only important code structures (deprecated, use --summary-level)
-    #[arg(long)]
-    pub summary: bool,
-
-    /// Summary level: control detail level of summary output
-    #[arg(long, value_enum)]
-    pub summary_level: Option<CliSummaryLevel>,
 
     /// Generate shell completions for the specified shell
     #[arg(long, value_enum)]
@@ -99,10 +90,6 @@ pub struct Args {
     #[arg(long)]
     pub with_line_numbers: bool,
 
-    /// Compute and include SHA-256 content hash in JSON output (for change detection)
-    #[arg(long)]
-    pub hash: bool,
-
     /// Strip comment-only lines from output
     #[arg(long)]
     pub strip_comments: bool,
@@ -116,7 +103,6 @@ pub struct Args {
 pub enum CliOutputMode {
     Plain,
     Json,
-    Summary,
     /// Machine-readable symbol index with line ranges
     Index,
 }
@@ -135,7 +121,6 @@ impl From<CliOutputMode> for OutputMode {
         match mode {
             CliOutputMode::Plain => Self::Plain,
             CliOutputMode::Json => Self::Json,
-            CliOutputMode::Summary => Self::Summary,
             CliOutputMode::Index => Self::Index,
         }
     }
@@ -148,11 +133,10 @@ impl FromStr for OutputMode {
         match s {
             "plain" => Ok(Self::Plain),
             "json" => Ok(Self::Json),
-            "summary" => Ok(Self::Summary),
             "index" => Ok(Self::Index),
             _ => Err(BatlessError::ConfigurationError {
                 message: format!("Invalid output mode: {s}"),
-                help: Some("Valid modes are: plain, json, summary, index".to_string()),
+                help: Some("Valid modes are: plain, json, index".to_string()),
             }),
         }
     }
@@ -163,29 +147,6 @@ pub enum ColorMode {
     Auto,
     Always,
     Never,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum CliSummaryLevel {
-    /// No summary, show full file
-    None,
-    /// Minimal summary with only critical structures
-    Minimal,
-    /// Standard summary with most important code
-    Standard,
-    /// Detailed summary with comprehensive information
-    Detailed,
-}
-
-impl From<CliSummaryLevel> for SummaryLevel {
-    fn from(level: CliSummaryLevel) -> Self {
-        match level {
-            CliSummaryLevel::None => Self::None,
-            CliSummaryLevel::Minimal => Self::Minimal,
-            CliSummaryLevel::Standard => Self::Standard,
-            CliSummaryLevel::Detailed => Self::Detailed,
-        }
-    }
 }
 
 /// Manages the application's configuration, merging settings from various
@@ -353,9 +314,6 @@ impl ConfigManager {
         if self.args.with_line_numbers {
             new_config = new_config.with_json_line_numbers(true);
         }
-        if self.args.hash {
-            new_config = new_config.with_hash(true);
-        }
         if self.args.strip_comments {
             new_config = new_config.with_strip_comments(true);
         }
@@ -364,11 +322,6 @@ impl ConfigManager {
         }
         if self.args.debug {
             new_config = new_config.with_debug(self.args.debug);
-        }
-        if let Some(summary_level) = self.args.summary_level {
-            new_config = new_config.with_summary_level(summary_level.into());
-        } else if self.args.summary || self.args.mode == Some(CliOutputMode::Summary) {
-            new_config = new_config.with_summary_mode(true);
         }
 
         self.config = new_config;
@@ -433,12 +386,6 @@ mod tests {
     }
 
     #[test]
-    fn test_summary_mode() {
-        let mgr = make_manager(&["--mode=summary", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Summary);
-    }
-
-    #[test]
     fn test_max_lines_applied() {
         let mgr = make_manager(&["--max-lines=42", "Cargo.toml"]);
         assert_eq!(mgr.config().max_lines, 42);
@@ -478,24 +425,6 @@ mod tests {
     fn test_debug_flag() {
         let mgr = make_manager(&["--debug", "Cargo.toml"]);
         assert!(mgr.config().debug);
-    }
-
-    #[test]
-    fn test_summary_flag_enables_summary() {
-        let mgr = make_manager(&["--summary", "Cargo.toml"]);
-        assert!(mgr.config().summary_level.is_enabled());
-    }
-
-    #[test]
-    fn test_summary_level_override() {
-        let mgr = make_manager(&["--summary-level=minimal", "Cargo.toml"]);
-        assert_eq!(mgr.config().summary_level, SummaryLevel::Minimal);
-    }
-
-    #[test]
-    fn test_summary_level_detailed() {
-        let mgr = make_manager(&["--summary-level=detailed", "Cargo.toml"]);
-        assert_eq!(mgr.config().summary_level, SummaryLevel::Detailed);
     }
 
     #[test]
@@ -541,12 +470,9 @@ mod tests {
     fn test_output_mode_from_str() {
         assert_eq!(OutputMode::from_str("plain").unwrap(), OutputMode::Plain);
         assert_eq!(OutputMode::from_str("json").unwrap(), OutputMode::Json);
-        assert_eq!(
-            OutputMode::from_str("summary").unwrap(),
-            OutputMode::Summary
-        );
         assert_eq!(OutputMode::from_str("index").unwrap(), OutputMode::Index);
         assert!(OutputMode::from_str("highlight").is_err());
+        assert!(OutputMode::from_str("summary").is_err());
         assert!(OutputMode::from_str("invalid").is_err());
     }
 
@@ -554,31 +480,7 @@ mod tests {
     fn test_cli_output_mode_conversion() {
         assert_eq!(OutputMode::from(CliOutputMode::Plain), OutputMode::Plain);
         assert_eq!(OutputMode::from(CliOutputMode::Json), OutputMode::Json);
-        assert_eq!(
-            OutputMode::from(CliOutputMode::Summary),
-            OutputMode::Summary
-        );
         assert_eq!(OutputMode::from(CliOutputMode::Index), OutputMode::Index);
-    }
-
-    #[test]
-    fn test_cli_summary_level_conversion() {
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::None),
-            SummaryLevel::None
-        );
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::Minimal),
-            SummaryLevel::Minimal
-        );
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::Standard),
-            SummaryLevel::Standard
-        );
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::Detailed),
-            SummaryLevel::Detailed
-        );
     }
 
     #[test]

@@ -8,8 +8,6 @@ use crate::config::BatlessConfig;
 use crate::error::{BatlessError, BatlessResult};
 use crate::file_info::FileInfo;
 use crate::language::LanguageDetector;
-use crate::summarizer::SummaryExtractor;
-use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
@@ -62,40 +60,15 @@ impl FileProcessor {
             metadata.truncated_by_bytes,
         );
 
-        file_info = Self::apply_post_processing(file_info, &lines, config);
-
-        // Compute file hash if requested (file-only; stdin has no path to hash)
-        if config.hash {
-            let hash = Self::compute_file_hash(file_path)?;
-            file_info = file_info.with_file_hash(Some(hash));
-        }
+        file_info = Self::apply_post_processing(file_info, config);
 
         Ok(file_info)
     }
 
-    /// Apply summary extraction, token extraction, and content stripping to a
-    /// FileInfo that has already been constructed from raw lines.  Shared by
-    /// both `process_file` and `process_stdin`.
-    fn apply_post_processing(
-        mut file_info: FileInfo,
-        lines: &[String],
-        config: &BatlessConfig,
-    ) -> FileInfo {
-        // Process summary if requested
-        let summary_level = config.effective_summary_level();
-        if summary_level.is_enabled() {
-            let summary_lines = SummaryExtractor::extract_summary(
-                lines,
-                file_info.language.as_deref(),
-                summary_level,
-            );
-            let summary_text: Vec<String> = summary_lines.iter().map(|s| s.line.clone()).collect();
-            file_info = file_info
-                .with_original_lines(Some(lines.to_vec()))
-                .with_summary_lines(Some(summary_lines));
-            file_info.lines = summary_text;
-        }
-
+    /// Apply content stripping to a FileInfo that has already been
+    /// constructed from raw lines. Shared by both `process_file` and
+    /// `process_stdin`.
+    fn apply_post_processing(mut file_info: FileInfo, config: &BatlessConfig) -> FileInfo {
         // Strip comments and/or blank lines if requested
         if config.strip_comments || config.strip_blank_lines {
             let original_count = file_info.lines.len();
@@ -116,31 +89,6 @@ impl FileProcessor {
         }
 
         file_info
-    }
-
-    /// Compute SHA-256 hex digest for a file's content
-    fn compute_file_hash(file_path: &str) -> BatlessResult<String> {
-        use std::fmt::Write as FmtWrite;
-        let mut hasher = Sha256::new();
-        let mut file =
-            File::open(file_path).map_err(|e| BatlessError::from_io_error(e, file_path))?;
-        let mut buf = vec![0u8; 65536];
-        loop {
-            let n = file
-                .read(&mut buf)
-                .map_err(|e| BatlessError::from_io_error(e, file_path))?;
-            if n == 0 {
-                break;
-            }
-            hasher.update(&buf[..n]);
-        }
-        Ok(hasher
-            .finalize()
-            .iter()
-            .fold(String::with_capacity(64), |mut s, b| {
-                let _ = write!(s, "{b:02x}");
-                s
-            }))
     }
 
     /// Strip comment-only and/or blank lines from a line buffer.
@@ -296,7 +244,7 @@ impl FileProcessor {
             truncated_by_bytes,
         );
 
-        Ok(Self::apply_post_processing(file_info, &final_lines, config))
+        Ok(Self::apply_post_processing(file_info, config))
     }
 
     /// Detect file encoding
@@ -612,17 +560,5 @@ mod tests {
         let mut binary_file = NamedTempFile::new().unwrap();
         binary_file.write_all(&[0, 1, 2, 3, 0, 0, 0]).unwrap();
         assert!(FileProcessor::is_likely_binary(binary_file.path().to_str().unwrap()).unwrap());
-    }
-
-    #[test]
-    fn test_process_file_with_summary_mode() -> BatlessResult<()> {
-        let file = create_test_file("fn main() {\n    println!(\"Hello\");\n}");
-        let config = BatlessConfig::default().with_summary_mode(true);
-
-        let result = FileProcessor::process_file(file.path().to_str().unwrap(), &config)?;
-
-        assert!(result.has_summary());
-
-        Ok(())
     }
 }

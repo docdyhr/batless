@@ -7,7 +7,6 @@ pub mod error_formatter;
 pub mod index_formatter;
 pub mod json_formatter;
 pub mod plain_formatter;
-pub mod summary_formatter;
 
 use crate::config::BatlessConfig;
 use crate::error::BatlessResult;

@@ -32,57 +32,6 @@ fn benchmark_process_file(c: &mut Criterion) {
     group.finish();
 }
 
-fn benchmark_summary_mode(c: &mut Criterion) {
-    let rust_code = r#"
-use std::io;
-
-pub struct Config {
-    pub debug: bool,
-    pub timeout: u64,
-}
-
-impl Config {
-    pub fn new() -> Self {
-        Self { debug: false, timeout: 30 }
-    }
-}
-
-pub fn process_data(data: &str) -> Result<String, io::Error> {
-    // Process the data
-    Ok(data.to_uppercase())
-}
-
-fn main() {
-    let config = Config::new();
-    match process_data("hello") {
-        Ok(result) => println!("{}", result),
-        Err(e) => eprintln!("Error: {}", e),
-    }
-}
-"#
-    .repeat(10); // Repeat to make it larger
-
-    let file = create_test_file(&rust_code);
-
-    let summary_config = BatlessConfig {
-        summary_mode: true,
-        ..Default::default()
-    };
-
-    let regular_config = BatlessConfig {
-        summary_mode: false,
-        ..Default::default()
-    };
-
-    c.bench_function("summary_mode_enabled", |b| {
-        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &summary_config).unwrap()));
-    });
-
-    c.bench_function("summary_mode_disabled", |b| {
-        b.iter(|| black_box(process_file(file.path().to_str().unwrap(), &regular_config).unwrap()));
-    });
-}
-
 fn benchmark_max_lines_limits(c: &mut Criterion) {
     let large_content = "Line of text\n".repeat(10000);
     let file = create_test_file(&large_content);
@@ -142,10 +91,6 @@ fn benchmark_config_operations(c: &mut Criterion) {
                 .with_max_lines(5000)
                 .with_max_bytes(Some(1_000_000)),
         ),
-        (
-            "with_summary",
-            BatlessConfig::default().with_summary_mode(true),
-        ),
     ];
 
     for (name, config) in configs {
@@ -163,7 +108,6 @@ fn benchmark_config_operations(c: &mut Criterion) {
 criterion_group!(
     benches,
     benchmark_process_file,
-    benchmark_summary_mode,
     benchmark_max_lines_limits,
     benchmark_startup_operations,
     benchmark_config_operations

@@ -230,11 +230,6 @@ fn handle_normal_processing(file_path: &str, manager: &ConfigManager) -> Batless
         );
     }
 
-    if output_mode == OutputMode::Summary && final_file_info.summary_line_count() == 0 {
-        eprintln!("// No summary-worthy code structures found");
-        return Ok(());
-    }
-
     let formatted_output =
         batless::format_output(&final_file_info, file_path, config, output_mode)?;
 

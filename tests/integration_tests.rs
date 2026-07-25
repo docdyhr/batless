@@ -294,61 +294,6 @@ fn test_list_languages() {
 }
 
 #[test]
-fn test_summary_mode() {
-    let content = "import os\nimport sys\n\ndef main():\n    print('hello')\n    x = 1\n    y = 2\n\nclass Test:\n    def method(self):\n        pass\n";
-    let file = create_test_file(content, ".py");
-
-    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=summary"]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("import os"));
-    assert!(stdout.contains("def main():"));
-    assert!(stdout.contains("class Test:"));
-    assert!(!stdout.contains("x = 1")); // Should not include non-summary lines
-}
-
-#[test]
-fn test_summary_flag() {
-    let content = "fn main() {\n    println!(\"hello\");\n    let x = 1;\n}\n\nstruct Test {\n    name: String,\n}\n";
-    let file = create_test_file(content, ".rs");
-
-    let output = run_batless(&[file.path().to_str().unwrap(), "--summary", "--mode=plain"]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("fn main()"));
-    assert!(stdout.contains("struct Test"));
-    assert!(!stdout.contains("let x = 1")); // Should not include non-summary lines
-}
-
-#[test]
-fn test_json_summary_retains_full_content() {
-    let content =
-        "import os\n\nclass Example:\n    def method(self):\n        pass\n\nSECRET = 42\n";
-    let file = create_test_file(content, ".py");
-
-    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=json", "--summary"]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
-
-    let lines = json["lines"].as_array().expect("lines array");
-    assert!(
-        lines
-            .iter()
-            .any(|line| line.as_str() == Some("SECRET = 42")),
-        "Original content should remain intact"
-    );
-    let summary_lines = json["summary_lines"].as_array().expect("summary lines");
-    assert!(
-        summary_lines.len() <= lines.len(),
-        "Summary should not exceed full content"
-    );
-}
-
-#[test]
 fn test_total_lines_exact_flag() {
     let content = "line1\nline2\nline3\nline4\nline5\n";
     let file = create_test_file(content, ".txt");
@@ -365,18 +310,6 @@ fn test_total_lines_exact_flag() {
 
     assert_eq!(json["truncated_by_lines"], true);
     assert_eq!(json["total_lines_exact"], false);
-}
-
-#[test]
-fn test_summary_with_no_important_lines() {
-    let content = "// Just comments\n// Nothing important\n// More comments\n";
-    let file = create_test_file(content, ".rs");
-
-    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=summary"]);
-
-    assert!(output.status.success());
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    assert!(stderr.contains("// No summary-worthy code structures found"));
 }
 
 #[test]
@@ -491,25 +424,6 @@ fn test_invalid_language_error() {
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(stderr.contains("Language 'invalid-language' not found"));
     assert!(stderr.contains("E203"));
-}
-
-#[test]
-fn test_summary_mode_different_languages() {
-    // Test JavaScript
-    let js_content = "import React from 'react';\n\nfunction Component() {\n    console.log('test');\n    return <div>Hello</div>;\n}\n\nexport default Component;\n";
-    let js_file = create_test_file(js_content, ".js");
-
-    let output = run_batless(&[
-        js_file.path().to_str().unwrap(),
-        "--mode=summary",
-        "--language=javascript",
-    ]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    assert!(stdout.contains("import React"));
-    assert!(stdout.contains("function Component"));
-    assert!(stdout.contains("export default"));
 }
 
 // Enhanced integration tests for technical debt resolution
@@ -805,30 +719,5 @@ fn test_mode_index_has_file_metadata() {
         json["mode"].as_str(),
         Some("index"),
         "mode field should equal index"
-    );
-}
-
-#[test]
-fn test_mode_index_with_hash() {
-    let content = "pub fn answer() -> i32 { 42 }\n";
-    let file = create_test_file(content, ".rs");
-
-    let output = run_batless(&[file.path().to_str().unwrap(), "--mode=index", "--hash"]);
-
-    assert!(
-        output.status.success(),
-        "batless --mode=index --hash should succeed"
-    );
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value =
-        serde_json::from_str(&stdout).expect("--mode=index --hash output should be valid JSON");
-
-    assert!(
-        json.get("file_hash").is_some(),
-        "JSON output should contain file_hash field when --hash is passed"
-    );
-    assert!(
-        !json["file_hash"].is_null(),
-        "file_hash should not be null when --hash is passed"
     );
 }

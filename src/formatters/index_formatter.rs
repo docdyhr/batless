@@ -135,7 +135,7 @@ impl Formatter for IndexFormatter {
             .map(|item| Self::symbol_to_json(item, language))
             .collect();
 
-        let mut output = json!({
+        let output = json!({
             "file": file_path,
             "language": language,
             "total_lines": file_info.total_lines,
@@ -144,10 +144,6 @@ impl Formatter for IndexFormatter {
             "symbols": symbols,
             "mode": "index",
         });
-
-        if let Some(ref hash) = file_info.file_hash {
-            output["file_hash"] = json!(hash);
-        }
 
         Ok(serde_json::to_string_pretty(&output)?)
     }

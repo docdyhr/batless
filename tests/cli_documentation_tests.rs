@@ -58,14 +58,6 @@ fn test_json_mode() {
 }
 
 #[test]
-fn test_summary_mode() {
-    let file = create_test_file("fn main() {}\nstruct User {}\n", ".rs");
-    let output = run_batless(&["--mode=summary", file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-}
-
-#[test]
 fn test_max_lines_limit() {
     let file = create_test_file("line1\nline2\nline3\nline4\nline5\n", ".txt");
     let output = run_batless(&["--max-lines=3", file.path().to_str().unwrap()]);
@@ -96,18 +88,6 @@ fn test_combined_limits() {
     ]);
 
     assert!(output.status.success());
-}
-
-#[test]
-fn test_json_with_summary() {
-    let file = create_test_file("fn main() {}\n", ".rs");
-    let output = run_batless(&["--mode=json", "--summary", file.path().to_str().unwrap()]);
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8(output.stdout).unwrap();
-    let json: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
-
-    assert!(json["summary_lines"].is_array());
 }
 
 #[test]

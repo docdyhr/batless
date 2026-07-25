@@ -16,19 +16,15 @@ impl Formatter for JsonFormatter {
         file_path: &str,
         config: &BatlessConfig,
     ) -> BatlessResult<String> {
-        let line_source = file_info
-            .original_lines
-            .as_ref()
-            .unwrap_or(&file_info.lines);
-
         let lines_value: serde_json::Value = if config.json_line_numbers {
-            line_source
+            file_info
+                .lines
                 .iter()
                 .enumerate()
                 .map(|(i, text)| json!({"n": i + 1, "text": text}))
                 .collect()
         } else {
-            json!(line_source)
+            json!(file_info.lines)
         };
 
         let mut json_data = json!({
@@ -48,12 +44,6 @@ impl Formatter for JsonFormatter {
             "mode": "json"
         });
 
-        if let Some(ref summary_lines) = file_info.summary_lines {
-            json_data["summary_lines"] = json!(summary_lines);
-        }
-        if let Some(ref hash) = file_info.file_hash {
-            json_data["file_hash"] = json!(hash);
-        }
         if let Some(ratio) = file_info.compression_ratio {
             json_data["compression_ratio"] = json!(ratio);
         }

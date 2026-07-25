@@ -5,7 +5,6 @@
 
 use crate::config_validation::validate_config;
 use crate::error::{BatlessError, BatlessResult};
-use crate::summary::SummaryLevel;
 use serde::{Deserialize, Serialize};
 
 use std::fs;
@@ -29,12 +28,6 @@ pub struct BatlessConfig {
     /// Whether to use color output
     #[serde(default = "default_use_color")]
     pub use_color: bool,
-    /// Summary extraction level
-    #[serde(default)]
-    pub summary_level: SummaryLevel,
-    /// Whether to enable summary mode (deprecated, use summary_level)
-    #[serde(default)]
-    pub summary_mode: bool,
     /// Schema version for JSON output compatibility
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -53,9 +46,6 @@ pub struct BatlessConfig {
     /// Include 1-based line numbers in JSON output lines array
     #[serde(default)]
     pub json_line_numbers: bool,
-    /// Compute and include SHA-256 file hash in JSON output
-    #[serde(default)]
-    pub hash: bool,
     /// Strip comment-only lines from output
     #[serde(default)]
     pub strip_comments: bool,
@@ -84,15 +74,12 @@ impl Default for BatlessConfig {
             language: None,
             strip_ansi: false,
             use_color: true,
-            summary_level: SummaryLevel::None,
-            summary_mode: false,
             schema_version: default_schema_version(),
             debug: false,
             show_line_numbers: false,
             show_line_numbers_nonblank: false,
             pretty_json: false,
             json_line_numbers: false,
-            hash: false,
             strip_comments: false,
             strip_blank_lines: false,
         }
@@ -135,26 +122,6 @@ impl BatlessConfig {
         self
     }
 
-    /// Set summary mode
-    pub const fn with_summary_mode(mut self, summary_mode: bool) -> Self {
-        self.summary_mode = summary_mode;
-        // For backward compatibility, map boolean to SummaryLevel
-        if summary_mode {
-            self.summary_level = SummaryLevel::Standard;
-        } else {
-            self.summary_level = SummaryLevel::None;
-        }
-        self
-    }
-
-    /// Set summary level
-    pub const fn with_summary_level(mut self, summary_level: SummaryLevel) -> Self {
-        // Update deprecated summary_mode for backward compatibility
-        self.summary_mode = summary_level.is_enabled();
-        self.summary_level = summary_level;
-        self
-    }
-
     /// Set schema version
     pub fn with_schema_version(mut self, version: String) -> Self {
         self.schema_version = version;
@@ -194,12 +161,6 @@ impl BatlessConfig {
         self
     }
 
-    /// Compute and include SHA-256 file hash in JSON output
-    pub const fn with_hash(mut self, enabled: bool) -> Self {
-        self.hash = enabled;
-        self
-    }
-
     /// Strip comment-only lines from output
     pub const fn with_strip_comments(mut self, enabled: bool) -> Self {
         self.strip_comments = enabled;
@@ -210,18 +171,6 @@ impl BatlessConfig {
     pub const fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
         self.strip_blank_lines = enabled;
         self
-    }
-
-    /// Get effective summary level (considering both new and deprecated fields)
-    pub fn effective_summary_level(&self) -> SummaryLevel {
-        // Priority: summary_level takes precedence over deprecated summary_mode
-        if self.summary_level != SummaryLevel::None {
-            self.summary_level
-        } else if self.summary_mode {
-            SummaryLevel::Standard
-        } else {
-            SummaryLevel::None
-        }
     }
 
     /// Validate the configuration
@@ -391,12 +340,6 @@ impl BatlessConfig {
         if other.use_color != default.use_color {
             self.use_color = other.use_color;
         }
-        if other.summary_mode != default.summary_mode {
-            self.summary_mode = other.summary_mode;
-        }
-        if other.summary_level != default.summary_level {
-            self.summary_level = other.summary_level;
-        }
         if other.schema_version != default.schema_version {
             self.schema_version = other.schema_version;
         }
@@ -415,9 +358,6 @@ impl BatlessConfig {
         if other.json_line_numbers != default.json_line_numbers {
             self.json_line_numbers = other.json_line_numbers;
         }
-        if other.hash != default.hash {
-            self.hash = other.hash;
-        }
         if other.strip_comments != default.strip_comments {
             self.strip_comments = other.strip_comments;
         }
@@ -432,8 +372,6 @@ impl BatlessConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::summary::SummaryLevel;
-
     #[test]
     fn test_default_config() {
         let config = BatlessConfig::default();
@@ -442,7 +380,6 @@ mod tests {
         assert_eq!(config.language, None);
         assert!(!config.strip_ansi);
         assert!(config.use_color);
-        assert!(!config.summary_mode);
     }
 
     #[test]
@@ -452,15 +389,13 @@ mod tests {
             .with_max_bytes(Some(1024))
             .with_language(Some("rust".to_string()))
             .with_strip_ansi(true)
-            .with_use_color(false)
-            .with_summary_mode(true);
+            .with_use_color(false);
 
         assert_eq!(config.max_lines, 5000);
         assert_eq!(config.max_bytes, Some(1024));
         assert_eq!(config.language, Some("rust".to_string()));
         assert!(config.strip_ansi);
         assert!(!config.use_color);
-        assert!(config.summary_mode);
     }
 
     #[test]
@@ -519,7 +454,6 @@ mod tests {
         let base = BatlessConfig::default();
         let override_config = BatlessConfig::default()
             .with_max_lines(2000)
-            .with_summary_level(SummaryLevel::Detailed)
             .with_schema_version("9.9".to_string())
             .with_debug(true)
             .with_show_line_numbers(true)
@@ -528,7 +462,6 @@ mod tests {
 
         let merged = base.merge_with(override_config);
         assert_eq!(merged.max_lines, 2000);
-        assert_eq!(merged.summary_level, SummaryLevel::Detailed);
         assert_eq!(merged.schema_version, "9.9");
         assert!(merged.debug);
         assert!(merged.show_line_numbers);
@@ -559,7 +492,6 @@ mod tests {
         let toml_content = r"
 max_lines = 15000
 use_color = false
-summary_mode = true
 ";
 
         let mut temp_file = NamedTempFile::new().unwrap();
@@ -568,7 +500,6 @@ summary_mode = true
         let config = BatlessConfig::from_file(temp_file.path()).unwrap();
         assert_eq!(config.max_lines, 15000);
         assert!(!config.use_color);
-        assert!(config.summary_mode);
     }
 
     #[test]

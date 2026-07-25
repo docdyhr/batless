@@ -3,7 +3,6 @@
 //! This module defines the FileInfo structure that holds all information
 //! about a processed file, including content, metadata, and processing results.
 
-use crate::summary_item::SummaryItem;
 use serde::{Deserialize, Serialize};
 
 /// Information about a processed file
@@ -11,8 +10,6 @@ use serde::{Deserialize, Serialize};
 pub struct FileInfo {
     /// The processed lines of the file
     pub lines: Vec<String>,
-    /// Original lines before any summary transformations
-    pub original_lines: Option<Vec<String>>,
     /// Total number of lines in the original file
     pub total_lines: usize,
     /// Whether total_lines reflects the entire file
@@ -33,10 +30,6 @@ pub struct FileInfo {
     pub encoding: String,
     /// Syntax errors encountered during processing
     pub syntax_errors: Vec<String>,
-    /// Summary items with line numbers (if in summary mode)
-    pub summary_lines: Option<Vec<SummaryItem>>,
-    /// SHA-256 hex digest of file content (only populated when --hash is passed)
-    pub file_hash: Option<String>,
     /// Ratio of original line count to stripped line count (set when strip_comments or strip_blank_lines is active)
     pub compression_ratio: Option<f64>,
 }
@@ -46,7 +39,6 @@ impl FileInfo {
     pub fn new() -> Self {
         Self {
             lines: Vec::new(),
-            original_lines: None,
             total_lines: 0,
             total_lines_exact: true,
             total_bytes: 0,
@@ -57,8 +49,6 @@ impl FileInfo {
             language: None,
             encoding: "UTF-8".to_string(),
             syntax_errors: Vec::new(),
-            summary_lines: None,
-            file_hash: None,
             compression_ratio: None,
         }
     }
@@ -72,7 +62,6 @@ impl FileInfo {
     ) -> Self {
         Self {
             lines: Vec::new(),
-            original_lines: None,
             total_lines,
             total_lines_exact: true,
             total_bytes,
@@ -83,8 +72,6 @@ impl FileInfo {
             language,
             encoding,
             syntax_errors: Vec::new(),
-            summary_lines: None,
-            file_hash: None,
             compression_ratio: None,
         }
     }
@@ -120,27 +107,9 @@ impl FileInfo {
         self.syntax_errors.push(error);
     }
 
-    /// Set file hash
-    pub fn with_file_hash(mut self, hash: Option<String>) -> Self {
-        self.file_hash = hash;
-        self
-    }
-
     /// Set compression ratio (original lines / stripped lines)
     pub const fn with_compression_ratio(mut self, ratio: Option<f64>) -> Self {
         self.compression_ratio = ratio;
-        self
-    }
-
-    /// Set summary items
-    pub fn with_summary_lines(mut self, summary_lines: Option<Vec<SummaryItem>>) -> Self {
-        self.summary_lines = summary_lines;
-        self
-    }
-
-    /// Preserve original lines before summary transformations
-    pub fn with_original_lines(mut self, original: Option<Vec<String>>) -> Self {
-        self.original_lines = original;
         self
     }
 
@@ -167,16 +136,6 @@ impl FileInfo {
         } else {
             self.processed_lines() as f64 / self.total_lines as f64
         }
-    }
-
-    /// Check if summary was generated
-    pub fn has_summary(&self) -> bool {
-        self.summary_lines.as_ref().is_some_and(|s| !s.is_empty())
-    }
-
-    /// Get the number of summary lines (if any)
-    pub fn summary_line_count(&self) -> usize {
-        self.summary_lines.as_ref().map_or(0, Vec::len)
     }
 
     /// Get truncation reason as a human-readable string
@@ -216,7 +175,6 @@ impl FileInfo {
             error_count: self.syntax_errors.len(),
             language: self.language.clone(),
             encoding: self.encoding.clone(),
-            summary_line_count: self.summary_line_count(),
         }
     }
 }
@@ -240,7 +198,6 @@ pub struct ProcessingStats {
     pub error_count: usize,
     pub language: Option<String>,
     pub encoding: String,
-    pub summary_line_count: usize,
 }
 
 #[cfg(test)]
@@ -251,7 +208,6 @@ mod tests {
     fn test_new_file_info() {
         let info = FileInfo::new();
         assert_eq!(info.lines.len(), 0);
-        assert!(info.original_lines.is_none());
         assert_eq!(info.total_lines, 0);
         assert!(info.total_lines_exact);
         assert_eq!(info.total_bytes, 0);
@@ -262,7 +218,6 @@ mod tests {
         assert_eq!(info.language, None);
         assert_eq!(info.encoding, "UTF-8");
         assert_eq!(info.syntax_errors.len(), 0);
-        assert_eq!(info.summary_lines, None);
     }
 
     #[test]
@@ -278,23 +233,18 @@ mod tests {
 
     #[test]
     fn test_builder_pattern() {
-        use crate::summary_item::SummaryItem;
         let lines = vec!["line1".to_string(), "line2".to_string()];
-        let summary = vec![SummaryItem::new("fn main()", 1, Some(3), "function")];
 
         let info = FileInfo::new()
             .with_lines(lines.clone())
             .with_truncation(true, true, false)
-            .with_original_lines(Some(lines.clone()))
-            .with_total_lines_exact(false)
-            .with_summary_lines(Some(summary));
+            .with_total_lines_exact(false);
 
         assert_eq!(info.lines, lines);
         assert!(info.truncated);
         assert!(info.truncated_by_lines);
         assert!(!info.truncated_by_bytes);
         assert!(!info.total_lines_exact);
-        assert_eq!(info.summary_lines.as_ref().map(Vec::len), Some(1));
     }
 
     #[test]
@@ -338,15 +288,6 @@ mod tests {
         assert!(info.is_success());
         info.add_syntax_error("test error".to_string());
         assert!(!info.is_success());
-
-        // Test summary checks
-        assert!(!info.has_summary());
-        assert_eq!(info.summary_line_count(), 0);
-
-        info.summary_lines = Some(vec![SummaryItem::new("summary", 1, None, "other")]);
-
-        assert!(info.has_summary());
-        assert_eq!(info.summary_line_count(), 1);
     }
 
     #[test]
@@ -370,6 +311,5 @@ mod tests {
         assert_eq!(stats.error_count, 1);
         assert_eq!(stats.language, Some("rust".to_string()));
         assert_eq!(stats.encoding, "UTF-8");
-        assert_eq!(stats.summary_line_count, 0);
     }
 }
