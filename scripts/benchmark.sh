@@ -68,8 +68,9 @@ BINARY=./target/release/batless
 echo "## Performance Benchmark Results"  > benchmark_results.md
 echo ""                                  >> benchmark_results.md
 
-for mode in plain json summary index; do
-  echo "### ${mode^} Mode" >> benchmark_results.md
+for mode in plain json index; do
+  mode_label="$(printf '%s' "${mode:0:1}" | tr '[:lower:]' '[:upper:]')${mode:1}"
+  echo "### ${mode_label} Mode" >> benchmark_results.md
   hyperfine --warmup 3 --runs 10 \
     "${BINARY} benchmark_files/medium.rs --mode=${mode}" \
     --export-markdown "${mode}_bench.md"

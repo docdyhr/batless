@@ -224,7 +224,6 @@ batless NEVER provides interactive paging (no less/more behavior), user prompts 
       "kind": "function",
       "name": "main",
       "line_start": 10,
-      "line_end": 25,
       "signature": "fn main() {",
       "visibility": "public"
     }
@@ -234,7 +233,7 @@ batless NEVER provides interactive paging (no less/more behavior), user prompts 
 
 **Symbol field notes:**
 - `kind`, `name`, `line_start`, `signature` are always present
-- `line_end` is present only when the extractor could determine the enclosing block's end line
+- `line_end` exists in the schema but the current regex/heuristic extractor never populates it — it is always absent today, not just "when detectable". Don't rely on it to locate a symbol's closing boundary; use `line_start` plus your own bracket/indent matching if you need the full body
 - `visibility` is present only for Rust (`pub` / `pub(crate)` / `pub(super)` / `private`) and JavaScript/TypeScript (`export` / `local`); it is omitted entirely for other languages
 
 ### Directory Input (NDJSON)

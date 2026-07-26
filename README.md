@@ -402,7 +402,7 @@ When using `--mode=index`, the output includes:
 | `symbols[].kind` | string | `function`, `struct`, `class`, `impl`, `trait`, `import`, etc. |
 | `symbols[].name` | string | Symbol identifier name |
 | `symbols[].line_start` | integer | 1-based start line |
-| `symbols[].line_end` | integer\|null | 1-based end line (when detectable) |
+| `symbols[].line_end` | integer (key omitted if unset) | 1-based end line; the field exists in the schema but the current regex/heuristic extractor never populates it, so the key is always omitted from the JSON object today, not present as `null` |
 | `symbols[].signature` | string | Declaration line, trimmed |
 | `symbols[].visibility` | string\|null | `pub`, `private`, `export`, `local`, depending on language |
 | `total_lines` | integer | Line count |
