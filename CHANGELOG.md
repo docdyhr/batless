@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-26
+
 ### Breaking Changes
 
 - **Removed AST mode** (`--mode=ast`): dropped the entire tree-sitter dependency (`tree-sitter` core plus the `tree-sitter-rust`, `tree-sitter-python`, `tree-sitter-javascript`, and `tree-sitter-typescript` grammar crates)
@@ -19,6 +21,13 @@ All notable changes to this project will be documented in this file.
 
 - **Why**: usage telemetry across ~475 real invocations over 3.5 months showed `--mode=plain` at 84.4% and `--mode=index` at 10.5% (kept — real usage), while every AI/automation-oriented feature (profiles, AST mode, hashing, summary, streaming, schema validation) sat at ~0-1.5% or was never invoked at all
 - batless is now positioned as a fast, honest, non-blocking `cat`/`bat` alternative rather than an "AI-native structured output tool" — see `docs/PHILOSOPHY_AND_SCOPE.md`
+
+### Fixed
+
+- **`--mode=index` no longer silently truncates past 100 symbols**: the regex/heuristic extractor now returns every matching declaration at the `Detailed` level (the level `--mode=index` always uses), instead of capping at 100 and reporting the truncated count as `symbol_count` with no indication anything was missing. `Minimal`/`Standard` levels keep their caps for library callers wanting a short summary.
+- **Scheduled performance-benchmark workflow**: `scripts/benchmark.sh` no longer references the removed `--mode=summary`, which had made the scheduled/manual benchmark run abort immediately.
+- **`scripts/benchmark.sh` bash portability**: replaced a bash-4-only `${var^}` capitalization with a portable substring+`tr` form that also works under macOS's default `/bin/bash` (3.2).
+- **Docs accuracy**: `line_end` in `--mode=index` output is documented as omitted (not emitted as JSON `null`) when the extractor can't determine it — which is always, today; `demo.sh` no longer claims streaming behavior that was removed.
 
 ### 🏗️ Architecture
 
