@@ -23,8 +23,6 @@
 #![allow(clippy::unused_self)] // Some methods need self for trait consistency
 #![allow(clippy::match_same_arms)] // Sometimes clearer to have explicit arms
 
-pub mod ast_summarizer;
-pub mod chunker;
 pub mod config;
 pub mod config_manager;
 pub mod config_validation;
@@ -32,32 +30,21 @@ pub mod error;
 pub mod file_info;
 pub mod formatter;
 pub mod formatters;
-pub mod json_schema;
 pub mod language;
 pub mod processor;
-pub mod profile;
-pub mod streaming;
 pub mod summarizer;
 pub mod summary;
 pub mod summary_item;
-pub mod tokens;
 pub mod traits;
-
-// Re-export for fuzzing and external use
-pub use tokens::TokenExtractor;
 
 // Re-export commonly used types
 pub use config::BatlessConfig;
 pub use error::{BatlessError, BatlessResult};
 pub use file_info::FileInfo;
 pub use formatter::{OutputFormatter, OutputMode};
-pub use json_schema::{get_json_schema, validate_batless_output, JsonSchemaValidator};
 pub use language::LanguageDetector;
 pub use processor::FileProcessor;
-pub use profile::CustomProfile;
-pub use streaming::{StreamingCheckpoint, StreamingChunk, StreamingProcessor};
 pub use summary::SummaryLevel;
-pub use tokens::{AiModel, TokenCount, TokenCounter};
 
 /// Main entry point for processing a file with batless
 pub fn process_file(file_path: &str, config: &BatlessConfig) -> BatlessResult<FileInfo> {
@@ -167,32 +154,6 @@ mod tests {
     }
 
     #[test]
-    fn test_summary_mode() -> BatlessResult<()> {
-        let file = create_test_file("fn main() {\n    println!(\"Hello\");\n}");
-        let config = BatlessConfig::default().with_summary_mode(true);
-
-        let result = process_file(file.path().to_str().unwrap(), &config)?;
-
-        assert!(result.has_summary());
-        assert!(result.summary_line_count() > 0);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_include_tokens() -> BatlessResult<()> {
-        let file = create_test_file("fn main() { println!(\"Hello\"); }");
-        let config = BatlessConfig::default().with_include_tokens(true);
-
-        let result = process_file(file.path().to_str().unwrap(), &config)?;
-
-        assert!(result.has_tokens());
-        assert!(result.token_count() > 0);
-
-        Ok(())
-    }
-
-    #[test]
     fn test_encoding_detection() -> BatlessResult<()> {
         let file = create_test_file("Hello, 世界!");
         let config = BatlessConfig::default();
@@ -211,8 +172,6 @@ mod tests {
         assert_eq!(config.language, None);
         assert!(!config.strip_ansi);
         assert!(config.use_color);
-        assert!(!config.include_tokens);
-        assert!(!config.summary_mode);
     }
 
     #[test]
@@ -260,10 +219,6 @@ mod tests {
             json.contains("\"file\": \"test.rs\"") || json.contains("\"file\":\"test.rs\""),
             "JSON output did not contain expected file field: {json}"
         );
-
-        // Test summary output
-        let summary = format_output(&file_info, "test.rs", &config, OutputMode::Summary)?;
-        assert!(summary.contains("=== File Summary ==="));
 
         Ok(())
     }

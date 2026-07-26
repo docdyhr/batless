@@ -2,21 +2,23 @@
 
 ## Overview
 
-batless is a non-blocking code viewer designed for automation and AI workflows. Unlike `bat`, it NEVER uses a pager and NEVER blocks waiting for user input.
+batless is a fast, non-blocking `cat`/`bat` alternative. Unlike `bat`, it never uses a pager and never applies syntax highlighting — both are wrong for scripts, CI, and automated pipelines. Unlike plain `cat`, it can emit structured JSON and a symbol index on request. It NEVER blocks waiting for user input and NEVER pages.
+
+This project went through a deliberate simplification ("Option A"): usage telemetry showed plain-text output accounted for the overwhelming majority of real invocations, `--mode=index` was a distant second, and the rest of the old "AI-native" surface (AI profiles, token estimation, AST/tree-sitter mode, streaming/chunking, content hashing, JSON schema validation, summary mode) was barely or never used. All of that has been removed from the codebase. This document describes only what the CLI actually does today.
 
 ## AI Assistant Integration: When to Use batless
 
-If you are an AI assistant (Claude Code, Copilot, etc.) with built-in file tools (`Read`, `Grep`, `Glob`), **use those for routine file operations**. batless adds value only for structured AI-specific outputs those tools cannot produce:
+If you are an AI assistant (Claude Code, Copilot, etc.) with built-in file tools (`Read`, `Grep`, `Glob`), **use those for routine file operations** — they are faster and require no shell invocation. batless earns its keep for a few specific things those tools can't do directly:
 
 | Use batless for | Command |
 |---|---|
-| Symbol/structure index without loading full content | `batless --mode=index file` |
-| LLM token estimation before loading a file into context | `batless --mode=json --profile=claude file \| jq '.estimated_llm_tokens'` |
-| Compressed context (language-aware comment + blank stripping) | `batless --mode=json --profile=claude --strip-comments --strip-blank-lines file` |
-| Semantic streaming of very large files | `batless --mode=json --streaming --chunk-strategy=semantic file` |
-| Content hash for change detection / cache invalidation | `batless --mode=json --hash file` |
+| Symbol/structure index without loading full file content | `batless --mode=index file` |
+| Machine-readable JSON for scripting/piping into `jq` | `batless --mode=json file` |
+| Byte/line-capped preview of a large file | `batless --max-lines=200 --max-bytes=8192 file` |
+| Compressed context (strip comment-only and blank lines) | `batless --strip-comments --strip-blank-lines file` |
+| Project-wide symbol index over a directory (NDJSON) | `batless --mode=index src/` |
 
-**For everything else** — reading files, searching content, listing files — use your built-in tools. They are faster and require no shell invocation.
+**For everything else** — reading files, searching content, listing files — use your built-in tools.
 
 ---
 
@@ -25,22 +27,21 @@ If you are an AI assistant (Claude Code, Copilot, etc.) with built-in file tools
 ### Basic File Viewing
 
 ```bash
-# View file with syntax highlighting
+# View file (plain text, no color, no pager) — this is the default mode
 batless file.py
 
-# Plain text output (no colors)
+# Explicit plain mode (identical to the default; useful when overriding --mode)
 batless --mode=plain file.py
-batless --plain file.py  # short form
+batless --plain file.py   # PAGER-compatibility alias for --mode=plain
 
 # JSON output for structured processing
 batless --mode=json file.py
 
-# Summary mode (extracts key code structures)
-batless --mode=summary file.py
-
-# Symbol index mode (machine-readable symbol table) [v0.5.0]
+# Symbol index mode (machine-readable symbol table)
 batless --mode=index file.py
 ```
+
+There is no highlighted/colorized terminal output mode — batless intentionally does not do syntax highlighting (see Overview). `--mode` accepts exactly three values: `plain`, `json`, `index`.
 
 ### Output Limiting
 
@@ -51,36 +52,43 @@ batless --max-lines=50 file.py
 # Limit output by bytes
 batless --max-bytes=1024 file.py
 
-# Combine limits (both apply)
+# Combine limits (both apply; whichever is hit first truncates)
 batless --max-lines=100 --max-bytes=5000 file.py
 ```
 
-### AI-Optimized Features
+In plain mode, a truncated read prints a trailing `// Output truncated after N lines` / `// Output truncated after N bytes` marker. JSON mode instead sets `truncated`, `truncated_by_lines`, and `truncated_by_bytes` booleans (no marker text is printed).
+
+### Line Numbers (Cat Compatibility)
+
+Line numbers only render in plain mode. Since plain is already the **default** mode, `-n`/`-b` work with no other flags — you only need to add `--plain`/`--mode=plain` if you've also passed `--mode=json` or `--mode=index` and want to switch back. In json/index mode, `-n`/`-b` are silently ignored.
 
 ```bash
-# Use built-in AI profiles
-batless --profile=claude file.py      # Claude-optimized: 20K lines, JSON, standard summary
-batless --profile=claude-max file.py  # Claude large context: 150K lines, JSON, no summary [v0.5.0]
-batless --profile=copilot file.py     # GitHub Copilot
-batless --profile=chatgpt file.py     # ChatGPT
+# Show line numbers (like cat -n)
+batless -n file.py
+batless --number file.py
 
-# Include extracted identifiers in JSON [--include-tokens is a deprecated alias]
-batless --mode=json --include-identifiers file.py
+# Number non-blank lines only (like cat -b)
+batless -b file.py
+batless --number-nonblank file.py
 
-# LLM token estimate in JSON output (requires profile or --ai-model) [v0.5.0]
-batless --mode=json --profile=claude file.py  # adds estimated_llm_tokens + token_model
-
-# Get both summary and full content
-batless --mode=json --summary file.py
-
-# Line-numbered JSON lines: {"n": 1, "text": "..."} instead of plain strings [v0.5.0]
-batless --mode=json --with-line-numbers file.py
-
-# SHA-256 file hash in JSON output [v0.5.0]
-batless --mode=json --hash file.py
+# Explicit form if you're overriding a different --mode back to plain
+batless -n --plain file.py
 ```
 
-### Content Stripping (v0.5.0)
+### Language & Listing
+
+```bash
+# Force a specific language for detection/labeling purposes
+# (populates the "language" field in JSON/index output and drives the
+# per-language heuristics used by --mode=index and --strip-comments;
+# it does not enable any colorized output)
+batless --language=python unknown.file
+
+# List all supported language names
+batless --list-languages
+```
+
+### Content Stripping
 
 ```bash
 # Remove comment-only lines (language-aware: //, #, --, %, ;, /* */)
@@ -93,66 +101,43 @@ batless --strip-blank-lines file.py
 batless --mode=json --strip-comments --strip-blank-lines file.py
 ```
 
-### Streaming
+`compression_ratio` = original line count / stripped line count (higher means more was removed). It only appears in JSON output when at least one strip flag is used and produced a non-empty result.
 
-```bash
-# Stream file in chunks (output is pure NDJSON — one JSON object per line) [v0.5.0]
-batless --mode=json --streaming file.py
-
-# Semantic chunking: chunks extend to tree-sitter declaration boundaries [v0.5.0]
-# Supported: Rust, Python, JavaScript, TypeScript (line-based fallback for others)
-batless --mode=json --streaming --chunk-strategy=semantic file.py
-```
-
-### Language & Themes
-
-```bash
-# Force specific language
-batless --language=python unknown.file
-
-# Change color theme
-batless --theme="Solarized (dark)" file.py
-
-# List available options
-batless --list-languages
-batless --list-themes
-```
-
-### Line Numbers (Cat Compatibility)
-
-**IMPORTANT**: Line numbers only work in plain mode (no syntax highlighting).
-
-```bash
-# Show line numbers (like cat -n) - REQUIRES --plain or --mode=plain
-batless -n --plain file.py
-batless --number --mode=plain file.py
-
-# Number non-blank lines only (like cat -b) - REQUIRES --plain or --mode=plain
-batless -b --plain file.py
-batless --number-nonblank --mode=plain file.py
-
-# WRONG: These will NOT show line numbers (syntax highlighting ignores line numbers)
-# batless -n file.py              # No line numbers shown
-# batless --number file.py         # No line numbers shown
-```
-
-### Pipeline & PAGER Usage
+### Pipeline, PAGER & Misc Flags
 
 ```bash
 # Use as PAGER replacement
 PAGER="batless --plain" gh pr view 42
 
-# Pipeline input
+# Pipeline / stdin input (batless reads stdin when no file arg is given
+# and stdin is not a terminal)
 echo "code" | batless --language=python
-cat file.py | batless --mode=summary
+cat file.py | batless --mode=json
 
-# Compatible flags (ignored for compatibility)
-batless --plain --unbuffered file.py
+# Shell completions
+batless --generate-completions bash   # also: zsh, fish, power-shell
+
+# Explicit config file (.toml or .json, detected by extension); otherwise
+# batless auto-discovers config the normal way
+batless --config path/to/batless.toml file.py
+
+# Diagnostics to stderr
+batless --debug file.py
+
+# Color/ANSI compatibility flags — batless does not add color/highlighting
+# to its own output; these exist for cat/bat command-line compatibility and
+# for content that already contains ANSI codes
+batless --color=never file.py    # auto (default) | always | never
+batless --strip-ansi file.py
+
+# Compatibility flags accepted but ignored (present for drop-in cat/pager use)
+batless --unbuffered file.py     # -u
+batless --no-title file.py
 ```
 
 ## What batless DOES NOT Do
 
-batless intentionally does NOT provide these features. Use the suggested alternatives:
+batless intentionally does not provide these features. Use the suggested alternatives — running `batless --pattern`, `--list`, or `--range`/`-r` exits with an error and prints the same guidance shown here.
 
 ### Pattern Search
 
@@ -172,9 +157,10 @@ rg "TODO" src/
 # batless -r 10:50 file.py
 # batless --range 10:50 file.py
 
-# CORRECT: Use sed, head/tail, or combine with batless
-sed -n '10,50p' file.py | batless --language=python
-head -50 file.py | tail -41 | batless --mode=plain
+# CORRECT: Use sed, head/tail, or combine with batless's own limiting
+sed -n '10,50p' file.py | batless
+head -50 file.py | tail -41 | batless
+batless --max-lines=100 file.py
 ```
 
 ### File Globbing/Listing
@@ -183,48 +169,32 @@ head -50 file.py | tail -41 | batless --mode=plain
 # WRONG: batless does not list files
 # batless --list *.py
 
-# CORRECT: Use shell expansion or find
-batless *.py  # Shell expands the glob
+# CORRECT: Use shell expansion or find/fd
+batless *.py  # shell expands the glob
 find . -name "*.py" -exec batless {} \;
 fd -e py -x batless {}
 ```
 
 ### Interactive Features
 
-```bash
-# batless NEVER provides:
-# - Interactive paging (no less/more behavior)
-# - User prompts or confirmations
-# - Terminal UI elements
-# - Git integration (diffs, blame, etc.)
-```
+batless NEVER provides interactive paging (no less/more behavior), user prompts or confirmations, terminal UI elements, or git integration (diffs, blame, etc.).
 
 ## JSON Output Schema
 
-Standard `--mode=json` output:
+`--mode=json` output (verified shape, add `--json-pretty` for pretty-printing):
 
 ```json
 {
   "file": "path/to/file.py",
   "language": "Python",
   "lines": ["line1", "line2"],
-  "summary_lines": [
-    {"line": "def main():", "line_number": 10, "end_line": 25, "kind": "function"}
-  ],
-  "identifiers": ["def", "main", "os"],
-  "identifier_total": 42,
-  "estimated_llm_tokens": 1200,
-  "token_model": "claude",
-  "file_hash": "a3f1...",
-  "compression_ratio": 1.35,
-  "total_lines": 150,
+  "processed_lines": 2,
+  "total_lines": 2,
   "total_lines_exact": true,
-  "total_bytes": 3420,
+  "total_bytes": 30,
   "truncated": false,
   "truncated_by_lines": false,
   "truncated_by_bytes": false,
-  "truncated_by_context": false,
-  "tokens_truncated": false,
   "encoding": "UTF-8",
   "syntax_errors": [],
   "mode": "json"
@@ -233,52 +203,53 @@ Standard `--mode=json` output:
 
 **Field notes:**
 - `lines` — plain strings by default; `{"n": N, "text": "..."}` objects when `--with-line-numbers` is used
-- `summary_lines` — present when `--summary` is active; each entry has `line_number`, `end_line`, `kind`
-- `identifiers` / `identifier_total` — present when `--include-identifiers` is used (`--include-tokens` is a deprecated alias)
-- `estimated_llm_tokens` / `token_model` — present when a `--profile` or `--ai-model` is active
-- `file_hash` — present when `--hash` is used
-- `compression_ratio` — present when `--strip-comments` or `--strip-blank-lines` is used
+- `compression_ratio` — only present when `--strip-comments`/`--strip-blank-lines` produced output (see Content Stripping above)
+- `syntax_errors` — currently always an empty array; reserved field, no syntax validation is performed
+- There is no `identifiers`, `estimated_llm_tokens`, `token_model`, `file_hash`, or `summary_lines` field — all of that was removed in the Option A refactor
 
-## Index Mode Schema (v0.5.0)
+## Index Mode Schema
 
-`--mode=index` emits a symbol table instead of file content. Backed by tree-sitter AST for Rust, Python, JavaScript, TypeScript; regex fallback for all other languages.
+`--mode=index` emits a symbol table instead of file content, extracted via regex/heuristic pattern matching in `src/summarizer.rs` (NOT tree-sitter/AST-backed — that was removed). It works uniformly across all supported languages using the same heuristic extractor.
 
 ```json
 {
   "file": "src/main.rs",
   "language": "Rust",
-  "symbol_count": 3,
+  "mode": "index",
+  "total_lines": 34,
+  "total_bytes": 512,
+  "symbol_count": 1,
   "symbols": [
     {
       "kind": "function",
       "name": "main",
       "line_start": 10,
       "line_end": 25,
-      "signature": "fn main()",
-      "visibility": "public"
-    },
-    {
-      "kind": "struct",
-      "name": "Config",
-      "line_start": 30,
-      "line_end": 40,
-      "signature": "pub struct Config",
+      "signature": "fn main() {",
       "visibility": "public"
     }
   ]
 }
 ```
 
-Use index mode when you need to navigate code structure without loading full file content.
+**Symbol field notes:**
+- `kind`, `name`, `line_start`, `signature` are always present
+- `line_end` is present only when the extractor could determine the enclosing block's end line
+- `visibility` is present only for Rust (`pub` / `pub(crate)` / `pub(super)` / `private`) and JavaScript/TypeScript (`export` / `local`); it is omitted entirely for other languages
+
+### Directory Input (NDJSON)
+
+Passing a directory to `--mode=index` recursively walks it (skipping hidden directories and symlinks) and emits one compact JSON object per line — NDJSON, one file per line, each with the schema above (or `{"file": ..., "error": ...}` if a file failed to process):
+
+```bash
+batless --mode=index src/ | jq -c '.symbols[] | select(.kind=="function")'
+```
 
 ## Error Handling
 
 When batless is not available, use these fallback commands:
 
 ```bash
-# Fallback for syntax highlighting
-cat file.py  # or less -R for colors if available
-
 # Fallback for line numbers
 cat -n file.py
 
@@ -289,170 +260,38 @@ head -50 file.py
 echo "{\"file\": \"$1\", \"content\": \"$(cat $1 | jq -Rs .)\"}"
 ```
 
-## Integration Examples
-
-### Viewing Large Log Files
+## Common Recipes
 
 ```bash
-# View the first 1000 lines of a large log file
-batless --max-lines=1000 application.log
+# Symbol navigation: jump to a symbol's line range
+batless --mode=index src/lib.rs | jq '.symbols[] | select(.name=="MyStruct")'
 
-# View specific size limit (useful for very large files)
-batless --max-bytes=1048576 huge-log.log  # 1MB limit
+# Public API surface across a directory (NDJSON walk)
+batless --mode=index src | jq -c '.symbols[] | select(.kind=="function" and .visibility=="pub")'
 
-# Combine with grep for error analysis
-grep -n "ERROR" application.log | head -100 | batless --language=log
+# Symbol-level diff of a file's structure before and after a change
+git show HEAD~1:src/main.rs > /tmp/before.rs
+diff <(batless --mode=index /tmp/before.rs | jq '.symbols') <(batless --mode=index src/main.rs | jq '.symbols')
 
-# Preview log file with line numbers for debugging (requires --plain)
-batless -n --plain --max-lines=500 server.log
-```
-
-### Extracting JSON for AI Processing
-
-```bash
-# Extract code structure as JSON for LLM analysis
-batless --mode=json --include-identifiers --max-lines=500 src/main.py | \
-  jq '{file, language, summary: .summary_lines, identifiers: .identifier_total}'
-
-# Get LLM token estimate before sending to API
-batless --mode=json --profile=claude src/main.py | jq '.estimated_llm_tokens'
-
-# Get function signatures only
-batless --mode=summary src/lib.rs | grep "^fn "
-
-# Build context for AI code review
-batless --mode=json --summary --max-lines=300 complex.py > ai-context.json
-
-# Extract multiple files for AI analysis
-find src -name "*.py" -exec sh -c \
-  'batless --mode=json --summary "$1" | jq -c .' _ {} \; > codebase-context.jsonl
-```
-
-### Symbol Navigation with Index Mode (v0.5.0)
-
-```bash
-# Get all symbols in a file
-batless --mode=index src/main.rs | jq '.symbols[] | "\(.line_start): \(.kind) \(.name)"'
-
-# Find all public functions across a codebase
-find src -name "*.rs" -exec sh -c \
-  'batless --mode=index "$1" | jq -c ".symbols[] | select(.kind==\"function\" and .visibility==\"public\")"' \
-  _ {} \; | jq -s '.'
-
-# Jump to a specific symbol's line range
-batless --mode=index src/lib.py | jq '.symbols[] | select(.name=="MyClass")'
-```
-
-### Compressed AI Context (v0.5.0)
-
-```bash
-# Strip comments and blanks for token-efficient context
-batless --mode=json --strip-comments --strip-blank-lines src/main.rs | \
-  jq '{file, compression_ratio, lines: (.lines | length)}'
-
-# Compare compressed vs original size
-batless --mode=json --strip-comments --strip-blank-lines --profile=claude file.py | \
-  jq '{estimated_llm_tokens, compression_ratio}'
+# Build a JSONL context file from multiple files for downstream tooling
+find src -name "*.rs" -exec sh -c 'batless --mode=json "$1"' _ {} \; > codebase-context.jsonl
 ```
 
 ### CI/CD Pipeline Usage
 
 ```yaml
-# GitHub Actions - Show test failure context
+# GitHub Actions - show test failure context
 - name: Show failing test code
   if: failure()
-  run: batless --mode=summary --max-lines=100 tests/test_auth.py
+  run: batless --max-lines=100 tests/test_auth.py
 
-# GitLab CI - Extract code summary for artifacts
+# GitLab CI - extract JSON as a build artifact
 analyze-code:
   script:
-    - batless --mode=json --summary src/main.rs > code-analysis.json
+    - batless --mode=json src/main.rs > code-analysis.json
   artifacts:
     paths:
       - code-analysis.json
-
-# Jenkins - Generate code context for debugging
-stage('Debug Context') {
-  steps {
-    sh 'batless --mode=summary --max-lines=200 src/failing-module.py'
-  }
-}
-
-# CircleCI - Non-blocking code preview
-- run:
-    name: Show changed files
-    command: |
-      for file in $(git diff --name-only HEAD~1); do
-        echo "=== $file ==="
-        batless --max-lines=50 "$file"
-      done
-```
-
-### Summary Mode for Code Review
-
-```bash
-# Quick overview of changed files
-for file in $(git diff --name-only main...HEAD); do
-  echo "=== Changes in $file ==="
-  batless --mode=summary "$file"
-  echo ""
-done
-
-# Extract function signatures for review
-batless --mode=summary src/api.py | grep -E "^(def|class) "
-
-# Compare code structure before and after
-git show HEAD~1:src/main.rs | batless --mode=summary --language=rust > before.txt
-batless --mode=summary src/main.rs > after.txt
-diff -u before.txt after.txt
-
-# Generate review checklist from imports
-batless --mode=summary src/*.py | grep "^import " | sort -u
-```
-
-### AI Context Building
-
-```bash
-# Get structured data for AI processing
-batless --mode=json --include-identifiers --max-lines=500 complex.py | \
-  jq '{file, language, summary_lines, total_lines}'
-
-# Build multi-file context for LLM
-echo '{"files": [' > context.json
-find src -name "*.rs" | while read file; do
-  batless --mode=json --summary --max-lines=200 "$file" | jq -c '.'
-  echo ","
-done >> context.json
-echo ']}' >> context.json
-
-# Extract API endpoints for documentation
-batless --mode=summary src/routes/*.py | grep -E "@app\.(get|post|put|delete)"
-```
-
-### Automated Code Review
-
-```bash
-# Extract code structure for analysis
-for file in $(git diff --name-only); do
-  batless --mode=summary --max-lines=50 "$file"
-done
-
-# Analyze complexity by counting identifiers
-for file in src/*.py; do
-  count=$(batless --mode=json --include-identifiers "$file" | jq '.identifier_total')
-  echo "$file: $count identifiers"
-done | sort -t: -k2 -n
-
-# Check for TODO comments across codebase (use grep, not batless)
-find . -name "*.rs" -exec grep -Hn "TODO\|FIXME\|XXX" {} \;
-
-# Alternative: combine with batless for context
-find . -name "*.rs" | while read file; do
-  if grep -q "TODO\|FIXME\|XXX" "$file"; then
-    echo "=== $file ==="
-    batless --plain "$file" | grep -n "TODO\|FIXME\|XXX"
-  fi
-done
 ```
 
 ## Version Information
@@ -461,7 +300,7 @@ done
 # Human-readable version
 batless --version
 
-# Machine-readable version (JSON)
+# Machine-readable version (JSON: name, version, git_hash, build_timestamp, authors)
 batless --version-json
 ```
 
@@ -469,8 +308,7 @@ batless --version-json
 
 batless is designed to be:
 
-- **Non-blocking**: Never waits for user input
+- **Non-blocking**: Never waits for user input, never pages
 - **Predictable**: Same output whether in terminal or pipe
-- **Minimal**: No decorations by default (unless explicitly requested)
-- **Streaming**: Memory-efficient for large files
-- **Automation-first**: Built for scripts and AI, not interactive use
+- **Minimal**: Plain text by default, no decorations, no highlighting
+- **Honest about scope**: Views individual files; use `ls`/`find`/`fd`/`grep`/`rg` for discovery and search, and pipe their results into batless

@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Breaking Changes
+
+- **Removed AST mode** (`--mode=ast`): dropped the entire tree-sitter dependency (`tree-sitter` core plus the `tree-sitter-rust`, `tree-sitter-python`, `tree-sitter-javascript`, and `tree-sitter-typescript` grammar crates)
+- **Removed the AI profile system** (`--profile`, `--custom-profile`, `--ai-model`, `--fit-context`, `--prompt-tokens`, `--count-tokens`, `--include-identifiers`/`--include-tokens`): also removes the `identifiers`, `identifier_count`, `identifiers_truncated`, `estimated_llm_tokens`, and `token_model` JSON fields
+- **Removed content hashing** (`--hash`): drops the `file_hash` JSON field and the `sha2` dependency
+- **Removed summary mode** (`--mode=summary`, `--summary`, `--summary-level`): drops the `summary_lines` JSON field
+- **Removed streaming** (`--streaming-json`, `--streaming-chunk-size`, `--chunk-strategy`, `--enable-resume`, `--checkpoint`)
+- **Removed JSON schema validation** (`--get-schema`, `--validate-json`) entirely
+- **`--mode=index` is now regex/heuristic-only**: previously tree-sitter-backed for Rust, Python, JavaScript, and TypeScript with a regex fallback for other languages; now a single regex/heuristic symbol extractor is used for every language. Output shape is unchanged, but symbol boundaries are less precise for those four languages
+- **Removed `truncated_by_context`** from the JSON output: it was only ever set by the now-removed `--fit-context` flag and was always `false` otherwise
+
+### 📉 Scope Reduction
+
+- **Why**: usage telemetry across ~475 real invocations over 3.5 months showed `--mode=plain` at 84.4% and `--mode=index` at 10.5% (kept — real usage), while every AI/automation-oriented feature (profiles, AST mode, hashing, summary, streaming, schema validation) sat at ~0-1.5% or was never invoked at all
+- batless is now positioned as a fast, honest, non-blocking `cat`/`bat` alternative rather than an "AI-native structured output tool" — see `docs/PHILOSOPHY_AND_SCOPE.md`
+
+### 🏗️ Architecture
+
+- **Binary size**: stripped release binary reduced from 8.0MB to 1.5MB (81% reduction)
+- **Test suite**: reduced from 365 to 193 tests, reflecting the removed surface area (zero regressions in surviving functionality)
+- **Dependencies removed**: `sha2`, `chrono`, and all `tree-sitter*` crates dropped from `Cargo.toml`
+
 ## [0.6.0] - 2026-04-09
 
 ### Breaking Changes

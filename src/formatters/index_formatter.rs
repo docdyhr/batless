@@ -4,7 +4,6 @@
 //! Useful for AI agents that want to build a project-wide symbol index
 //! without reading every line of every file.
 
-use crate::ast_summarizer::AstSummarizer;
 use crate::config::BatlessConfig;
 use crate::error::BatlessResult;
 use crate::file_info::FileInfo;
@@ -126,27 +125,17 @@ impl Formatter for IndexFormatter {
         _config: &BatlessConfig,
     ) -> BatlessResult<String> {
         let language = file_info.language.as_deref();
-        let content = file_info.lines.join("\n");
 
         // Use detailed summary level to capture the most symbols
-        let mut items: Vec<SummaryItem> =
-            AstSummarizer::extract_summary(&content, language, SummaryLevel::Detailed);
-
-        // Fall back to regex-based summarizer for unsupported languages
-        if items.is_empty() {
-            items = SummaryExtractor::extract_summary(
-                &file_info.lines,
-                language,
-                SummaryLevel::Detailed,
-            );
-        }
+        let items: Vec<SummaryItem> =
+            SummaryExtractor::extract_summary(&file_info.lines, language, SummaryLevel::Detailed);
 
         let symbols: Vec<Value> = items
             .iter()
             .map(|item| Self::symbol_to_json(item, language))
             .collect();
 
-        let mut output = json!({
+        let output = json!({
             "file": file_path,
             "language": language,
             "total_lines": file_info.total_lines,
@@ -155,16 +144,6 @@ impl Formatter for IndexFormatter {
             "symbols": symbols,
             "mode": "index",
         });
-
-        if let Some(ref hash) = file_info.file_hash {
-            output["file_hash"] = json!(hash);
-        }
-        if let Some(tokens) = file_info.estimated_llm_tokens {
-            output["estimated_llm_tokens"] = json!(tokens);
-        }
-        if let Some(ref model) = file_info.token_model {
-            output["token_model"] = json!(model);
-        }
 
         Ok(serde_json::to_string_pretty(&output)?)
     }

@@ -5,20 +5,8 @@
 
 use crate::config_validation::validate_config;
 use crate::error::{BatlessError, BatlessResult};
-use crate::summary::SummaryLevel;
 use serde::{Deserialize, Serialize};
 
-/// Strategy for splitting streaming chunks
-#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "lowercase")]
-pub enum ChunkStrategy {
-    /// Split at fixed line counts (default)
-    #[default]
-    Line,
-    /// Split at top-level declaration boundaries using tree-sitter (falls back to line-based for
-    /// unsupported languages)
-    Semantic,
-}
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -40,24 +28,6 @@ pub struct BatlessConfig {
     /// Whether to use color output
     #[serde(default = "default_use_color")]
     pub use_color: bool,
-    /// Whether to include tokens in JSON output
-    #[serde(default)]
-    pub include_tokens: bool,
-    /// Summary extraction level
-    #[serde(default)]
-    pub summary_level: SummaryLevel,
-    /// Whether to enable summary mode (deprecated, use summary_level)
-    #[serde(default)]
-    pub summary_mode: bool,
-    /// Enable streaming JSON output for large files
-    #[serde(default)]
-    pub streaming_json: bool,
-    /// Chunk size for streaming output (in lines)
-    #[serde(default = "default_streaming_chunk_size")]
-    pub streaming_chunk_size: usize,
-    /// Enable resume capability with checkpoint support
-    #[serde(default)]
-    pub enable_resume: bool,
     /// Schema version for JSON output compatibility
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -76,18 +46,12 @@ pub struct BatlessConfig {
     /// Include 1-based line numbers in JSON output lines array
     #[serde(default)]
     pub json_line_numbers: bool,
-    /// Compute and include SHA-256 file hash in JSON output
-    #[serde(default)]
-    pub hash: bool,
     /// Strip comment-only lines from output
     #[serde(default)]
     pub strip_comments: bool,
     /// Strip blank lines from output
     #[serde(default)]
     pub strip_blank_lines: bool,
-    /// Strategy for splitting streaming chunks
-    #[serde(default)]
-    pub chunk_strategy: ChunkStrategy,
 }
 
 const fn default_max_lines() -> usize {
@@ -96,10 +60,6 @@ const fn default_max_lines() -> usize {
 
 const fn default_use_color() -> bool {
     true
-}
-
-const fn default_streaming_chunk_size() -> usize {
-    1000
 }
 
 fn default_schema_version() -> String {
@@ -114,22 +74,14 @@ impl Default for BatlessConfig {
             language: None,
             strip_ansi: false,
             use_color: true,
-            include_tokens: false,
-            summary_level: SummaryLevel::None,
-            summary_mode: false,
-            streaming_json: false,
-            streaming_chunk_size: default_streaming_chunk_size(),
-            enable_resume: false,
             schema_version: default_schema_version(),
             debug: false,
             show_line_numbers: false,
             show_line_numbers_nonblank: false,
             pretty_json: false,
             json_line_numbers: false,
-            hash: false,
             strip_comments: false,
             strip_blank_lines: false,
-            chunk_strategy: ChunkStrategy::Line,
         }
     }
 }
@@ -167,50 +119,6 @@ impl BatlessConfig {
     /// Set color usage
     pub const fn with_use_color(mut self, use_color: bool) -> Self {
         self.use_color = use_color;
-        self
-    }
-
-    /// Set token inclusion
-    pub const fn with_include_tokens(mut self, include_tokens: bool) -> Self {
-        self.include_tokens = include_tokens;
-        self
-    }
-
-    /// Set summary mode
-    pub const fn with_summary_mode(mut self, summary_mode: bool) -> Self {
-        self.summary_mode = summary_mode;
-        // For backward compatibility, map boolean to SummaryLevel
-        if summary_mode {
-            self.summary_level = SummaryLevel::Standard;
-        } else {
-            self.summary_level = SummaryLevel::None;
-        }
-        self
-    }
-
-    /// Set summary level
-    pub const fn with_summary_level(mut self, summary_level: SummaryLevel) -> Self {
-        // Update deprecated summary_mode for backward compatibility
-        self.summary_mode = summary_level.is_enabled();
-        self.summary_level = summary_level;
-        self
-    }
-
-    /// Enable streaming JSON output
-    pub const fn with_streaming_json(mut self, streaming_json: bool) -> Self {
-        self.streaming_json = streaming_json;
-        self
-    }
-
-    /// Set streaming chunk size
-    pub const fn with_streaming_chunk_size(mut self, chunk_size: usize) -> Self {
-        self.streaming_chunk_size = chunk_size;
-        self
-    }
-
-    /// Enable resume capability
-    pub const fn with_enable_resume(mut self, enable_resume: bool) -> Self {
-        self.enable_resume = enable_resume;
         self
     }
 
@@ -253,12 +161,6 @@ impl BatlessConfig {
         self
     }
 
-    /// Compute and include SHA-256 file hash in JSON output
-    pub const fn with_hash(mut self, enabled: bool) -> Self {
-        self.hash = enabled;
-        self
-    }
-
     /// Strip comment-only lines from output
     pub const fn with_strip_comments(mut self, enabled: bool) -> Self {
         self.strip_comments = enabled;
@@ -269,24 +171,6 @@ impl BatlessConfig {
     pub const fn with_strip_blank_lines(mut self, enabled: bool) -> Self {
         self.strip_blank_lines = enabled;
         self
-    }
-
-    /// Set streaming chunk strategy
-    pub const fn with_chunk_strategy(mut self, strategy: ChunkStrategy) -> Self {
-        self.chunk_strategy = strategy;
-        self
-    }
-
-    /// Get effective summary level (considering both new and deprecated fields)
-    pub fn effective_summary_level(&self) -> SummaryLevel {
-        // Priority: summary_level takes precedence over deprecated summary_mode
-        if self.summary_level != SummaryLevel::None {
-            self.summary_level
-        } else if self.summary_mode {
-            SummaryLevel::Standard
-        } else {
-            SummaryLevel::None
-        }
     }
 
     /// Validate the configuration
@@ -456,24 +340,6 @@ impl BatlessConfig {
         if other.use_color != default.use_color {
             self.use_color = other.use_color;
         }
-        if other.include_tokens != default.include_tokens {
-            self.include_tokens = other.include_tokens;
-        }
-        if other.summary_mode != default.summary_mode {
-            self.summary_mode = other.summary_mode;
-        }
-        if other.summary_level != default.summary_level {
-            self.summary_level = other.summary_level;
-        }
-        if other.streaming_json != default.streaming_json {
-            self.streaming_json = other.streaming_json;
-        }
-        if other.streaming_chunk_size != default.streaming_chunk_size {
-            self.streaming_chunk_size = other.streaming_chunk_size;
-        }
-        if other.enable_resume != default.enable_resume {
-            self.enable_resume = other.enable_resume;
-        }
         if other.schema_version != default.schema_version {
             self.schema_version = other.schema_version;
         }
@@ -492,17 +358,11 @@ impl BatlessConfig {
         if other.json_line_numbers != default.json_line_numbers {
             self.json_line_numbers = other.json_line_numbers;
         }
-        if other.hash != default.hash {
-            self.hash = other.hash;
-        }
         if other.strip_comments != default.strip_comments {
             self.strip_comments = other.strip_comments;
         }
         if other.strip_blank_lines != default.strip_blank_lines {
             self.strip_blank_lines = other.strip_blank_lines;
-        }
-        if other.chunk_strategy != default.chunk_strategy {
-            self.chunk_strategy = other.chunk_strategy;
         }
 
         self
@@ -512,8 +372,6 @@ impl BatlessConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{profile::CustomProfile, summary::SummaryLevel};
-
     #[test]
     fn test_default_config() {
         let config = BatlessConfig::default();
@@ -522,8 +380,6 @@ mod tests {
         assert_eq!(config.language, None);
         assert!(!config.strip_ansi);
         assert!(config.use_color);
-        assert!(!config.include_tokens);
-        assert!(!config.summary_mode);
     }
 
     #[test]
@@ -533,17 +389,13 @@ mod tests {
             .with_max_bytes(Some(1024))
             .with_language(Some("rust".to_string()))
             .with_strip_ansi(true)
-            .with_use_color(false)
-            .with_include_tokens(true)
-            .with_summary_mode(true);
+            .with_use_color(false);
 
         assert_eq!(config.max_lines, 5000);
         assert_eq!(config.max_bytes, Some(1024));
         assert_eq!(config.language, Some("rust".to_string()));
         assert!(config.strip_ansi);
         assert!(!config.use_color);
-        assert!(config.include_tokens);
-        assert!(config.summary_mode);
     }
 
     #[test]
@@ -590,14 +442,11 @@ mod tests {
 
     #[test]
     fn test_json_serialization() {
-        let config = BatlessConfig::default()
-            .with_max_lines(3000)
-            .with_include_tokens(true);
+        let config = BatlessConfig::default().with_max_lines(3000);
 
         let json_str = serde_json::to_string_pretty(&config).unwrap();
         let deserialized: BatlessConfig = serde_json::from_str(&json_str).unwrap();
         assert_eq!(deserialized.max_lines, 3000);
-        assert!(deserialized.include_tokens);
     }
 
     #[test]
@@ -605,10 +454,6 @@ mod tests {
         let base = BatlessConfig::default();
         let override_config = BatlessConfig::default()
             .with_max_lines(2000)
-            .with_summary_level(SummaryLevel::Detailed)
-            .with_streaming_json(true)
-            .with_streaming_chunk_size(42)
-            .with_enable_resume(true)
             .with_schema_version("9.9".to_string())
             .with_debug(true)
             .with_show_line_numbers(true)
@@ -617,10 +462,6 @@ mod tests {
 
         let merged = base.merge_with(override_config);
         assert_eq!(merged.max_lines, 2000);
-        assert_eq!(merged.summary_level, SummaryLevel::Detailed);
-        assert!(merged.streaming_json);
-        assert_eq!(merged.streaming_chunk_size, 42);
-        assert!(merged.enable_resume);
         assert_eq!(merged.schema_version, "9.9");
         assert!(merged.debug);
         assert!(merged.show_line_numbers);
@@ -651,7 +492,6 @@ mod tests {
         let toml_content = r"
 max_lines = 15000
 use_color = false
-summary_mode = true
 ";
 
         let mut temp_file = NamedTempFile::new().unwrap();
@@ -660,7 +500,6 @@ summary_mode = true
         let config = BatlessConfig::from_file(temp_file.path()).unwrap();
         assert_eq!(config.max_lines, 15000);
         assert!(!config.use_color);
-        assert!(config.summary_mode);
     }
 
     #[test]
@@ -670,7 +509,6 @@ summary_mode = true
 
         let json_content = r#"{
   "max_lines": 8000,
-  "include_tokens": true,
   "strip_ansi": true
 }"#;
 
@@ -679,7 +517,6 @@ summary_mode = true
 
         let config = BatlessConfig::from_json_file(temp_file.path()).unwrap();
         assert_eq!(config.max_lines, 8000);
-        assert!(config.include_tokens);
         assert!(config.strip_ansi);
     }
 
@@ -710,163 +547,5 @@ max_lines = "not_a_number"
 
         let loaded_config = BatlessConfig::from_file(temp_file.path()).unwrap();
         assert_eq!(loaded_config.max_lines, 7000);
-    }
-
-    // Custom Profile Tests
-    #[test]
-    fn test_custom_profile_creation() {
-        let profile = CustomProfile::new(
-            "test-profile".to_string(),
-            Some("A test profile for unit testing".to_string()),
-        );
-
-        assert_eq!(profile.name, "test-profile");
-        assert_eq!(
-            profile.description,
-            Some("A test profile for unit testing".to_string())
-        );
-        assert_eq!(profile.version, "1.0");
-        assert!(profile.max_lines.is_none());
-        assert!(profile.max_bytes.is_none());
-        assert!(profile.tags.is_empty());
-    }
-
-    #[test]
-    fn test_custom_profile_apply_to_config() {
-        let profile = CustomProfile {
-            name: "coding-profile".to_string(),
-            description: None,
-            version: "1.0".to_string(),
-            max_lines: Some(2500),
-            max_bytes: Some(50000),
-            language: Some("rust".to_string()),
-            strip_ansi: Some(true),
-            use_color: Some(false),
-            include_tokens: Some(true),
-            summary_level: Some(SummaryLevel::Standard),
-            output_mode: Some("json".to_string()),
-            ai_model: Some("gpt4-turbo".to_string()),
-            streaming_json: Some(false),
-            streaming_chunk_size: Some(1000),
-            enable_resume: Some(false),
-            debug: Some(false),
-            tags: vec!["coding".to_string(), "development".to_string()],
-            created_at: None,
-            updated_at: None,
-        };
-
-        let base_config = BatlessConfig::default();
-        let applied_config = profile.apply_to_config(base_config);
-
-        assert_eq!(applied_config.max_lines, 2500);
-        assert_eq!(applied_config.max_bytes, Some(50000));
-        assert_eq!(applied_config.language, Some("rust".to_string()));
-        assert!(applied_config.strip_ansi);
-        assert!(!applied_config.use_color);
-        assert!(applied_config.include_tokens);
-        assert_eq!(applied_config.summary_level, SummaryLevel::Standard);
-    }
-
-    #[test]
-    fn test_custom_profile_partial_application() {
-        let profile = CustomProfile {
-            name: "minimal-profile".to_string(),
-            description: None,
-            version: "1.0".to_string(),
-            max_lines: Some(1000),
-            max_bytes: None,
-            language: None,
-            strip_ansi: None,
-            use_color: None,
-            include_tokens: None,
-            summary_level: None,
-            output_mode: None,
-            ai_model: None,
-            streaming_json: None,
-            streaming_chunk_size: None,
-            enable_resume: None,
-            debug: None,
-            tags: Vec::new(),
-            created_at: None,
-            updated_at: None,
-        };
-
-        let base_config = BatlessConfig::default().with_use_color(false);
-
-        let applied_config = profile.apply_to_config(base_config);
-
-        // Profile should only override max_lines
-        assert_eq!(applied_config.max_lines, 1000);
-        assert!(!applied_config.use_color); // Unchanged
-    }
-
-    #[test]
-    fn test_custom_profile_validation() {
-        // Valid profile
-        let valid_profile = CustomProfile::new(
-            "valid-profile".to_string(),
-            Some("A valid profile".to_string()),
-        );
-        assert!(valid_profile.validate().is_ok());
-
-        // Empty name
-        let empty_name_profile = CustomProfile::new(String::new(), None);
-        assert!(empty_name_profile.validate().is_err());
-
-        // Name too long
-        let long_name_profile = CustomProfile::new("a".repeat(60), None);
-        assert!(long_name_profile.validate().is_err());
-    }
-
-    #[test]
-    fn test_custom_profile_output_mode_preference() {
-        let profile = CustomProfile {
-            name: "test".to_string(),
-            description: None,
-            version: "1.0".to_string(),
-            max_lines: None,
-            max_bytes: None,
-            language: None,
-            strip_ansi: None,
-            use_color: None,
-            include_tokens: None,
-            summary_level: None,
-            output_mode: Some("summary".to_string()),
-            ai_model: Some("claude35-sonnet".to_string()),
-            streaming_json: None,
-            streaming_chunk_size: None,
-            enable_resume: None,
-            debug: None,
-            tags: Vec::new(),
-            created_at: None,
-            updated_at: None,
-        };
-
-        assert_eq!(profile.get_output_mode(), Some("summary"));
-        assert_eq!(profile.get_ai_model(), Some("claude35-sonnet"));
-    }
-
-    #[test]
-    fn test_custom_profile_json_serialization() {
-        let profile = CustomProfile::new(
-            "test-profile".to_string(),
-            Some("Test description".to_string()),
-        );
-
-        let json_str = serde_json::to_string_pretty(&profile).unwrap();
-        let deserialized: CustomProfile = serde_json::from_str(&json_str).unwrap();
-
-        assert_eq!(deserialized.name, profile.name);
-        assert_eq!(deserialized.description, profile.description);
-        assert_eq!(deserialized.version, profile.version);
-    }
-
-    #[test]
-    fn test_custom_profile_discover_profiles() {
-        // This test just ensures the function runs without panicking
-        // In a real environment, it would find actual profile files
-        let profiles = CustomProfile::discover_profiles();
-        // Should return a Vec (even if empty, which is fine for testing)
-        assert!(profiles.is_empty() || !profiles.is_empty());
     }
 }

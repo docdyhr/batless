@@ -4,13 +4,13 @@ version = "0.6.0"
 edition = "2021"
 rust-version = "1.85.0"
 authors = ["Thomas <thomas@docdyhr.com>"]
-description = "A non-blocking, LLM-friendly code viewer inspired by bat"
+description = "A fast, non-blocking code and text viewer inspired by bat"
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/docdyhr/batless"
 repository = "https://github.com/docdyhr/batless"
 documentation = "https://docs.rs/batless"
-keywords = ["cli", "syntax-highlighting", "code-viewer", "ai", "automation"]
+keywords = ["cli", "code-viewer", "cat", "pager", "viewer"]
 categories = ["command-line-utilities", "development-tools", "text-processing"]
 exclude = [
     "target/",
@@ -41,14 +41,6 @@ serde_json = "1.0"
 encoding_rs = "0.8"
 toml = "1.1"
 dirs = "6"
-chrono = { version = "0.4", features = ["serde"] }
-# Tree-sitter for AST parsing
-tree-sitter = "0.26"
-tree-sitter-rust = "0.24"
-tree-sitter-python = "0.25"
-tree-sitter-javascript = "0.25"
-tree-sitter-typescript = "0.23"
-sha2 = "0.11"
 
 [dev-dependencies]
 tempfile = "3.27"

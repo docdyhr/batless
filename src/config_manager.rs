@@ -4,9 +4,6 @@
 use crate::config::BatlessConfig;
 use crate::error::{BatlessError, BatlessResult};
 use crate::formatter::OutputMode;
-use crate::profile::CustomProfile;
-use crate::summary::SummaryLevel;
-use crate::tokens::AiModel;
 use clap::{CommandFactory, FromArgMatches, Parser, ValueEnum};
 use is_terminal::IsTerminal;
 use std::str::FromStr;
@@ -49,81 +46,13 @@ pub struct Args {
     #[arg(long)]
     pub list_languages: bool,
 
-    /// Include extracted code identifiers in JSON output (preferred flag)
-    #[arg(long)]
-    pub include_identifiers: bool,
-
-    /// Include extracted code identifiers in JSON output (deprecated alias for --include-identifiers)
-    #[arg(long, hide = true)]
-    pub include_tokens: bool,
-
-    /// Summary mode: show only important code structures (deprecated, use --summary-level)
-    #[arg(long)]
-    pub summary: bool,
-
-    /// Summary level: control detail level of summary output
-    #[arg(long, value_enum)]
-    pub summary_level: Option<CliSummaryLevel>,
-
-    /// Count tokens for AI model context estimation
-    #[arg(long)]
-    pub count_tokens: bool,
-
-    /// AI model for token counting
-    #[arg(long, value_enum, default_value = "generic")]
-    pub ai_model: CliAiModel,
-
-    /// Fit content within AI model context window (truncate if needed)
-    #[arg(long)]
-    pub fit_context: bool,
-
-    /// Estimate prompt token overhead when fitting context
-    #[arg(long, default_value = "500")]
-    pub prompt_tokens: usize,
-
-    /// Validate JSON output against schema
-    #[arg(long)]
-    pub validate_json: bool,
-
-    /// Get JSON schema for specified output format
-    #[arg(long)]
-    pub get_schema: Option<String>,
-
     /// Generate shell completions for the specified shell
     #[arg(long, value_enum)]
     pub generate_completions: Option<Shell>,
 
-    /// Use predefined AI tool profile (overrides other settings)
-    #[arg(long, value_enum)]
-    pub profile: Option<AiProfile>,
-
-    /// Load custom AI profile from file
-    #[arg(long)]
-    pub custom_profile: Option<String>,
-
     /// Configuration file path (defaults to auto-discovery)
     #[arg(long)]
     pub config: Option<String>,
-
-    /// Enable streaming JSON output for large files
-    #[arg(long)]
-    pub streaming_json: bool,
-
-    /// Chunk size for streaming output (in lines)
-    #[arg(long)]
-    pub streaming_chunk_size: Option<usize>,
-
-    /// Streaming chunk strategy: line (fixed line count) or semantic (top-level declaration boundaries)
-    #[arg(long, value_name = "STRATEGY")]
-    pub chunk_strategy: Option<CliChunkStrategy>,
-
-    /// Enable resume capability with checkpoint support
-    #[arg(long)]
-    pub enable_resume: bool,
-
-    /// Checkpoint file path for resuming
-    #[arg(long)]
-    pub checkpoint: Option<String>,
 
     /// Enable debug mode with detailed processing information
     #[arg(long)]
@@ -153,17 +82,13 @@ pub struct Args {
     #[arg(long)]
     pub version_json: bool,
 
-    /// Pretty-print JSON output (when --mode=json); does not affect streaming
+    /// Pretty-print JSON output (when --mode=json)
     #[arg(long)]
     pub json_pretty: bool,
 
     /// Include 1-based line numbers in JSON output lines array (e.g. {"n":1,"text":"..."})
     #[arg(long)]
     pub with_line_numbers: bool,
-
-    /// Compute and include SHA-256 content hash in JSON output (for change detection)
-    #[arg(long)]
-    pub hash: bool,
 
     /// Strip comment-only lines from output
     #[arg(long)]
@@ -178,17 +103,8 @@ pub struct Args {
 pub enum CliOutputMode {
     Plain,
     Json,
-    Summary,
     /// Machine-readable symbol index with line ranges
     Index,
-    /// Raw tree-sitter parse tree as JSON
-    Ast,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum CliChunkStrategy {
-    Line,
-    Semantic,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -200,89 +116,12 @@ pub enum Shell {
     Power,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum AiProfile {
-    /// Optimized for Anthropic Claude (20K lines, standard summary, 200K context)
-    Claude,
-    /// Claude full-context mode — no summary, JSON output, up to 150K lines
-    #[clap(name = "claude-max")]
-    ClaudeMax,
-    /// Focused on code suggestions for GitHub Copilot (2K lines, identifiers included)
-    Copilot,
-    /// OpenAI ChatGPT optimizations (3K lines, JSON output)
-    Chatgpt,
-    /// Google Gemini optimizations (8K lines, JSON output, leverages large context)
-    Gemini,
-    /// General AI assistant profile (5K lines, balanced output)
-    Assistant,
-}
-
-impl AiProfile {
-    pub const fn apply_to_config(self, config: BatlessConfig) -> BatlessConfig {
-        match self {
-            Self::Claude => config
-                .with_max_lines(20_000)
-                .with_summary_level(SummaryLevel::Standard)
-                .with_include_tokens(false)
-                .with_use_color(false),
-            Self::ClaudeMax => config
-                .with_max_lines(150_000)
-                .with_summary_level(SummaryLevel::None)
-                .with_include_tokens(false)
-                .with_use_color(false),
-            Self::Copilot => config
-                .with_max_lines(2000)
-                .with_include_tokens(true)
-                .with_summary_level(SummaryLevel::None)
-                .with_use_color(false),
-            Self::Chatgpt => config
-                .with_max_lines(3000)
-                .with_include_tokens(true)
-                .with_summary_level(SummaryLevel::None)
-                .with_use_color(false),
-            Self::Gemini => config
-                .with_max_lines(8000)
-                .with_include_tokens(true)
-                .with_summary_level(SummaryLevel::None)
-                .with_use_color(false),
-            Self::Assistant => config
-                .with_max_lines(5000)
-                .with_include_tokens(false)
-                .with_summary_level(SummaryLevel::Detailed)
-                .with_use_color(false),
-        }
-    }
-
-    pub const fn get_output_mode(self) -> OutputMode {
-        match self {
-            Self::Claude => OutputMode::Summary,
-            Self::ClaudeMax => OutputMode::Json,
-            Self::Copilot => OutputMode::Json,
-            Self::Chatgpt => OutputMode::Json,
-            Self::Gemini => OutputMode::Json,
-            Self::Assistant => OutputMode::Summary,
-        }
-    }
-
-    /// Return the AI model to use for LLM token estimation
-    pub const fn get_ai_model(self) -> AiModel {
-        match self {
-            Self::Claude | Self::ClaudeMax => AiModel::Claude,
-            Self::Copilot | Self::Chatgpt => AiModel::Gpt4,
-            Self::Gemini => AiModel::Gemini,
-            Self::Assistant => AiModel::Generic,
-        }
-    }
-}
-
 impl From<CliOutputMode> for OutputMode {
     fn from(mode: CliOutputMode) -> Self {
         match mode {
             CliOutputMode::Plain => Self::Plain,
             CliOutputMode::Json => Self::Json,
-            CliOutputMode::Summary => Self::Summary,
             CliOutputMode::Index => Self::Index,
-            CliOutputMode::Ast => Self::Ast,
         }
     }
 }
@@ -294,12 +133,10 @@ impl FromStr for OutputMode {
         match s {
             "plain" => Ok(Self::Plain),
             "json" => Ok(Self::Json),
-            "summary" => Ok(Self::Summary),
             "index" => Ok(Self::Index),
-            "ast" => Ok(Self::Ast),
             _ => Err(BatlessError::ConfigurationError {
                 message: format!("Invalid output mode: {s}"),
-                help: Some("Valid modes are: plain, json, summary, index, ast".to_string()),
+                help: Some("Valid modes are: plain, json, index".to_string()),
             }),
         }
     }
@@ -310,64 +147,6 @@ pub enum ColorMode {
     Auto,
     Always,
     Never,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum CliSummaryLevel {
-    /// No summary, show full file
-    None,
-    /// Minimal summary with only critical structures
-    Minimal,
-    /// Standard summary with most important code
-    Standard,
-    /// Detailed summary with comprehensive information
-    Detailed,
-}
-
-impl From<CliSummaryLevel> for SummaryLevel {
-    fn from(level: CliSummaryLevel) -> Self {
-        match level {
-            CliSummaryLevel::None => Self::None,
-            CliSummaryLevel::Minimal => Self::Minimal,
-            CliSummaryLevel::Standard => Self::Standard,
-            CliSummaryLevel::Detailed => Self::Detailed,
-        }
-    }
-}
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum CliAiModel {
-    /// OpenAI GPT-4 family
-    Gpt4,
-    /// OpenAI GPT-4 Turbo with enhanced capabilities
-    Gpt4Turbo,
-    /// OpenAI GPT-3.5 family
-    Gpt35,
-    /// Anthropic Claude family (Claude 4.x series)
-    Claude,
-    /// Anthropic Claude Sonnet (Claude 4.x Sonnet)
-    ClaudeSonnet,
-    /// Google Gemini 1.5 Pro (1M context)
-    Gemini,
-    /// Google Gemini 2.0 Flash (1M context)
-    GeminiFlash,
-    /// Generic model estimation
-    Generic,
-}
-
-impl From<CliAiModel> for AiModel {
-    fn from(model: CliAiModel) -> Self {
-        match model {
-            CliAiModel::Gpt4 => Self::Gpt4,
-            CliAiModel::Gpt4Turbo => Self::Gpt4Turbo,
-            CliAiModel::Gpt35 => Self::Gpt35,
-            CliAiModel::Claude => Self::Claude,
-            CliAiModel::ClaudeSonnet => Self::ClaudeSonnet,
-            CliAiModel::Gemini => Self::Gemini,
-            CliAiModel::GeminiFlash => Self::GeminiFlash,
-            CliAiModel::Generic => Self::Generic,
-        }
-    }
 }
 
 /// Manages the application's configuration, merging settings from various
@@ -485,8 +264,8 @@ impl ConfigManager {
         // 2. Apply command-line arguments
         self.apply_cli_args();
 
-        // 3. Apply AI profiles (which can override previous settings)
-        self.apply_profiles()?;
+        // 3. Resolve output mode
+        self.resolve_output_mode()?;
 
         // 4. Handle compatibility flags
         self.apply_compatibility_flags();
@@ -529,20 +308,11 @@ impl ConfigManager {
         };
         new_config = new_config.with_use_color(use_color);
 
-        if self.args.include_identifiers || self.args.include_tokens {
-            new_config = new_config.with_include_tokens(true);
-        }
-        if self.args.streaming_json {
-            new_config = new_config.with_streaming_json(self.args.streaming_json);
-        }
         if self.args.json_pretty {
             new_config = new_config.with_pretty_json(true);
         }
         if self.args.with_line_numbers {
             new_config = new_config.with_json_line_numbers(true);
-        }
-        if self.args.hash {
-            new_config = new_config.with_hash(true);
         }
         if self.args.strip_comments {
             new_config = new_config.with_strip_comments(true);
@@ -550,48 +320,16 @@ impl ConfigManager {
         if self.args.strip_blank_lines {
             new_config = new_config.with_strip_blank_lines(true);
         }
-        if let Some(chunk_size) = self.args.streaming_chunk_size {
-            new_config = new_config.with_streaming_chunk_size(chunk_size);
-        }
-        if let Some(strategy) = self.args.chunk_strategy {
-            use crate::config::ChunkStrategy;
-            new_config = new_config.with_chunk_strategy(match strategy {
-                CliChunkStrategy::Line => ChunkStrategy::Line,
-                CliChunkStrategy::Semantic => ChunkStrategy::Semantic,
-            });
-        }
-        if self.args.enable_resume {
-            new_config = new_config.with_enable_resume(self.args.enable_resume);
-        }
         if self.args.debug {
             new_config = new_config.with_debug(self.args.debug);
-        }
-        if let Some(summary_level) = self.args.summary_level {
-            new_config = new_config.with_summary_level(summary_level.into());
-        } else if self.args.summary || self.args.mode == Some(CliOutputMode::Summary) {
-            new_config = new_config.with_summary_mode(true);
         }
 
         self.config = new_config;
     }
 
-    /// Applies AI profiles to the configuration.
-    fn apply_profiles(&mut self) -> BatlessResult<()> {
-        self.output_mode = if let Some(custom_profile_path) = &self.args.custom_profile {
-            let custom_profile = CustomProfile::load_from_file(custom_profile_path)?;
-            self.config = custom_profile.apply_to_config(std::mem::take(&mut self.config));
-            custom_profile
-                .get_output_mode()
-                .and_then(|mode| mode.parse().ok())
-                .unwrap_or_else(|| self.args.mode.map_or(OutputMode::Plain, Into::into))
-        } else if let Some(profile) = self.args.profile {
-            self.config = profile.apply_to_config(std::mem::take(&mut self.config));
-            self.args
-                .mode
-                .map_or_else(|| profile.get_output_mode(), Into::into)
-        } else {
-            self.args.mode.map_or(OutputMode::Plain, Into::into)
-        };
+    /// Resolves the output mode from the `--mode` flag.
+    fn resolve_output_mode(&mut self) -> BatlessResult<()> {
+        self.output_mode = self.args.mode.map_or(OutputMode::Plain, Into::into);
         Ok(())
     }
 
@@ -648,12 +386,6 @@ mod tests {
     }
 
     #[test]
-    fn test_summary_mode() {
-        let mgr = make_manager(&["--mode=summary", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Summary);
-    }
-
-    #[test]
     fn test_max_lines_applied() {
         let mgr = make_manager(&["--max-lines=42", "Cargo.toml"]);
         assert_eq!(mgr.config().max_lines, 42);
@@ -669,12 +401,6 @@ mod tests {
     fn test_language_override() {
         let mgr = make_manager(&["--language=python", "Cargo.toml"]);
         assert_eq!(mgr.config().language, Some("python".to_string()));
-    }
-
-    #[test]
-    fn test_include_tokens() {
-        let mgr = make_manager(&["--include-tokens", "Cargo.toml"]);
-        assert!(mgr.config().include_tokens);
     }
 
     #[test]
@@ -702,63 +428,6 @@ mod tests {
     }
 
     #[test]
-    fn test_summary_flag_enables_summary() {
-        let mgr = make_manager(&["--summary", "Cargo.toml"]);
-        assert!(mgr.config().summary_level.is_enabled());
-    }
-
-    #[test]
-    fn test_summary_level_override() {
-        let mgr = make_manager(&["--summary-level=minimal", "Cargo.toml"]);
-        assert_eq!(mgr.config().summary_level, SummaryLevel::Minimal);
-    }
-
-    #[test]
-    fn test_summary_level_detailed() {
-        let mgr = make_manager(&["--summary-level=detailed", "Cargo.toml"]);
-        assert_eq!(mgr.config().summary_level, SummaryLevel::Detailed);
-    }
-
-    #[test]
-    fn test_profile_claude() {
-        let mgr = make_manager(&["--profile=claude", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Summary);
-        assert_eq!(mgr.config().max_lines, 20_000);
-        assert!(!mgr.config().use_color);
-    }
-
-    #[test]
-    fn test_profile_copilot() {
-        let mgr = make_manager(&["--profile=copilot", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Json);
-        assert_eq!(mgr.config().max_lines, 2000);
-        assert!(mgr.config().include_tokens);
-    }
-
-    #[test]
-    fn test_profile_chatgpt() {
-        let mgr = make_manager(&["--profile=chatgpt", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Json);
-        assert_eq!(mgr.config().max_lines, 3000);
-    }
-
-    #[test]
-    fn test_profile_gemini() {
-        let mgr = make_manager(&["--profile=gemini", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Json);
-        assert_eq!(mgr.config().max_lines, 8000);
-        assert!(mgr.config().include_tokens);
-        assert!(!mgr.config().use_color);
-    }
-
-    #[test]
-    fn test_profile_assistant() {
-        let mgr = make_manager(&["--profile=assistant", "Cargo.toml"]);
-        assert_eq!(mgr.output_mode(), OutputMode::Summary);
-        assert_eq!(mgr.config().max_lines, 5000);
-    }
-
-    #[test]
     fn test_color_never() {
         let mgr = make_manager(&["--color=never", "Cargo.toml"]);
         assert!(!mgr.config().use_color);
@@ -768,24 +437,6 @@ mod tests {
     fn test_json_pretty() {
         let mgr = make_manager(&["--json-pretty", "--mode=json", "Cargo.toml"]);
         assert!(mgr.config().pretty_json);
-    }
-
-    #[test]
-    fn test_streaming_json() {
-        let mgr = make_manager(&["--streaming-json", "Cargo.toml"]);
-        assert!(mgr.config().streaming_json);
-    }
-
-    #[test]
-    fn test_streaming_chunk_size() {
-        let mgr = make_manager(&["--streaming-chunk-size=500", "Cargo.toml"]);
-        assert_eq!(mgr.config().streaming_chunk_size, 500);
-    }
-
-    #[test]
-    fn test_enable_resume() {
-        let mgr = make_manager(&["--enable-resume", "Cargo.toml"]);
-        assert!(mgr.config().enable_resume);
     }
 
     #[test]
@@ -819,12 +470,9 @@ mod tests {
     fn test_output_mode_from_str() {
         assert_eq!(OutputMode::from_str("plain").unwrap(), OutputMode::Plain);
         assert_eq!(OutputMode::from_str("json").unwrap(), OutputMode::Json);
-        assert_eq!(
-            OutputMode::from_str("summary").unwrap(),
-            OutputMode::Summary
-        );
         assert_eq!(OutputMode::from_str("index").unwrap(), OutputMode::Index);
         assert!(OutputMode::from_str("highlight").is_err());
+        assert!(OutputMode::from_str("summary").is_err());
         assert!(OutputMode::from_str("invalid").is_err());
     }
 
@@ -832,53 +480,7 @@ mod tests {
     fn test_cli_output_mode_conversion() {
         assert_eq!(OutputMode::from(CliOutputMode::Plain), OutputMode::Plain);
         assert_eq!(OutputMode::from(CliOutputMode::Json), OutputMode::Json);
-        assert_eq!(
-            OutputMode::from(CliOutputMode::Summary),
-            OutputMode::Summary
-        );
         assert_eq!(OutputMode::from(CliOutputMode::Index), OutputMode::Index);
-    }
-
-    #[test]
-    fn test_cli_summary_level_conversion() {
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::None),
-            SummaryLevel::None
-        );
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::Minimal),
-            SummaryLevel::Minimal
-        );
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::Standard),
-            SummaryLevel::Standard
-        );
-        assert_eq!(
-            SummaryLevel::from(CliSummaryLevel::Detailed),
-            SummaryLevel::Detailed
-        );
-    }
-
-    #[test]
-    fn test_cli_ai_model_conversion() {
-        assert_eq!(AiModel::from(CliAiModel::Gpt4), AiModel::Gpt4);
-        assert_eq!(AiModel::from(CliAiModel::Claude), AiModel::Claude);
-        assert_eq!(
-            AiModel::from(CliAiModel::ClaudeSonnet),
-            AiModel::ClaudeSonnet
-        );
-        assert_eq!(AiModel::from(CliAiModel::Gemini), AiModel::Gemini);
-        assert_eq!(AiModel::from(CliAiModel::GeminiFlash), AiModel::GeminiFlash);
-        assert_eq!(AiModel::from(CliAiModel::Generic), AiModel::Generic);
-    }
-
-    #[test]
-    fn test_ai_profile_output_modes() {
-        assert_eq!(AiProfile::Claude.get_output_mode(), OutputMode::Summary);
-        assert_eq!(AiProfile::Copilot.get_output_mode(), OutputMode::Json);
-        assert_eq!(AiProfile::Chatgpt.get_output_mode(), OutputMode::Json);
-        assert_eq!(AiProfile::Gemini.get_output_mode(), OutputMode::Json);
-        assert_eq!(AiProfile::Assistant.get_output_mode(), OutputMode::Summary);
     }
 
     #[test]
@@ -893,13 +495,11 @@ mod tests {
         let mgr = make_manager(&[
             "--max-lines=100",
             "--max-bytes=5000",
-            "--include-tokens",
             "--mode=json",
             "Cargo.toml",
         ]);
         assert_eq!(mgr.config().max_lines, 100);
         assert_eq!(mgr.config().max_bytes, Some(5000));
-        assert!(mgr.config().include_tokens);
         assert_eq!(mgr.output_mode(), OutputMode::Json);
     }
 

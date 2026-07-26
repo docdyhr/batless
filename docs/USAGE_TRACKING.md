@@ -28,7 +28,7 @@ Claude Code / shell
                         (includes link to file a GitHub issue)
 ```
 
-Each log line captures: timestamp, session ID, mode, profile, `--max-lines`, `--max-bytes`, flags, extra flags, file extensions, and filenames. On failure, a separate error entry is appended with the exit code and stderr message.
+Each log line captures: timestamp, session ID, mode, profile (kept in the schema for backward compatibility with historical logs; always `null` since `--profile` was removed from batless), `--max-lines`, `--max-bytes`, flags, extra flags, file extensions, and filenames. On failure, a separate error entry is appended with the exit code and stderr message.
 
 ---
 
@@ -85,14 +85,14 @@ One NDJSON object per call, written to `~/.batless/stats/YYYY-MM-DD.ndjson`:
 
 ```json
 {
-  "ts": "2025-04-02T10:23:01Z",
+  "ts": "2026-07-25T10:23:01Z",
   "session": "a3f1b2c4",
-  "mode": "json",
-  "profile": "claude",
+  "mode": "index",
+  "profile": null,
   "max_lines": 100,
   "max_bytes": null,
-  "flags": ["--summary", "--with-line-numbers"],
-  "extra_flags": ["--chunk-strategy"],
+  "flags": ["--with-line-numbers"],
+  "extra_flags": ["--language"],
   "files": ["src/main.rs"],
   "file_count": 1,
   "file_exts": [".rs"]
@@ -162,10 +162,12 @@ batless-stats --commands
 Output:
 
 ```
-  batless --profile=claude --mode=json --summary            42  55%
-  batless --profile=claude-max --mode=json --streaming      21  28%
-  batless --mode=summary --max-lines=50                     13  17%
+  batless --mode=plain                                      401 84.4%
+  batless --mode=index                                       50 10.5%
+  batless --mode=json --with-line-numbers                     8  1.7%
 ```
+
+(Real numbers from the telemetry that drove the "Option A" scope reduction — see `CHANGELOG.md` — `--mode=plain` and `--mode=index` account for essentially all real usage.)
 
 Each line is a canonical signature with flags in stable order, a call count, and a percentage of total calls.
 
@@ -173,8 +175,8 @@ Each line is a canonical signature with flags in stable order, a call count, and
 
 | Section | What it shows |
 |---|---|
-| Output modes | Breakdown of `json`, `summary`, `plain`, `default`, etc. |
-| AI profiles | Which `--profile` values were used |
+| Output modes | Breakdown of `plain`, `json`, `index`, `default`, etc. |
+| AI profiles | Vestigial — `--profile` was removed from batless; this section will always show `none: 100%` for new logs. Kept so historical pre-refactor logs still render |
 | Output limiting | How often `--max-lines` / `--max-bytes` were set, and averages |
 | Unique command signatures | Every distinct flag combination, count, percentage |
 | Top flags | Individual flag frequency |

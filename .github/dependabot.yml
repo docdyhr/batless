@@ -33,12 +33,6 @@ updates:
         update-types:
           - "minor"
           - "patch"
-      syntect-updates:
-        patterns:
-          - "syntect*"
-        update-types:
-          - "minor"
-          - "patch"
       serde-updates:
         patterns:
           - "serde*"
@@ -48,8 +42,6 @@ updates:
     ignore:
       # Ignore major version updates for core dependencies
       # These should be updated manually with proper testing
-      - dependency-name: "syntect"
-        update-types: ["version-update:semver-major"]
       - dependency-name: "clap"
         update-types: ["version-update:semver-major"]
 

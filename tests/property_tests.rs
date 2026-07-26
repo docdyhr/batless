@@ -74,31 +74,6 @@ proptest! {
     }
 
     #[test]
-    fn test_summary_mode_stability(
-        rust_code in r"(fn |struct |impl |use |pub )[a-zA-Z0-9_\s\{\}\(\);]*",
-    ) {
-        let mut file = NamedTempFile::new().expect("Failed to create test file");
-        file.write_all(rust_code.as_bytes()).expect("Failed to write test content");
-
-        let config = BatlessConfig {
-            summary_mode: true,
-            ..Default::default()
-        };
-
-        // Summary mode should not panic and should return a subset of lines
-        let file_path = file.path().to_str().expect("Failed to convert path");
-        if let Ok(result) = process_file(file_path, &config) {
-            if let Some(summary_lines) = &result.summary_lines {
-                prop_assert!(summary_lines.len() <= result.total_lines);
-                // result.lines contains the text from summary items
-                let summary_text: Vec<String> =
-                    summary_lines.iter().map(|s| s.line.clone()).collect();
-                prop_assert_eq!(result.lines, summary_text);
-            }
-        }
-    }
-
-    #[test]
     fn test_encoding_detection_stability(
         content in prop::collection::vec(any::<u8>(), 0..1000)
     ) {

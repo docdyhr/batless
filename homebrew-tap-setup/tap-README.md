@@ -1,6 +1,6 @@
 # 🍺 Homebrew Tap for batless
 
-This is the official Homebrew tap for [batless](https://github.com/docdyhr/batless) - a non-blocking, AI-friendly code viewer inspired by bat.
+This is the official Homebrew tap for [batless](https://github.com/docdyhr/batless) - a fast, non-blocking code and text viewer inspired by bat.
 
 ## Installation
 
@@ -22,27 +22,23 @@ brew install docdyhr/batless
 
 ## What is batless?
 
-**batless** is a minimal, blazing-fast syntax viewer that **never blocks, never pages, never hangs**. Unlike `bat`, it's purpose-built for:
+**batless** is a minimal, blazing-fast file viewer that **never blocks, never pages, never hangs**. Unlike `bat`, it's purpose-built for:
 
-- 🤖 **AI code assistants** that need predictable, streaming output
 - 🔄 **CI/CD pipelines** where interactive pagers would hang forever
 - 📜 **Automation scripts** that require guaranteed non-blocking behavior
-- 🚀 **Modern workflows** where JSON output and code summaries matter more than line numbers
+- 🚀 **Scripting workflows** where JSON output and a symbol index matter more than syntax highlighting
 
 ## Usage Examples
 
 ```bash
-# View a file with syntax highlighting
+# Plain text output (default — no pager, no highlighting, no colors unless piped to a terminal)
 batless src/main.rs
-
-# Plain text output (no colors)
-batless --mode=plain src/main.rs
 
 # JSON output for parsing
 batless --mode=json src/main.rs
 
-# Extract code structure summary
-batless --mode=summary src/main.rs
+# Machine-readable symbol table (functions, classes, structs)
+batless --mode=index src/main.rs
 
 # Limit output
 batless --max-lines=50 large-file.py
@@ -51,11 +47,10 @@ batless --max-lines=50 large-file.py
 ## Features
 
 - ✅ **NEVER blocks** - no pager, no interactive prompts
-- 🎨 **Syntax highlighting** for 100+ languages
-- 📊 **Multiple output modes**: plain, highlighted, JSON, summary
-- 🤖 **AI-optimized** with metadata and token extraction
-- 💾 **Memory efficient** - true streaming architecture
-- 📦 **Single binary** with minimal dependencies
+- 📊 **Three output modes**: plain (default), JSON, index
+- 🗂️ **Symbol index** for a quick structural map of a file
+- 💾 **Memory efficient** - bounded reads via `--max-lines`/`--max-bytes`
+- 📦 **Single binary under 2MB** with minimal dependencies
 
 ## Links
 

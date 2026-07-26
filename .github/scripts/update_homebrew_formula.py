@@ -16,7 +16,7 @@ base_url = f"https://github.com/docdyhr/batless/releases/download/v{version}"
 
 formula = f"""\
 class Batless < Formula
-  desc "Non-blocking, LLM-friendly code viewer inspired by bat"
+  desc "Fast, non-blocking code and text viewer inspired by bat"
   homepage "https://github.com/docdyhr/batless"
   version "{version}"
   license "MIT"
@@ -55,8 +55,8 @@ class Batless < Formula
     assert_match(/"mode":\\s*"json"/, json_output)
     assert_match(/"language":\\s*"Rust"/, json_output)
 
-    summary_output = shell_output("#{{bin}}/batless --mode=summary #{{testpath}}/test.rs")
-    assert_match "main", summary_output
+    index_output = shell_output("#{{bin}}/batless --mode=index #{{testpath}}/test.rs")
+    assert_match "main", index_output
   end
 end
 """
@@ -69,9 +69,8 @@ headers = {
 }
 
 req = urllib.request.Request(api, headers=headers)
-# nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
 # `api` is the hardcoded GitHub Contents API URL above, not user/external input.
-with urllib.request.urlopen(req) as resp:
+with urllib.request.urlopen(req, timeout=30) as resp:  # nosemgrep
     data = json.loads(resp.read())
     file_sha = data["sha"]
     current_content = base64.b64decode(data["content"]).decode()
@@ -88,8 +87,7 @@ payload = json.dumps(
     }
 ).encode()
 req = urllib.request.Request(api, data=payload, headers=headers, method="PUT")
-# nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
 # `api` is the hardcoded GitHub Contents API URL above, not user/external input.
-with urllib.request.urlopen(req) as resp:
+with urllib.request.urlopen(req, timeout=30) as resp:  # nosemgrep
     commit_sha = json.loads(resp.read())["commit"]["sha"][:8]
     print(f"Formula updated → commit {commit_sha}")
