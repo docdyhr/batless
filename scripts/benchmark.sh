@@ -68,7 +68,7 @@ BINARY=./target/release/batless
 echo "## Performance Benchmark Results"  > benchmark_results.md
 echo ""                                  >> benchmark_results.md
 
-for mode in plain json summary index; do
+for mode in plain json index; do
   echo "### ${mode^} Mode" >> benchmark_results.md
   hyperfine --warmup 3 --runs 10 \
     "${BINARY} benchmark_files/medium.rs --mode=${mode}" \
