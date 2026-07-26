@@ -167,7 +167,7 @@ echo "💡 Core Benefits:"
 echo "✅ Always non-blocking (never hangs, never pages)"
 echo "✅ Plain-text viewing by default, JSON and index modes for scripts"
 echo "✅ Smart limiting (lines and bytes)"
-echo "✅ Memory efficient streaming"
+echo "✅ Memory efficient (bounded reads via --max-lines/--max-bytes)"
 echo "✅ cat -n / cat -b compatible"
 echo "✅ CI/CD pipeline safe"
 echo

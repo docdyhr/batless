@@ -23,10 +23,16 @@ impl SummaryExtractor {
 
         let mut summary = Vec::new();
         let mut seen_patterns = HashSet::new();
+        // `Detailed` is the level `--mode=index` always uses (see
+        // `IndexFormatter`), and a symbol index needs to be complete to be
+        // trustworthy — silently dropping symbols past an arbitrary cap
+        // would corrupt downstream tooling with no indication anything was
+        // missing. `Minimal`/`Standard` keep their caps for library callers
+        // that want a short, human-scannable summary.
         let max_items = match level {
             SummaryLevel::Minimal => 25,
             SummaryLevel::Standard => 50,
-            SummaryLevel::Detailed => 100,
+            SummaryLevel::Detailed => usize::MAX,
             SummaryLevel::None => 0,
         };
 
@@ -692,5 +698,35 @@ mod tests {
         assert_eq!(fn_item.line_number, 2);
         let struct_item = summary.iter().find(|s| s.line == "struct Foo {").unwrap();
         assert_eq!(struct_item.line_number, 5);
+    }
+
+    #[test]
+    fn test_detailed_level_does_not_truncate_large_symbol_counts() {
+        // Regression test: `--mode=index` always extracts at `SummaryLevel::Detailed`
+        // and needs a complete symbol list, not a capped "top N" summary.
+        let lines: Vec<String> = (0..150).map(|i| format!("fn func{i}() {{}}")).collect();
+
+        let detailed =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Detailed);
+
+        assert_eq!(
+            detailed.len(),
+            150,
+            "Detailed extraction must not silently cap below the real symbol count"
+        );
+    }
+
+    #[test]
+    fn test_minimal_and_standard_levels_still_cap() {
+        // Minimal/Standard remain capped for library callers wanting a short summary.
+        let lines: Vec<String> = (0..60).map(|i| format!("fn func{i}() {{}}")).collect();
+
+        let minimal =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Minimal);
+        assert_eq!(minimal.len(), 25);
+
+        let standard =
+            SummaryExtractor::extract_summary(&lines, Some("Rust"), SummaryLevel::Standard);
+        assert_eq!(standard.len(), 50);
     }
 }
