@@ -21,16 +21,13 @@ impl OutputFormatter {
     ) -> BatlessResult<String> {
         use crate::formatters::Formatter;
         use crate::formatters::{
-            ast_formatter::AstFormatter, index_formatter::IndexFormatter,
-            json_formatter::JsonFormatter, plain_formatter::PlainFormatter,
-            summary_formatter::SummaryFormatter,
+            index_formatter::IndexFormatter, json_formatter::JsonFormatter,
+            plain_formatter::PlainFormatter,
         };
         match output_mode {
             OutputMode::Plain => PlainFormatter.format(file_info, file_path, config),
             OutputMode::Json => JsonFormatter.format(file_info, file_path, config),
-            OutputMode::Summary => SummaryFormatter.format(file_info, file_path, config),
             OutputMode::Index => IndexFormatter.format(file_info, file_path, config),
-            OutputMode::Ast => AstFormatter.format(file_info, file_path, config),
         }
     }
 
@@ -51,9 +48,7 @@ impl OutputFormatter {
                 });
                 serde_json::to_string(&json_line).map_err(BatlessError::from)
             }
-            OutputMode::Summary => Ok(line.to_string()), // Summary mode doesn't stream
-            OutputMode::Index => Ok(line.to_string()),   // Index mode doesn't stream
-            OutputMode::Ast => Ok(line.to_string()),     // Ast mode doesn't stream
+            OutputMode::Index => Ok(line.to_string()), // Index mode doesn't stream
         }
     }
 
@@ -118,9 +113,6 @@ impl OutputFormatter {
             "truncation_reason": file_info.truncation_reason(),
             "has_syntax_errors": !file_info.syntax_errors.is_empty(),
             "error_count": file_info.syntax_errors.len(),
-            "token_count": file_info.token_count(),
-            "tokens_truncated": file_info.tokens_truncated(),
-            "summary_line_count": file_info.summary_line_count(),
             "processing_ratio": file_info.processing_ratio()
         });
 
@@ -148,9 +140,6 @@ Total Bytes: {}
 Processing Time: {}ms
 Truncated: {}
 Syntax Errors: {}
-Tokens: {}
-Tokens Truncated: {}
-Summary Lines: {}
 Processing Ratio: {:.2}%",
             file_path,
             stats.language.as_deref().unwrap_or("Unknown"),
@@ -162,9 +151,6 @@ Processing Ratio: {:.2}%",
             processing_time_ms,
             if stats.truncated { "Yes" } else { "No" },
             stats.error_count,
-            stats.token_count,
-            if stats.tokens_truncated { "Yes" } else { "No" },
-            stats.summary_line_count,
             file_info.processing_ratio() * 100.0
         )
     }
@@ -227,11 +213,8 @@ Processing Ratio: {:.2}%",
 pub enum OutputMode {
     Plain,
     Json,
-    Summary,
     /// Machine-readable symbol index (functions, classes, structs with line ranges)
     Index,
-    /// Raw tree-sitter parse tree as JSON (Rust/Python/JS/TS; null root for others)
-    Ast,
 }
 
 impl OutputMode {
@@ -240,22 +223,14 @@ impl OutputMode {
         match s.to_lowercase().as_str() {
             "plain" => Ok(Self::Plain),
             "json" => Ok(Self::Json),
-            "summary" => Ok(Self::Summary),
             "index" => Ok(Self::Index),
-            "ast" => Ok(Self::Ast),
             _ => Err(format!("Unknown output mode: {s}")),
         }
     }
 
     /// Get all available output modes
     pub fn all() -> Vec<Self> {
-        vec![
-            Self::Plain,
-            Self::Json,
-            Self::Summary,
-            Self::Index,
-            Self::Ast,
-        ]
+        vec![Self::Plain, Self::Json, Self::Index]
     }
 
     /// Get string representation
@@ -263,9 +238,7 @@ impl OutputMode {
         match self {
             Self::Plain => "plain",
             Self::Json => "json",
-            Self::Summary => "summary",
             Self::Index => "index",
-            Self::Ast => "ast",
         }
     }
 }
@@ -277,13 +250,13 @@ mod tests {
     use serde_json::Value;
 
     fn create_test_file_info() -> FileInfo {
-        FileInfo::with_metadata(10, 256, Some("Rust".to_string()), "UTF-8".to_string())
-            .with_lines(vec![
+        FileInfo::with_metadata(10, 256, Some("Rust".to_string()), "UTF-8".to_string()).with_lines(
+            vec![
                 "fn main() {".to_string(),
                 "    println!(\"Hello\");".to_string(),
                 "}".to_string(),
-            ])
-            .with_tokens(Some(vec!["fn".to_string(), "main".to_string()]))
+            ],
+        )
     }
 
     #[test]
@@ -309,20 +282,6 @@ mod tests {
         assert_eq!(parsed["processed_lines"].as_u64().unwrap(), 3);
         assert_eq!(parsed["total_lines"].as_u64().unwrap(), 10);
         assert!(parsed["lines"].is_array());
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_format_summary() -> BatlessResult<()> {
-        let file_info = create_test_file_info();
-        let config = BatlessConfig::default();
-        let result =
-            OutputFormatter::format_output(&file_info, "test.rs", &config, OutputMode::Summary)?;
-
-        assert!(result.contains("=== File Summary ==="));
-        assert!(result.contains("Language: Rust"));
-        assert!(result.contains("Total Lines: 10"));
 
         Ok(())
     }
@@ -370,8 +329,9 @@ mod tests {
     fn test_output_mode_parsing() {
         assert_eq!(OutputMode::parse_mode("plain").unwrap(), OutputMode::Plain);
         assert_eq!(OutputMode::parse_mode("json").unwrap(), OutputMode::Json);
-        assert_eq!(OutputMode::parse_mode("ast").unwrap(), OutputMode::Ast);
         assert!(OutputMode::parse_mode("highlight").is_err());
+        assert!(OutputMode::parse_mode("ast").is_err());
+        assert!(OutputMode::parse_mode("summary").is_err());
         assert!(OutputMode::parse_mode("invalid").is_err());
     }
 
@@ -379,9 +339,7 @@ mod tests {
     fn test_output_mode_string_conversion() {
         assert_eq!(OutputMode::Plain.as_str(), "plain");
         assert_eq!(OutputMode::Json.as_str(), "json");
-        assert_eq!(OutputMode::Summary.as_str(), "summary");
         assert_eq!(OutputMode::Index.as_str(), "index");
-        assert_eq!(OutputMode::Ast.as_str(), "ast");
     }
 
     #[test]

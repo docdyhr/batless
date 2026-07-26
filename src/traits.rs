@@ -28,12 +28,3 @@ pub trait SummaryExtraction {
     /// Check if a line is summary-worthy
     fn is_summary_worthy(&self, line: &str, language: Option<&str>, level: SummaryLevel) -> bool;
 }
-
-/// Trait for token extraction functionality
-pub trait TokenExtraction {
-    /// Extract tokens from content
-    fn extract_tokens(&self, content: &str, file_path: &str) -> Vec<String>;
-
-    /// Count tokens in content
-    fn count_tokens(&self, content: &str) -> usize;
-}

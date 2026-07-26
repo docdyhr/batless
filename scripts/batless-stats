@@ -85,6 +85,10 @@ def build_signature(e: dict) -> str:
     """Reconstruct the batless command flags (no filenames) from a log entry."""
     parts = ["batless"]
 
+    # --profile was removed from batless in the Option A scope reduction;
+    # batless-logger now always records "profile": null for new entries.
+    # This branch is kept so historical logs (which may contain a real
+    # profile value) still render correctly.
     profile = e.get("profile")
     if profile:
         parts.append(f"--profile={profile}")

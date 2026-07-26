@@ -33,8 +33,14 @@ else
 fi
 
 # ── Parse args ────────────────────────────────────────────────────────────────
+# NOTE: --profile, --hash, --streaming, --summary, --include-identifiers,
+# --chunk-strategy, and --ai-model were removed from batless in the Option A
+# scope reduction. They are intentionally absent from the classification
+# below; if a caller still passes one of these (stale muscle memory), it
+# falls through to the generic `-*` bucket, gets logged as an unrecognized
+# flag, and the resulting clap error from the real binary is captured by the
+# error-logging path further down.
 MODE="default"
-PROFILE=""
 MAX_LINES=""
 MAX_BYTES=""
 FLAGS=()
@@ -45,15 +51,12 @@ for arg in "$@"; do
     case "$arg" in
         --mode=*)        MODE="${arg#--mode=}" ;;
         --plain)         MODE="plain" ;;
-        --profile=*)     PROFILE="${arg#--profile=}" ;;
         --max-lines=*)   MAX_LINES="${arg#--max-lines=}" ;;
         --max-bytes=*)   MAX_BYTES="${arg#--max-bytes=}" ;;
-        --strip-comments|--strip-blank-lines|\
-        --include-identifiers|--summary|--with-line-numbers|\
-        --hash|--streaming|\
+        --strip-comments|--strip-blank-lines|--with-line-numbers|\
         -n|--number|-b|--number-nonblank)
             FLAGS+=("$arg") ;;
-        --chunk-strategy=*|--language=*|--ai-model=*)
+        --language=*)
             EXTRA_FLAGS+=("${arg%%=*}") ;;
         --version|--version-json|--list-languages)
             FLAGS+=("$arg") ;;
@@ -96,7 +99,10 @@ if [[ $FILE_COUNT -gt 0 ]]; then
     FILE_EXTS="$(json_array "${EXTS[@]}")"
 fi
 
-PROFILE_JSON="$([ -n "$PROFILE" ] && json_str "$PROFILE" || echo "null")"
+# "profile" is always null now that --profile has been removed; the key is
+# kept in the schema so batless-stats' `e.get("profile")` continues to work
+# unchanged against both old and new log entries.
+PROFILE_JSON="null"
 MAX_LINES_JSON="${MAX_LINES:-null}"
 MAX_BYTES_JSON="${MAX_BYTES:-null}"
 
