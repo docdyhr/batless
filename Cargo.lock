@@ -113,12 +113,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
-name = "bumpalo"
-version = "3.20.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb"
-
-[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -238,7 +232,6 @@ dependencies = [
  "num-traits",
  "oorandom",
  "page_size",
- "plotters",
  "rayon",
  "regex",
  "serde",
@@ -259,9 +252,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-deque"
-version = "0.8.6"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dd111b7b7f7d55b72c0a6ae361660ee5853c9af73f70c3c2ef6858b950e2e51"
+checksum = "5181e0de7b61eb03a81e347d6dd8797bae9da5146707b51077e2d71a54ec0ceb"
 dependencies = [
  "crossbeam-epoch",
  "crossbeam-utils",
@@ -278,9 +271,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.21"
+version = "0.8.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
+checksum = "61803da095bee82a81bb1a452ecc25d3b2f1416d1897eb86430c6159ef717c17"
 
 [[package]]
 name = "crunchy"
@@ -396,13 +389,12 @@ dependencies = [
 
 [[package]]
 name = "half"
-version = "2.7.1"
+version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ea2d84b969582b4b1864a92dc5d27cd2b77b622a8d79306834f1be5ba20d84b"
+checksum = "6dd08c532ae367adf81c312a4580bc67f1d0fe8bc9c460520283f4c0ff277888"
 dependencies = [
  "cfg-if",
  "crunchy",
- "zerocopy",
 ]
 
 [[package]]
@@ -481,16 +473,6 @@ name = "itoa"
 version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
-
-[[package]]
-name = "js-sys"
-version = "0.3.90"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14dc6f6450b3f6d4ed5b16327f38fed626d375a886159ca555bd7822c0c3a5a6"
-dependencies = [
- "once_cell",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "leb128fmt"
@@ -576,41 +558,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "plotters"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aeb6f403d7a4911efb1e33402027fc44f29b5bf6def3effcc22d7bb75f2b747"
-dependencies = [
- "num-traits",
- "plotters-backend",
- "plotters-svg",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "plotters-backend"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df42e13c12958a16b3f7f4386b9ab1f3e7933914ecea48da7139435263a4172a"
-
-[[package]]
-name = "plotters-svg"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51bae2ac328883f7acdfea3d66a7c35751187f870bc81f94563733a154d7a670"
-dependencies = [
- "plotters-backend",
-]
-
-[[package]]
 name = "ppv-lite86"
-version = "0.2.21"
+version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9"
-dependencies = [
- "zerocopy",
-]
+checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "prettyplease"
@@ -701,9 +652,9 @@ dependencies = [
 
 [[package]]
 name = "rayon"
-version = "1.11.0"
+version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "368f01d005bf8fd9b1206fb6fa653e6c4a81ceb1466406b81792d87c5677a58f"
+checksum = "fb39b166781f92d482534ef4b4b1b2568f42613b53e5b6c160e24cfbfa30926d"
 dependencies = [
  "either",
  "rayon-core",
@@ -771,12 +722,6 @@ dependencies = [
  "linux-raw-sys",
  "windows-sys",
 ]
-
-[[package]]
-name = "rustversion"
-version = "1.0.22"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 
 [[package]]
 name = "same-file"
@@ -1029,51 +974,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasm-bindgen"
-version = "0.2.113"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60722a937f594b7fde9adb894d7c092fc1bb6612897c46368d18e7a20208eff2"
-dependencies = [
- "cfg-if",
- "once_cell",
- "rustversion",
- "wasm-bindgen-macro",
- "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-macro"
-version = "0.2.113"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fac8c6395094b6b91c4af293f4c79371c163f9a6f56184d2c9a85f5a95f3950"
-dependencies = [
- "quote",
- "wasm-bindgen-macro-support",
-]
-
-[[package]]
-name = "wasm-bindgen-macro-support"
-version = "0.2.113"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab3fabce6159dc20728033842636887e4877688ae94382766e00b180abac9d60"
-dependencies = [
- "bumpalo",
- "proc-macro2",
- "quote",
- "syn 2.0.117",
- "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-shared"
-version = "0.2.113"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de0e091bdb824da87dc01d967388880d017a0a9bc4f3bdc0d86ee9f9336e3bb5"
-dependencies = [
- "unicode-ident",
-]
-
-[[package]]
 name = "wasm-encoder"
 version = "0.244.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1105,16 +1005,6 @@ dependencies = [
  "hashbrown 0.15.5",
  "indexmap",
  "semver",
-]
-
-[[package]]
-name = "web-sys"
-version = "0.3.90"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "705eceb4ce901230f8625bd1d665128056ccbe4b7408faa625eec1ba80f59a97"
-dependencies = [
- "js-sys",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -1255,26 +1145,6 @@ dependencies = [
  "serde_json",
  "unicode-xid",
  "wasmparser",
-]
-
-[[package]]
-name = "zerocopy"
-version = "0.8.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a789c6e490b576db9f7e6b6d661bcc9799f7c0ac8352f56ea20193b2681532e5"
-dependencies = [
- "zerocopy-derive",
-]
-
-[[package]]
-name = "zerocopy-derive"
-version = "0.8.40"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f65c489a7071a749c849713807783f70672b28094011623e200cb86dcb835953"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
 ]
 
 [[package]]

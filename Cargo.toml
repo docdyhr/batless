@@ -48,7 +48,7 @@ serde_json = "1.0"
 
 # Enhanced testing dependencies
 proptest = { version = "1.11", default-features = false, features = ["std"] }
-criterion = { version = "0.8", features = ["html_reports"] }
+criterion = { version = "0.8", default-features = false, features = ["rayon", "cargo_bench_support"] }
 
 [[bench]]
 name = "performance"
