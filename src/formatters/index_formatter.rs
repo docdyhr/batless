@@ -204,4 +204,56 @@ mod tests {
             Some("export".to_string())
         );
     }
+
+    #[test]
+    fn test_format_produces_index_json() {
+        let lines = vec![
+            "pub fn process_file(path: &str) {".to_string(),
+            "    todo!()".to_string(),
+            "}".to_string(),
+            "struct Config {".to_string(),
+            "}".to_string(),
+        ];
+        let file_info = FileInfo::with_metadata(
+            lines.len(),
+            100,
+            Some("Rust".to_string()),
+            "UTF-8".to_string(),
+        )
+        .with_lines(lines);
+        let config = BatlessConfig::default();
+
+        let formatted = IndexFormatter
+            .format(&file_info, "src/lib.rs", &config)
+            .unwrap();
+        let parsed: Value = serde_json::from_str(&formatted).unwrap();
+
+        assert_eq!(parsed["file"], "src/lib.rs");
+        assert_eq!(parsed["language"], "Rust");
+        assert_eq!(parsed["mode"], "index");
+        assert_eq!(parsed["total_lines"], 5);
+        assert_eq!(parsed["total_bytes"], 100);
+
+        let symbols = parsed["symbols"].as_array().unwrap();
+        assert_eq!(parsed["symbol_count"], symbols.len());
+        assert!(symbols
+            .iter()
+            .any(|s| s["name"] == "process_file" && s["visibility"] == "pub"));
+        assert!(symbols
+            .iter()
+            .any(|s| s["name"] == "Config" && s["visibility"] == "private"));
+    }
+
+    #[test]
+    fn test_symbol_to_json_unknown_name_fallback() {
+        let item = SummaryItem {
+            kind: "function".to_string(),
+            line: "???".to_string(),
+            line_number: 1,
+            end_line: None,
+        };
+        let json = IndexFormatter::symbol_to_json(&item, None);
+        assert_eq!(json["name"], "unknown");
+        assert!(json.get("visibility").is_none());
+    }
 }

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Redundant line-buffer clone on every processed file**: `FileProcessor::process_file` and `process_stdin` were cloning the full `Vec<String>` of file lines immediately before the original was dropped, doubling peak allocation for no benefit.
+
+### Testing
+
+- Added direct unit tests for `IndexFormatter::format()`'s JSON assembly and `ErrorFormatter::format_error()`'s JSON-mode branch, closing the two largest test-coverage gaps found in a project audit (`error_formatter.rs` 24% → 95%, `index_formatter.rs` 31% → 90%).
+
 ## [0.7.0] - 2026-07-26
 
 ### Breaking Changes
