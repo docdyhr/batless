@@ -53,7 +53,7 @@ impl FileProcessor {
             encoding,
         )
         .with_total_lines_exact(metadata.total_lines_exact)
-        .with_lines(lines.clone())
+        .with_lines(lines)
         .with_truncation(
             metadata.truncated,
             metadata.truncated_by_lines,
@@ -237,7 +237,7 @@ impl FileProcessor {
             language,
             "UTF-8".to_string(), // Assume UTF-8 for stdin
         )
-        .with_lines(final_lines.clone())
+        .with_lines(final_lines)
         .with_truncation(
             truncated_by_lines || truncated_by_bytes,
             truncated_by_lines,
