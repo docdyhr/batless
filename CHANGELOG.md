@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - **Redundant line-buffer clone on every processed file**: `FileProcessor::process_file` and `process_stdin` were cloning the full `Vec<String>` of file lines immediately before the original was dropped, doubling peak allocation for no benefit.
+- **`--mode=index <dir>` directory walk no longer recurses**: `collect_files_recursive` now uses an explicit heap-allocated stack instead of function recursion, so a pathologically deep directory tree can no longer overflow the call stack. Output is now globally sorted by path rather than only sorted within each directory.
 
 ### Testing
 
