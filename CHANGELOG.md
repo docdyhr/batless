@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Redundant line-buffer clone on every processed file**: `FileProcessor::process_file` and `process_stdin` were cloning the full `Vec<String>` of file lines immediately before the original was dropped, doubling peak allocation for no benefit.
+- **`--mode=index <dir>` directory walk no longer recurses**: `collect_files_recursive` now uses an explicit heap-allocated stack instead of function recursion, so a pathologically deep directory tree can no longer overflow the call stack. Output is now globally sorted by path rather than only sorted within each directory.
+
+### Testing
+
+- Added direct unit tests for `IndexFormatter::format()`'s JSON assembly and `ErrorFormatter::format_error()`'s JSON-mode branch, closing the two largest test-coverage gaps found in a project audit (`error_formatter.rs` 24% → 95%, `index_formatter.rs` 31% → 90%).
+
 ## [0.7.0] - 2026-07-26
 
 ### Breaking Changes

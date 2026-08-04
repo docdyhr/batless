@@ -135,44 +135,52 @@ fn handle_special_commands(args: &Args) -> BatlessResult<bool> {
     Ok(false)
 }
 
-fn collect_files_recursive(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
-    let entries = match std::fs::read_dir(dir) {
-        Ok(e) => e,
-        Err(e) => {
-            eprintln!("batless: cannot read directory {}: {}", dir.display(), e);
-            return;
-        }
-    };
-    let mut entries: Vec<_> = entries.flatten().collect();
-    entries.sort_by_key(std::fs::DirEntry::path);
-    for entry in entries {
-        let path = entry.path();
-        // Use symlink_metadata so symlinks are never followed — prevents cycles.
-        let meta = match std::fs::symlink_metadata(&path) {
-            Ok(m) => m,
+/// Iteratively walks `root` collecting every regular file, using an explicit
+/// heap-allocated stack rather than recursion so directory depth can never
+/// overflow the call stack. Output is sorted at the end for a deterministic
+/// order (the walk itself no longer proceeds directory-by-directory).
+fn collect_files_recursive(root: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+    let mut pending = vec![root.to_path_buf()];
+
+    while let Some(dir) = pending.pop() {
+        let entries = match std::fs::read_dir(&dir) {
+            Ok(e) => e,
             Err(e) => {
-                eprintln!("batless: cannot stat {}: {}", path.display(), e);
+                eprintln!("batless: cannot read directory {}: {}", dir.display(), e);
                 continue;
             }
         };
-        if meta.is_symlink() {
-            // Skip symlinks entirely to avoid directory cycles.
-            continue;
-        }
-        if meta.is_dir() {
-            // Skip hidden directories
-            if path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .is_some_and(|n| n.starts_with('.'))
-            {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            // Use symlink_metadata so symlinks are never followed — prevents cycles.
+            let meta = match std::fs::symlink_metadata(&path) {
+                Ok(m) => m,
+                Err(e) => {
+                    eprintln!("batless: cannot stat {}: {}", path.display(), e);
+                    continue;
+                }
+            };
+            if meta.is_symlink() {
+                // Skip symlinks entirely to avoid directory cycles.
                 continue;
             }
-            collect_files_recursive(&path, out);
-        } else if meta.is_file() {
-            out.push(path);
+            if meta.is_dir() {
+                // Skip hidden directories
+                if path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with('.'))
+                {
+                    continue;
+                }
+                pending.push(path);
+            } else if meta.is_file() {
+                out.push(path);
+            }
         }
     }
+
+    out.sort();
 }
 
 fn handle_directory_index(dir_path: &str, manager: &ConfigManager) -> BatlessResult<()> {
@@ -339,4 +347,64 @@ fn print_range_not_supported() {
         &mut stderr,
         "See: https://github.com/docdyhr/batless/issues/57"
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_collect_files_recursive_sorted_and_nested() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        fs::write(root.join("b.txt"), "b").unwrap();
+        fs::write(root.join("a.txt"), "a").unwrap();
+        fs::create_dir(root.join("sub")).unwrap();
+        fs::write(root.join("sub").join("c.txt"), "c").unwrap();
+
+        let mut files = Vec::new();
+        collect_files_recursive(root, &mut files);
+
+        assert_eq!(
+            files,
+            vec![
+                root.join("a.txt"),
+                root.join("b.txt"),
+                root.join("sub").join("c.txt"),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_collect_files_recursive_skips_hidden_dirs() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        fs::create_dir(root.join(".hidden")).unwrap();
+        fs::write(root.join(".hidden").join("secret.txt"), "x").unwrap();
+        fs::write(root.join("visible.txt"), "x").unwrap();
+
+        let mut files = Vec::new();
+        collect_files_recursive(root, &mut files);
+
+        assert_eq!(files, vec![root.join("visible.txt")]);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_collect_files_recursive_skips_symlinks() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        fs::write(root.join("real.txt"), "x").unwrap();
+        std::os::unix::fs::symlink(root.join("real.txt"), root.join("link.txt")).unwrap();
+        std::os::unix::fs::symlink(root, root.join("self_loop")).unwrap();
+
+        let mut files = Vec::new();
+        collect_files_recursive(root, &mut files);
+
+        // Only the real file is collected; the file symlink and the
+        // directory symlink (which would otherwise cause infinite
+        // recursion) are both skipped.
+        assert_eq!(files, vec![root.join("real.txt")]);
+    }
 }
