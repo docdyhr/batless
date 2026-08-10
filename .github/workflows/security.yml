@@ -20,4 +20,6 @@ jobs:
       actions: read
       security-events: write
     uses: docdyhr/.github/.github/workflows/rust-security.yml@45a390baa5d5e6b3cd058b0d16023410297ede84 # v1
+    with:
+      allow-licenses: "MIT, Apache-2.0, BSD-3-Clause, ISC, MPL-2.0, LGPL-3.0"
     secrets: inherit # pragma: allowlist secret
