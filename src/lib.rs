@@ -22,6 +22,7 @@
 #![allow(clippy::unnecessary_wraps)] // Some Result returns are for API consistency
 #![allow(clippy::unused_self)] // Some methods need self for trait consistency
 #![allow(clippy::match_same_arms)] // Sometimes clearer to have explicit arms
+#![allow(clippy::multiple_crate_versions)] // syn 2 vs 3 split is WASI-target-only (getrandom -> wasip2/wasip3 -> wit-bindgen -> prettyplease, never compiled for default target); see PR #201 for the same false-positive class
 
 pub mod config;
 pub mod config_manager;

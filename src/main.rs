@@ -1,3 +1,5 @@
+#![allow(clippy::multiple_crate_versions)] // syn 2 vs 3 split is WASI-target-only (getrandom -> wasip2/wasip3 -> wit-bindgen -> prettyplease, never compiled for default target); see PR #201 for the same false-positive class
+
 use batless::{config_manager::ConfigManager, BatlessError, BatlessResult, OutputMode};
 use clap::CommandFactory;
 use clap_complete::generate;
