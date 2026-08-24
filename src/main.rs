@@ -1,4 +1,14 @@
-#![allow(clippy::multiple_crate_versions)] // syn 2 vs 3 split is target-conditional only (Redox: dirs -> redox_users -> thiserror; WASI: getrandom -> wasip2/wasip3 -> wit-bindgen -> prettyplease); neither is ever compiled for the default target — see PR #201 for the same false-positive class
+// `syn` 3.0.3 is a real default-target dependency (clap_derive + serde_derive, both
+// plain [dependencies]) and is not the issue. The lint flags the *extra* syn 2.0.117,
+// which is target-conditional and never compiles for the default target. It's still
+// visible to clippy::multiple_crate_versions because that lint scans Cargo.lock's full
+// target-union metadata, not just what the current target builds. Two conditional paths
+// pull it in: Redox (dirs -> redox_users -> thiserror -> syn 2.0.117 — the one
+// `cargo tree --target=all` resolves as live) and WASI (tempfile[dev] -> getrandom ->
+// wasip2/wasip3 -> wit-bindgen -> prettyplease -> syn 2.0.117 — present only in
+// Cargo.lock's raw metadata, not in any `cargo tree` resolution). See PR #201 for the
+// same false-positive class.
+#![allow(clippy::multiple_crate_versions)]
 
 use batless::{config_manager::ConfigManager, BatlessError, BatlessResult, OutputMode};
 use clap::CommandFactory;
