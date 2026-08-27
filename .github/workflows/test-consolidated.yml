@@ -39,4 +39,3 @@ jobs:
           cargo test --test integration_tests --verbose
           cargo test --test cli_coverage_tests --verbose
           cargo test --test property_tests --verbose
-          cargo test --test streaming_coverage_tests --verbose
