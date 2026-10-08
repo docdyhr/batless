@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### CI/CD
+
+- **Dependabot now groups GitHub Actions SHA-pin bumps**: removed the `update-types` filter from the `github-actions` group. With the filter, a bump that only moves a pinned SHA under the same version tag (e.g. a re-tagged `docdyhr/.github` `# v1`) had no semver change, so it never matched the group and opened its own PR. One `v1` re-tag became nine PRs, at most three at a time.
+
 ### Fixed
 
 - **Redundant line-buffer clone on every processed file**: `FileProcessor::process_file` and `process_stdin` were cloning the full `Vec<String>` of file lines immediately before the original was dropped, doubling peak allocation for no benefit.

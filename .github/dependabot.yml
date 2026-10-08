@@ -64,10 +64,8 @@ updates:
       - "dependencies"
       - "github-actions"
     groups:
+      # No update-types filter: SHA-only bumps (e.g. a moved `# v1` tag) have
+      # no semver change and would otherwise each open a separate PR
       github-actions:
         patterns:
           - "*"
-        update-types:
-          - "major"
-          - "minor"
-          - "patch"
