@@ -297,8 +297,8 @@ Contributors will be recognized in:
 ## Getting Help
 
 - Check the [README](README.md) first
-- Look through existing [issues](https://github.com/your-username/batless/issues)
-- Start a [discussion](https://github.com/your-username/batless/discussions)
+- Look through existing [issues](https://github.com/docdyhr/batless/issues)
+- Start a [discussion](https://github.com/docdyhr/batless/discussions)
 - Join our community channels (if available)
 
 ## License
