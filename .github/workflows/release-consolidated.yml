@@ -20,7 +20,7 @@ jobs:
       contents: write
       attestations: write
       id-token: write
-    uses: docdyhr/.github/.github/workflows/rust-release.yml@45a390baa5d5e6b3cd058b0d16023410297ede84 # v1
+    uses: docdyhr/.github/.github/workflows/rust-release.yml@d71160615b23e71dbe55c88e3dc8fcd8e1aa1da5 # v1
     with:
       binary-name: batless
     secrets: inherit # pragma: allowlist secret
