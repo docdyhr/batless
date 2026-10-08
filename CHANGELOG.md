@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Minimum supported Rust version raised from 1.85.0 to 1.88.0**: the declared `rust-version` had been wrong since `encoding_rs` 0.8.41 (pulled in by a patch-group bump), which requires Rust 1.88. The weekly MSRV job had been failing since 2026-09-21. `Cargo.toml` and the MSRV job now both say 1.88.0, which covers every dependency in the lockfile.
+
 ### CI/CD
 
 - **Dependabot now groups GitHub Actions SHA-pin bumps**: removed the `update-types` filter from the `github-actions` group. With the filter, a bump that only moves a pinned SHA under the same version tag (e.g. a re-tagged `docdyhr/.github` `# v1`) had no semver change, so it never matched the group and opened its own PR. One `v1` re-tag became nine PRs, at most three at a time.
@@ -17,6 +21,7 @@ All notable changes to this project will be documented in this file.
 ### Testing
 
 - Added direct unit tests for `IndexFormatter::format()`'s JSON assembly and `ErrorFormatter::format_error()`'s JSON-mode branch, closing the two largest test-coverage gaps found in a project audit (`error_formatter.rs` 24% → 95%, `index_formatter.rs` 31% → 90%).
+- Four test assertions now use `assert_eq!`/`assert_ne!` instead of `assert!(x.is_empty())`, fixing the `clippy::assert_is_empty` lint added in recent stable clippy (reproduced with Rust 1.99.0). It had been failing the weekly Code Quality and Comprehensive Testing runs; PR CI didn't catch it because its clippy step skips test code.
 
 ## [0.7.0] - 2026-07-26
 

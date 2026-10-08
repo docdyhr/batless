@@ -475,7 +475,7 @@ mod tests {
     #[test]
     fn test_config_file_discovery() {
         let paths = BatlessConfig::find_config_files();
-        assert!(!paths.is_empty());
+        assert_ne!(paths, Vec::<PathBuf>::new());
         assert!(paths
             .iter()
             .any(|p| p.file_name() == Some(std::ffi::OsStr::new(".batlessrc"))));

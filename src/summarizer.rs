@@ -590,7 +590,7 @@ mod tests {
         let lines = vec![];
         let summary =
             SummaryExtractor::extract_summary(&lines, Some("Python"), SummaryLevel::Standard);
-        assert!(summary.is_empty());
+        assert_eq!(summary, Vec::<SummaryItem>::new());
     }
 
     #[test]
