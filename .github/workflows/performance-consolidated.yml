@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   benchmark:
-    uses: docdyhr/.github/.github/workflows/rust-benchmark.yml@364c7e1b7a342f547a7fa7a28e774291662fdf3d # v1
+    uses: docdyhr/.github/.github/workflows/rust-benchmark.yml@98e09a1614eaa2d49ccf27dcd905d88d633c1638 # v1
     with:
       binary-name: batless
       benchmark-script: scripts/benchmark.sh
