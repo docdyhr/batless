@@ -174,10 +174,12 @@ cargo bench
 # Update performance baseline (after validating improvement)
 gh workflow run performance-baseline.yml
 
-# Profile with flamegraph (requires cargo-flamegraph)
-cargo flamegraph -- benchmark_files/large.rs
+# Profile with flamegraph (requires cargo-flamegraph). The release profile
+# strips symbols, so turn that off and add debuginfo for readable frames
+CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true \
+  cargo flamegraph -- benchmark_files/large.rs
 
-# Check binary size
+# Check binary size (release builds are stripped; expect ~1.5MiB on macOS arm64)
 cargo build --release
 ls -lh target/release/batless
 ```
