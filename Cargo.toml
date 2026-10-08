@@ -54,6 +54,12 @@ criterion = { version = "0.8", default-features = false, features = ["rayon", "c
 name = "performance"
 harness = false
 
+# Cargo's default release profile only strips debuginfo, leaving the symbol
+# table in release artifacts (~370KB on macOS arm64). For profiling, override
+# with CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true.
+[profile.release]
+strip = true
+
 # Resolve duplicate dependencies by forcing newer compatible versions
 [workspace]
 resolver = "2"

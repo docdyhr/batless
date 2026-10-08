@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Release binaries are now fully stripped**: `Cargo.toml` sets `[profile.release] strip = true`. Cargo's default release profile only strips debuginfo, so the v0.7.1 artifacts still carried their symbol table (about 3,600 symbols). The macOS arm64 binary was 1,996,112 bytes, against 1,609,840 bytes (1.53 MiB) stripped. This also applies to `cargo install batless`. To profile with symbols (e.g. `cargo flamegraph`), override with `CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true`.
+
 ## [0.7.1] - 2026-10-08
 
 ### Changed
