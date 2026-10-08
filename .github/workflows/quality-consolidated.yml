@@ -10,5 +10,5 @@ permissions:
 
 jobs:
   quality:
-    uses: docdyhr/.github/.github/workflows/rust-quality.yml@45a390baa5d5e6b3cd058b0d16023410297ede84 # v1
+    uses: docdyhr/.github/.github/workflows/rust-quality.yml@d71160615b23e71dbe55c88e3dc8fcd8e1aa1da5 # v1
     secrets: inherit # pragma: allowlist secret
