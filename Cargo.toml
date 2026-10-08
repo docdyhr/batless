@@ -12,14 +12,16 @@ repository = "https://github.com/docdyhr/batless"
 documentation = "https://docs.rs/batless"
 keywords = ["cli", "code-viewer", "cat", "pager", "viewer"]
 categories = ["command-line-utilities", "development-tools", "text-processing"]
-exclude = [
-    "target/",
-    "*.tmp",
-    "test_file*.txt",
-    "demo_output.txt",
-    ".github/",
-    "demo.sh",
-    "fuzz/",
+# Allowlist: only what's needed to build, test, and document the crate.
+# Cargo.toml and Cargo.lock are always included.
+include = [
+    "src/**/*",
+    "tests/**/*",
+    "benches/**/*",
+    "build.rs",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
 ]
 build = "build.rs"
 

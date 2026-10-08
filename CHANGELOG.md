@@ -7,6 +7,15 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Release binaries are now fully stripped**: `Cargo.toml` sets `[profile.release] strip = true`. Cargo's default release profile only strips debuginfo, so the v0.7.1 artifacts still carried their symbol table (about 3,600 symbols). The macOS arm64 binary was 1,996,112 bytes, against 1,609,840 bytes (1.53 MiB) stripped. This also applies to `cargo install batless`. To profile with symbols (e.g. `cargo flamegraph`), override with `CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true`.
+- **The published crate only contains what's needed to build and test it**: `Cargo.toml` replaces its `exclude` denylist with an `include` allowlist (`src/`, `tests/`, `benches/`, `build.rs`, `README.md`, `LICENSE`, `CHANGELOG.md`). The v0.7.1 crate shipped 108 files (180,617 bytes), including `scripts/`, `docs/`, `reports/`, `CLAUDE.md`, lint reports, and `.secrets.baseline`. The new package has 33 files (about 76 KB). All 202 tests pass when run from the unpacked crate.
+
+### Fixed
+
+- **`test_version_json_command` failed when run from the published crate**: it required `git_hash` to be something other than `"unknown"`, but `build.rs` can only read the hash inside a git checkout, so builds from the crate tarball (distro packagers, crater) correctly report `"unknown"`. Reproduced against the published v0.7.1 crate. The test now checks that `git_hash` matches what `build.rs` saw, which is stricter inside the repo (exact hash) and correct outside it.
+
+### Removed
+
+- **Obsolete release scripts**: `scripts/diagnose-release.sh` checked for `release.yml` and `ci.yml` workflows that don't exist, so it always reported failure. Its other modes were hazardous: `fix` ran an unscoped `cargo update` plus `cargo clippy --fix --allow-dirty`, and `test-release` deleted and re-pushed a `v0.1.2-test` tag to origin, which matches the release pipeline's `v*` tag trigger. `scripts/publish-crates-io.sh` was a token-based first-time publish, replaced by OIDC trusted publishing. Neither was referenced anywhere. The release flow is documented in `docs/PUBLISHING.md`.
 
 ### Documentation
 
