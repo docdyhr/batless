@@ -456,7 +456,7 @@ cargo run -- src/main.rs
 ## 📊 Performance
 
 - **Startup time**: <5ms typical on modern hardware
-- **Binary size**: <2MB stripped (1.5MB measured on macOS arm64, down from 8.0MB before the v0.7.0 scope reduction)
+- **Binary size**: <2MB; release builds are fully stripped (1.5MiB measured on macOS arm64, down from 8.0MB before the v0.7.0 scope reduction)
 - **Memory usage**: Bounded by `--max-lines`/`--max-bytes`
 - **Throughput**: Limited only by disk I/O
 
