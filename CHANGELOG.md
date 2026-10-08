@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Minimum supported Rust version raised from 1.85.0 to 1.88.0**: the declared `rust-version` had been wrong since `encoding_rs` 0.8.41 (pulled in by a patch-group bump), which requires Rust 1.88. The weekly MSRV job had been failing since 2026-09-21. `Cargo.toml` and the MSRV job now both say 1.88.0, which covers every dependency in the lockfile.
+- **`FileInfo::is_success()` and `FileInfo::processed_lines()` are now `const fn`**: `Vec::is_empty`/`Vec::len` can be called in `const` context from Rust 1.87. With the new MSRV, `clippy::missing_const_for_fn` (nursery) flags both methods in the weekly Code Quality run.
 
 ### CI/CD
 
