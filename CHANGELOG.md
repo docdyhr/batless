@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 - **Dependabot now groups GitHub Actions SHA-pin bumps**: removed the `update-types` filter from the `github-actions` group. With the filter, a bump that only moves a pinned SHA under the same version tag (e.g. a re-tagged `docdyhr/.github` `# v1`) had no semver change, so it never matched the group and opened its own PR. One `v1` re-tag became nine PRs, at most three at a time.
 - **Removed retired `reviewers` keys from `dependabot.yml`**: GitHub removed this option in 2025 in favour of `CODEOWNERS`, which already requests review from `@docdyhr` on every PR. The config now validates cleanly against the Dependabot schema.
+- **PR CI now checks the MSRV and lints test code**: the shared `docdyhr/.github` workflows are pinned to `364c7e1` (docdyhr/.github#21). `ci / Quick Validation` now runs `clippy --all-targets --all-features`, a new `ci / MSRV (1.88.0)` job runs `cargo check --all-features --locked` on the declared MSRV, and the required `ci / CI Status` gate now fails when fmt/clippy fail. Before, it only checked jobs that were skipped in that case and passed anyway. Both of these regressions used to merge green and only failed the weekly scheduled runs.
 
 ### Fixed
 
