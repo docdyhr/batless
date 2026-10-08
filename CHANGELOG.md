@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Documentation
+
+- **Fixed the Homebrew install instructions**: the README said `brew tap docdyhr/batless`, which points to a `docdyhr/homebrew-batless` repository that doesn't exist, so the command failed. The release pipeline publishes the formula to `docdyhr/homebrew-tap`; the README now says `brew install docdyhr/tap/batless`.
+
 ## [0.7.1] - 2026-10-08
 
 ### Changed

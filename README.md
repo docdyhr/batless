@@ -81,8 +81,7 @@ cargo install batless
 #### Option C: Homebrew (macOS/Linux)
 
 ```bash
-brew tap docdyhr/batless
-brew install batless
+brew install docdyhr/tap/batless
 ```
 
 ### Basic Usage
