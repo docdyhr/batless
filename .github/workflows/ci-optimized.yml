@@ -23,9 +23,10 @@ concurrency:
 
 jobs:
   ci:
-    uses: docdyhr/.github/.github/workflows/rust-ci.yml@d71160615b23e71dbe55c88e3dc8fcd8e1aa1da5 # v1
+    uses: docdyhr/.github/.github/workflows/rust-ci.yml@364c7e1b7a342f547a7fa7a28e774291662fdf3d # v1
     with:
       binary-name: batless
+      msrv: "1.88.0" # keep in sync with Cargo.toml rust-version
     secrets: inherit # pragma: allowlist secret
 
   # Extended integration smoke tests (batless-specific)
