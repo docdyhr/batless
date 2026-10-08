@@ -47,7 +47,12 @@ fn test_version_json_command() {
     assert_eq!(json["name"], "batless");
     assert_eq!(json["version"], env!("CARGO_PKG_VERSION"));
     assert!(json["git_hash"].is_string());
-    assert_ne!(json["git_hash"].as_str().unwrap_or("unknown"), "unknown");
+    // build.rs only sets BATLESS_GIT_HASH when building inside a git checkout;
+    // a build from the published crate has no .git and reports "unknown".
+    assert_eq!(
+        json["git_hash"].as_str(),
+        Some(option_env!("BATLESS_GIT_HASH").unwrap_or("unknown"))
+    );
     assert!(json["build_timestamp"].is_string());
     assert_ne!(
         json["build_timestamp"].as_str().unwrap_or("unknown"),
