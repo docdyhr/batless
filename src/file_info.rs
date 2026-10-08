@@ -109,12 +109,12 @@ impl FileInfo {
     }
 
     /// Check if the file was processed successfully
-    pub fn is_success(&self) -> bool {
+    pub const fn is_success(&self) -> bool {
         self.syntax_errors.is_empty()
     }
 
     /// Get the number of processed lines
-    pub fn processed_lines(&self) -> usize {
+    pub const fn processed_lines(&self) -> usize {
         self.lines.len()
     }
 

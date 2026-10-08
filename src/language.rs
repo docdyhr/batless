@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn test_list_languages() {
         let languages = LanguageDetector::list_languages();
-        assert!(!languages.is_empty());
+        assert_ne!(languages, Vec::<String>::new());
         assert!(languages.contains(&"Rust".to_string()));
 
         // Check sorted

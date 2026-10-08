@@ -2,7 +2,7 @@
 name = "batless"
 version = "0.7.0"
 edition = "2021"
-rust-version = "1.85.0"
+rust-version = "1.88.0"
 authors = ["Thomas <thomas@docdyhr.com>"]
 description = "A fast, non-blocking code and text viewer inspired by bat"
 license = "MIT"

@@ -13,7 +13,7 @@ jobs:
   test-comprehensive:
     uses: docdyhr/.github/.github/workflows/rust-test-comprehensive.yml@d71160615b23e71dbe55c88e3dc8fcd8e1aa1da5 # v1
     with:
-      msrv: "1.85.0"
+      msrv: "1.88.0"
     secrets: inherit # pragma: allowlist secret
 
   # batless-specific integration test suites (run after comprehensive matrix)
