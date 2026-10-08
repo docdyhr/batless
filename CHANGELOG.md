@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-10-08
+
 ### Changed
 
 - **Minimum supported Rust version raised from 1.85.0 to 1.88.0**: the declared `rust-version` had been wrong since `encoding_rs` 0.8.41 (pulled in by a patch-group bump), which requires Rust 1.88. The weekly MSRV job had been failing since 2026-09-21. `Cargo.toml` and the MSRV job now both say 1.88.0, which covers every dependency in the lockfile.
@@ -20,10 +22,16 @@ All notable changes to this project will be documented in this file.
 - **Redundant line-buffer clone on every processed file**: `FileProcessor::process_file` and `process_stdin` were cloning the full `Vec<String>` of file lines immediately before the original was dropped, doubling peak allocation for no benefit.
 - **`--mode=index <dir>` directory walk no longer recurses**: `collect_files_recursive` now uses an explicit heap-allocated stack instead of function recursion, so a pathologically deep directory tree can no longer overflow the call stack. Output is now globally sorted by path rather than only sorted within each directory.
 
+### Dependencies
+
+- **`dirs` 6 → 7**: the only upstream change is `preference_dir` on Windows, which batless doesn't call. Config discovery uses `home_dir()` and `config_dir()`, so config file locations are unchanged on every platform.
+- **Patch/minor bumps**: `clap` 4.6.4 → 4.6.7, `clap_complete` 4.6.7 → 4.6.11, `encoding_rs` 0.8.35 → 0.8.42, `toml` 1.1.3 → 1.1.6.
+- **`criterion` (dev-only) builds without default features**: keeps `rayon` and `cargo_bench_support` but drops `plotters` and `html_reports`, which removes the `plotters → wasm-bindgen → syn 2` path and its duplicate `syn` from the lockfile.
+
 ### Testing
 
 - Added direct unit tests for `IndexFormatter::format()`'s JSON assembly and `ErrorFormatter::format_error()`'s JSON-mode branch, closing the two largest test-coverage gaps found in a project audit (`error_formatter.rs` 24% → 95%, `index_formatter.rs` 31% → 90%).
-- Four test assertions now use `assert_eq!`/`assert_ne!` instead of `assert!(x.is_empty())`, fixing the `clippy::assert_is_empty` lint added in recent stable clippy (reproduced with Rust 1.99.0). It had been failing the weekly Code Quality and Comprehensive Testing runs; PR CI didn't catch it because its clippy step skips test code.
+- Four test assertions now use `assert_eq!`/`assert_ne!` instead of `assert!(x.is_empty())`, fixing the `clippy::assert_is_empty` lint added in recent stable clippy (reproduced with Rust 1.99.0). It had been failing the weekly Code Quality and Comprehensive Testing runs; PR CI didn't catch it because its clippy step skipped test code at the time (fixed under CI/CD above).
 
 ## [0.7.0] - 2026-07-26
 
