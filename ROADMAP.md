@@ -21,6 +21,7 @@ Scope follows real usage, not speculation. The v0.7.0 scope reduction ([Option A
 | **v0.7.0** | Jul 2026 | Option A: major scope reduction — removed AST mode, AI profiles, hashing, summary mode, and streaming based on usage telemetry — see below |
 | **v0.7.1** | Oct 2026 | Maintenance — MSRV corrected to 1.88.0, non-recursive `--mode=index` directory walk, dependency updates |
 | **v0.7.2** | Oct 2026 | Packaging — stripped release binaries (~1.5MiB), 33-file crate allowlist, test suite passes from the published crate |
+| **v0.7.3** | Oct 2026 | Release tooling — GitHub release notes now carry the full CHANGELOG section; no code changes |
 
 ---
 
