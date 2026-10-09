@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-10-09
+
+No changes to the binary, library, or CLI. This release exists to verify the release-notes fix below in a real release.
+
 ### CI/CD
 
 - **GitHub release notes now contain the full CHANGELOG section**: the shared `rust-release.yml` workflow extracted the section with an awk range whose end pattern also matched the start line, so every release from v0.3.2 through v0.7.2 had only the `## [X.Y.Z] - date` heading as its notes. Fixed in docdyhr/.github#22, which adds regression tests that run on the release runner. All 9 shared-workflow pins move to `98e09a1`. The notes for v0.3.2 through v0.7.2 were backfilled from this file.
