@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+
+- **`anyhow` 1.0.102 → 1.0.104 in `Cargo.lock`** to clear [RUSTSEC-2026-0190](https://rustsec.org/advisories/RUSTSEC-2026-0190.html) (unsoundness in `Error::downcast_mut`, fixed in 1.0.103). It doesn't affect batless: `anyhow` comes in only through the `wit-bindgen` wasm toolchain and isn't compiled into any build (`cargo tree -i anyhow --target all` is empty). The update stops `cargo audit` and OSV scanners from flagging the lockfile. The advisory has no GHSA alias, so Dependabot never raised an alert for it.
+
 ## [0.7.3] - 2026-10-09
 
 No changes to the binary, library, or CLI. This release exists to verify the release-notes fix below in a real release.
