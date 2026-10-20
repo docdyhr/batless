@@ -6,9 +6,9 @@
 # IDE files
 .vscode/
 .idea/
-.claude/*
-# Shared agent skills are versioned
-!.claude/skills/
+**/.claude/*
+# Shared agent skills are versioned (root only)
+!/.claude/skills/
 *.swp
 *.swo
 *~
