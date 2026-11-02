@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Vendored agent skills**: `.claude/skills/` carries 4 skills from github/awesome-copilot at commit `cb64ad1` (`dependabot`, `docs-sync-audit`, `github-actions-hardening`, `test-gap-audit`), byte-identical to upstream with its MIT license, for Claude Code and GitHub Copilot. Repo rules take precedence over them (no PR merges or auto-merge, no installs, report-only audits).
+
 ### Security
 
 - **`anyhow` 1.0.102 → 1.0.104 in `Cargo.lock`** to clear [RUSTSEC-2026-0190](https://rustsec.org/advisories/RUSTSEC-2026-0190.html) (unsoundness in `Error::downcast_mut`, fixed in 1.0.103). It doesn't affect batless: `anyhow` comes in only through the `wit-bindgen` wasm toolchain and isn't compiled into any build (`cargo tree -i anyhow --target all` is empty). The update stops `cargo audit` and OSV scanners from flagging the lockfile. The advisory has no GHSA alias, so Dependabot never raised an alert for it.
