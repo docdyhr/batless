@@ -2,6 +2,9 @@ default_language_version:
   python: python3
   node: system
 
+# Vendored third-party agent skills stay byte-identical to upstream (see .claude/skills/README.md)
+exclude: '^\.claude/skills/(?!README\.md$)'
+
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks

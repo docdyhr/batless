@@ -2,7 +2,8 @@
     // markdownlint-cli2 configuration
     "globs": [
         "**/*.md",
-        "!target/**"
+        "!target/**",
+        "!.claude/skills/*/**"
     ],
     "config": {
         "default": true,
