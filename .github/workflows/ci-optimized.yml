@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: docdyhr/.github/.github/workflows/rust-ci.yml@98e09a1614eaa2d49ccf27dcd905d88d633c1638 # v1
+    uses: docdyhr/.github/.github/workflows/rust-ci.yml@2eea0207aab917043bfc06928dbe6ecdf75b98a1 # v1
     with:
       binary-name: batless
       msrv: "1.88.0" # keep in sync with Cargo.toml rust-version
@@ -41,7 +41,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       - name: Build and smoke test
         run: |
           cargo build --release
@@ -61,7 +61,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@ecabd13d1c56bd1345c230e542e9144811ad706f # v2.0.0
         with:
           toolchain: stable
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
       - name: Run benchmarks
         run: |
           cargo build --release
