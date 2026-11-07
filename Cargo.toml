@@ -7,7 +7,6 @@ authors = ["Thomas <thomas@docdyhr.com>"]
 description = "A fast, non-blocking code and text viewer inspired by bat"
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/docdyhr/batless"
 repository = "https://github.com/docdyhr/batless"
 documentation = "https://docs.rs/batless"
 keywords = ["cli", "code-viewer", "cat", "pager", "viewer"]
