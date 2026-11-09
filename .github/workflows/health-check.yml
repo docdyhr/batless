@@ -15,5 +15,5 @@ permissions:
 
 jobs:
   health-check:
-    uses: docdyhr/.github/.github/workflows/rust-health-check.yml@98e09a1614eaa2d49ccf27dcd905d88d633c1638 # v1
+    uses: docdyhr/.github/.github/workflows/rust-health-check.yml@b76712b10f46a2e8a54efd897218271ee8ffdc6f # v1
     secrets: inherit # pragma: allowlist secret
